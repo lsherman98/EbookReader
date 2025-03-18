@@ -1,12 +1,23 @@
-import type { IconProps } from "@radix-ui/react-icons/dist/types";
 import type { LinkProps } from "@tanstack/react-router";
+import { BookOpenText, LibraryBig, LucideProps } from "lucide-react";
 
 export interface MenuEntry {
-  icon: React.ForwardRefExoticComponent<
-    IconProps & React.RefAttributes<SVGSVGElement>
-  >;
-  label: string;
-  href: LinkProps["to"];
+    icon: React.ForwardRefExoticComponent<
+        LucideProps & React.RefAttributes<SVGSVGElement>
+    >;
+    label: string;
+    href: LinkProps["to"];
 }
 
-export const MENU_ENTRIES: MenuEntry[] = [];
+export const MENU_ENTRIES: MenuEntry[] = [
+    {
+        icon: LibraryBig,
+        label: "Libary",
+        href: "/library",
+    },
+    {
+        icon: BookOpenText,
+        label: "Reader",
+        href: "/reader",
+    }
+];

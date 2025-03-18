@@ -6,6 +6,7 @@ import "./index.css";
 
 // Import the generated route tree
 import { routeTree } from "./routeTree.gen";
+import { MyRuntimeProvider } from "./components/NestedSideBarContent";
 
 // Create a new router instance
 const router = createRouter({ routeTree });
@@ -19,6 +20,8 @@ declare module "@tanstack/react-router" {
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <MyRuntimeProvider>
+      <RouterProvider router={router} />
+    </MyRuntimeProvider>
   </React.StrictMode>
 );
