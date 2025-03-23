@@ -1,53 +1,83 @@
-import {
-    AssistantRuntimeProvider,
-    ChatModelAdapter,
-    useLocalRuntime,
-} from "@assistant-ui/react";
-import { Thread } from "./assistant-ui/thread";
-import { ThreadList } from "./assistant-ui/thread-list";
-import { ReactNode } from "react";
-import { pb } from "@/lib/pocketbase";
+import { useEffect, useState } from "react";
+import { Chat } from "./ui/chat";
+import { Message } from "./ui/chat-message";
+import { useGetMessagesByChatId } from "@/lib/api/queries";
+import { useAddMessage, useGenerateAIResponse } from "@/lib/api/mutations";
 
-export function NestedSideBarContent() {
-    return (
-        <div className="grid h-dvh grid-cols-[200px_1fr] gap-x-2 px-4 py-4">
-            <ThreadList />
-            <Thread />
-        </div>
-    );
-}
+export function NestedSideBarContent({ selectedChatId }: { selectedChatId: string | undefined }) {
+  const [input, setInput] = useState<string>("");
+  const [messages, setMessages] = useState<Message[]>([]);
 
-const MyModelAdapter: ChatModelAdapter = {
-    async run({ messages, abortSignal }) {
-        const data = await pb.send("/chat", {
-            method: "POST",
-            body: {
-                messages,
-            },
-            abortSignal,
-        });
+  const { data: messagesData, isPending: isMessagesPending } = useGetMessagesByChatId(selectedChatId);
 
-        return {
-            content: [
-                {
-                    type: "text",
-                    text: data.text,
-                },
-            ],
-        }
-    },
-};
+  const addMessageMutation = useAddMessage();
+  const generateAiResponseMutation = useGenerateAIResponse();
 
-export function MyRuntimeProvider({
-    children,
-}: Readonly<{
-    children: ReactNode;
-}>) {
-    const runtime = useLocalRuntime(MyModelAdapter);
+  useEffect(() => {
+    if (!isMessagesPending && messagesData) {
+      setMessages(messagesData as Message[]);
+    }
+  }, [messagesData, isMessagesPending]);
 
-    return (
-        <AssistantRuntimeProvider runtime={runtime}>
-            {children}
-        </AssistantRuntimeProvider>
-    );
+  const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(event.target.value);
+  };
+
+  const handleSubmit = async (event?: { preventDefault?: () => void }) => {
+    event?.preventDefault?.();
+
+    if (!input || !selectedChatId) {
+      return;
+    }
+
+    let data = await addMessageMutation.mutateAsync({
+      chat: selectedChatId,
+      content: input,
+      role: "user",
+    });
+
+    let message: Message = {
+      content: data.content,
+      role: data.role,
+      id: data.id,
+      createdAt: new Date(data.created),
+    };
+
+    const updatedMessages = [...messages, message];
+    setMessages(updatedMessages);
+
+    // handle error - set failed = true on message
+    data = await generateAiResponseMutation.mutateAsync(updatedMessages);
+    data = await addMessageMutation.mutateAsync({
+      chat: selectedChatId,
+      content: data.content,
+      role: data.role,
+    });
+
+    message = {
+      content: data.content,
+      role: data.role,
+      id: data.id,
+      createdAt: new Date(data.created),
+    };
+
+    setMessages((prev) => [...prev, message]);
+    setInput("");
+  };
+
+  // Show loading state or content based on data availability
+  return (
+    <div className="h-full grid grid-cols gap-x-2 px-4 py-4">
+      <>
+        <Chat
+          messages={messages}
+          input={input}
+          handleInputChange={handleInputChange}
+          handleSubmit={handleSubmit}
+          isGenerating={generateAiResponseMutation.isPending}
+          setMessages={setMessages}
+        />
+      </>
+    </div>
+  );
 }

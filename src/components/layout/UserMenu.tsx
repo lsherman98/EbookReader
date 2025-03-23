@@ -70,7 +70,7 @@ export default function UserMenu() {
         );
     }
 
-    const isAdmin = pb.authStore.isAdmin;
+    const isAdmin = pb.authStore.isSuperuser;
     const initials = (user.name || user.email || "U")[0].toUpperCase();
     const primaryName = user.name || user.email;
     const secondaryName = user.name ? user.email : null;

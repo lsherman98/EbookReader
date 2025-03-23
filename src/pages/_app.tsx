@@ -11,6 +11,6 @@ export const Route = createFileRoute("/_app")({
   ),
   beforeLoad: ({ location }) => {
     // All routes under /_app are protected
-    protectPage(location);
+    protectPage(location); 
   },
 });

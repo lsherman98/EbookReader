@@ -19,6 +19,7 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}
+
 	llm, err := openai.New()
 	if err != nil {
 		log.Fatal(err)
@@ -31,36 +32,20 @@ func main() {
 
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.POST("/chat", func(e *core.RequestEvent) error {
-			data := struct {
-				Messages []struct {
-					Attachments []struct{} `json:"attachments"`
-					Content     []struct {
-						Text string `json:"text"`
-						Type string `json:"type"`
-					} `json:"content"`
-					CreatedAt string `json:"createdAt"`
-					ID        string `json:"id"`
-					Metadata  struct {
-						Custom struct{} `json:"custom"`
-					} `json:"metadata"`
-					Role string `json:"role"`
-				} `json:"messages"`
-			}{}
+			ctx := context.Background()
+			var data ChatRequest
 			if err := e.BindBody(&data); err != nil {
 				return e.BadRequestError("Failed to read request data", err)
 			}
-			app.Logger().Info("Messages: ", data.Messages)
+			// app.Logger().Info(fmt.Sprintf("%+v", data))
 
-			ctx := context.Background()
-
-			content := []llms.MessageContent{}
-
-			for _, msg := range data.Messages {
+			content := make([]llms.MessageContent, len(data.Messages))
+			for i, msg := range data.Messages {
+				messageType := llms.ChatMessageTypeAI
 				if msg.Role == "user" {
-					content = append(content, llms.TextParts(llms.ChatMessageTypeHuman, msg.Content[0].Text))
-				} else {
-					content = append(content, llms.TextParts(llms.ChatMessageTypeAI, msg.Content[0].Text))
+					messageType = llms.ChatMessageTypeHuman
 				}
+				content[i] = llms.TextParts(messageType, msg.Content)
 			}
 
 			completion, err := llm.GenerateContent(ctx, content, llms.WithStreamingFunc(func(ctx context.Context, chunk []byte) error {
@@ -69,14 +54,11 @@ func main() {
 			if err != nil {
 				return e.InternalServerError("Failed to generate completion", err)
 			}
-
-			e.JSON(http.StatusOK, map[string]any{
-				"text":              completion.Choices[0].Content,
-				"completion_tokens": completion.Choices[0].GenerationInfo["CompletionTokens"],
-				"prompt_tokens":     completion.Choices[0].GenerationInfo["PromptTokens"],
-				"reasoning_tokens":  completion.Choices[0].GenerationInfo["ReasoningTokens"],
-				"total_tokens":      completion.Choices[0].GenerationInfo["TotalTokens"],
-				"reasoning_content": completion.Choices[0].ReasoningContent,
+			// e.Stream(http.StatusOK, "application/json", strings.NewReader(completion.Choices[0].Content))
+			e.JSON(http.StatusOK, ChatResponse{
+				Content: completion.Choices[0].Content,
+				Role:    "assistant",
+				Parts:   []any{},
 			})
 			return nil
 		}).Bind(apis.RequireAuth())
