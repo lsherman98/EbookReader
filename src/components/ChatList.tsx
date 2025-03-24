@@ -37,7 +37,7 @@ export function ChatList({ chats, selectedChatId, setSelectedChat, isCollapsed }
               variant={chat.id === selectedChatId ? "secondary" : "ghost"}
               size={"default"}
               onClick={() => setSelectedChat(chat)}
-              className="w-full justify-start py-3 hover:bg-accent/80"
+              className="w-full justify-start py-6 px-4 hover:bg-accent/80"
             >
               <div className="flex flex-col w-full truncate text-left">
                 <span className={cn("truncate", chat.id === selectedChatId ? "font-medium" : "font-normal")}>

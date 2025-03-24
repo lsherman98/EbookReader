@@ -4,7 +4,7 @@ import { Message } from "./ui/chat-message";
 import { useGetMessagesByChatId } from "@/lib/api/queries";
 import { useAddMessage, useGenerateAIResponse } from "@/lib/api/mutations";
 
-export function NestedSideBarContent({ selectedChatId }: { selectedChatId: string | undefined }) {
+export function ChatSideBarContent({ selectedChatId }: { selectedChatId: string | undefined }) {
   const [input, setInput] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
 
@@ -23,6 +23,15 @@ export function NestedSideBarContent({ selectedChatId }: { selectedChatId: strin
     setInput(event.target.value);
   };
 
+  const createMessageObject = (data: {content: string, role: "user" | "assistant", id: string, created: string}): Message => {
+    return {
+      content: data.content,
+      role: data.role,
+      id: data.id,
+      createdAt: new Date(data.created),
+    };
+  };
+
   const handleSubmit = async (event?: { preventDefault?: () => void }) => {
     event?.preventDefault?.();
 
@@ -36,12 +45,7 @@ export function NestedSideBarContent({ selectedChatId }: { selectedChatId: strin
       role: "user",
     });
 
-    let message: Message = {
-      content: data.content,
-      role: data.role,
-      id: data.id,
-      createdAt: new Date(data.created),
-    };
+    let message = createMessageObject(data);
 
     const updatedMessages = [...messages, message];
     setMessages(updatedMessages);
@@ -54,12 +58,7 @@ export function NestedSideBarContent({ selectedChatId }: { selectedChatId: strin
       role: data.role,
     });
 
-    message = {
-      content: data.content,
-      role: data.role,
-      id: data.id,
-      createdAt: new Date(data.created),
-    };
+    message = createMessageObject(data);
 
     setMessages((prev) => [...prev, message]);
     setInput("");
