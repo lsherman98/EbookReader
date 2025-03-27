@@ -1,5 +1,5 @@
 import type { LinkProps } from "@tanstack/react-router";
-import { BookOpenText, LibraryBig, LucideProps } from "lucide-react";
+import { BookOpenText, CloudUpload, LibraryBig, LucideProps } from "lucide-react";
 
 export interface MenuEntry {
     icon: React.ForwardRefExoticComponent<
@@ -19,5 +19,10 @@ export const MENU_ENTRIES: MenuEntry[] = [
         icon: BookOpenText,
         label: "Reader",
         href: "/reader",
+    },
+    {
+        icon: CloudUpload,
+        label: "Upload",
+        href: "/upload",
     }
 ];

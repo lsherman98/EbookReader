@@ -25,21 +25,11 @@ export function MessageList({
   return (
     <div className="space-y-4 overflow-visible">
       {messages.map((message, index) => {
-        const additionalOptions =
-          typeof messageOptions === "function"
-            ? messageOptions(message)
-            : messageOptions
+        const additionalOptions = typeof messageOptions === "function" ? messageOptions(message) : messageOptions;
 
-        return (
-          <ChatMessage
-            key={index}
-            showTimeStamp={showTimeStamps}
-            {...message}
-            {...additionalOptions}
-          />
-        )
+        return <ChatMessage key={index} showTimeStamp={showTimeStamps} {...message} {...additionalOptions} />;
       })}
       {isTyping && <TypingIndicator />}
     </div>
-  )
+  );
 }

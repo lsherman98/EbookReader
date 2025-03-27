@@ -43,11 +43,12 @@ export function ChatSidebar() {
   const handleTitleChange = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedChat) return;
-
     setIsEditingTitle(false);
+
+    if (chatTitle === selectedChat.title) return;
     updateChatMutation.mutate({ id: selectedChat.id, title: chatTitle });
   };
-  
+
   return (
     <Sidebar collapsible="none" className="hidden flex-1 md:flex">
       <SidebarHeader className="gap-3.5 border-b p-4 h-[50px] justify-between flex-row w-full items-center">

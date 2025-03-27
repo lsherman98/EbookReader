@@ -14,8 +14,8 @@ export function ChatSideBarContent({ selectedChatId }: { selectedChatId: string 
   const generateAiResponseMutation = useGenerateAIResponse();
 
   useEffect(() => {
-    if (!isMessagesPending && messagesData) {
-      setMessages(messagesData as Message[]);
+    if (!isMessagesPending && messagesData && "expand" in messagesData && messagesData.expand?.messages) {
+      setMessages(messagesData.expand?.messages as Message[]);
     }
   }, [messagesData, isMessagesPending]);
 
@@ -23,7 +23,12 @@ export function ChatSideBarContent({ selectedChatId }: { selectedChatId: string 
     setInput(event.target.value);
   };
 
-  const createMessageObject = (data: {content: string, role: "user" | "assistant", id: string, created: string}): Message => {
+  const createMessageObject = (data: {
+    content: string;
+    role: "user" | "assistant";
+    id: string;
+    created: string;
+  }): Message => {
     return {
       content: data.content,
       role: data.role,
@@ -64,19 +69,17 @@ export function ChatSideBarContent({ selectedChatId }: { selectedChatId: string 
     setInput("");
   };
 
-  // Show loading state or content based on data availability
   return (
     <div className="h-full grid grid-cols gap-x-2 px-4 py-4">
-      <>
-        <Chat
-          messages={messages}
-          input={input}
-          handleInputChange={handleInputChange}
-          handleSubmit={handleSubmit}
-          isGenerating={generateAiResponseMutation.isPending}
-          setMessages={setMessages}
-        />
-      </>
+      <Chat
+        messages={messages}
+        input={input}
+        handleInputChange={handleInputChange}
+        handleSubmit={handleSubmit}
+        isGenerating={generateAiResponseMutation.isPending}
+        setMessages={setMessages}
+        className="overflow-y-auto"
+      />
     </div>
   );
 }

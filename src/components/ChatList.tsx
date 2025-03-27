@@ -44,7 +44,7 @@ export function ChatList({ chats, selectedChatId, setSelectedChat, isCollapsed }
                   {chat.title}
                 </span>
                 <span className="text-xs text-muted-foreground truncate">
-                  {chat.created && formatDate(chat.created)}
+                  {chat.created && formatDate(chat.updated || chat.created)}
                 </span>
               </div>
             </Button>

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -65,6 +66,23 @@ func main() {
 
 		return se.Next()
 	})
+
+	app.OnRecordAfterCreateSuccess("messages").BindFunc(func(e *core.RecordEvent) error {
+		record, err := e.App.FindRecordById("chats", e.Record.GetString("chat"))
+		if err != nil {
+			return errors.New("failed to find chat record")
+		}
+		
+		record.Set("messages+", e.Record.Id)
+
+		err = e.App.Save(record)
+		if err != nil {
+			return err
+		}
+
+        return e.Next()
+    })
+
 
 	if err := app.Start(); err != nil {
 		log.Fatal(err)

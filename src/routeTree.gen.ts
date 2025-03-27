@@ -18,7 +18,7 @@ import { Route as AppImport } from './pages/_app'
 // Create Virtual Routes
 
 const SigninLazyImport = createFileRoute('/signin')()
-const AppIndexLazyImport = createFileRoute('/_app/')()
+const AppUploadLazyImport = createFileRoute('/_app/upload')()
 const AppReaderLazyImport = createFileRoute('/_app/reader')()
 const AppLibraryLazyImport = createFileRoute('/_app/library')()
 
@@ -34,10 +34,10 @@ const AppRoute = AppImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const AppIndexLazyRoute = AppIndexLazyImport.update({
-  path: '/',
+const AppUploadLazyRoute = AppUploadLazyImport.update({
+  path: '/upload',
   getParentRoute: () => AppRoute,
-} as any).lazy(() => import('./pages/_app/index.lazy').then((d) => d.Route))
+} as any).lazy(() => import('./pages/_app/upload.lazy').then((d) => d.Route))
 
 const AppReaderLazyRoute = AppReaderLazyImport.update({
   path: '/reader',
@@ -81,11 +81,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReaderLazyImport
       parentRoute: typeof AppImport
     }
-    '/_app/': {
-      id: '/_app/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AppIndexLazyImport
+    '/_app/upload': {
+      id: '/_app/upload'
+      path: '/upload'
+      fullPath: '/upload'
+      preLoaderRoute: typeof AppUploadLazyImport
       parentRoute: typeof AppImport
     }
   }
@@ -96,13 +96,13 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppLibraryLazyRoute: typeof AppLibraryLazyRoute
   AppReaderLazyRoute: typeof AppReaderLazyRoute
-  AppIndexLazyRoute: typeof AppIndexLazyRoute
+  AppUploadLazyRoute: typeof AppUploadLazyRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppLibraryLazyRoute: AppLibraryLazyRoute,
   AppReaderLazyRoute: AppReaderLazyRoute,
-  AppIndexLazyRoute: AppIndexLazyRoute,
+  AppUploadLazyRoute: AppUploadLazyRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -112,14 +112,15 @@ export interface FileRoutesByFullPath {
   '/signin': typeof SigninLazyRoute
   '/library': typeof AppLibraryLazyRoute
   '/reader': typeof AppReaderLazyRoute
-  '/': typeof AppIndexLazyRoute
+  '/upload': typeof AppUploadLazyRoute
 }
 
 export interface FileRoutesByTo {
+  '': typeof AppRouteWithChildren
   '/signin': typeof SigninLazyRoute
   '/library': typeof AppLibraryLazyRoute
   '/reader': typeof AppReaderLazyRoute
-  '/': typeof AppIndexLazyRoute
+  '/upload': typeof AppUploadLazyRoute
 }
 
 export interface FileRoutesById {
@@ -128,21 +129,21 @@ export interface FileRoutesById {
   '/signin': typeof SigninLazyRoute
   '/_app/library': typeof AppLibraryLazyRoute
   '/_app/reader': typeof AppReaderLazyRoute
-  '/_app/': typeof AppIndexLazyRoute
+  '/_app/upload': typeof AppUploadLazyRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '' | '/signin' | '/library' | '/reader' | '/'
+  fullPaths: '' | '/signin' | '/library' | '/reader' | '/upload'
   fileRoutesByTo: FileRoutesByTo
-  to: '/signin' | '/library' | '/reader' | '/'
+  to: '' | '/signin' | '/library' | '/reader' | '/upload'
   id:
     | '__root__'
     | '/_app'
     | '/signin'
     | '/_app/library'
     | '/_app/reader'
-    | '/_app/'
+    | '/_app/upload'
   fileRoutesById: FileRoutesById
 }
 
@@ -177,7 +178,7 @@ export const routeTree = rootRoute
       "children": [
         "/_app/library",
         "/_app/reader",
-        "/_app/"
+        "/_app/upload"
       ]
     },
     "/signin": {
@@ -191,8 +192,8 @@ export const routeTree = rootRoute
       "filePath": "_app/reader.lazy.tsx",
       "parent": "/_app"
     },
-    "/_app/": {
-      "filePath": "_app/index.lazy.tsx",
+    "/_app/upload": {
+      "filePath": "_app/upload.lazy.tsx",
       "parent": "/_app"
     }
   }

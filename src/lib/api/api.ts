@@ -1,5 +1,6 @@
 import { Message } from "@/components/ui/chat-message";
 import { pb } from "../pocketbase";
+import { ChatsResponse, Collections, MessagesResponse } from "../pocketbase-types";
 
 export const getFiles = async (page: number, limit: number) => {
     const user = pb.authStore.record;
@@ -72,7 +73,7 @@ export const getMessagesByChatId = async (chatId?: string) => {
         // handle error
         return [];
     }
-    return await pb.collection('messages').getFullList({ filter: `chat='${chatId}'` });
+    return await pb.collection(Collections.Chats).getOne<ChatsResponse<ExpandMessages>>(chatId, { expand: "messages" });
 }
 
 export const addMessage = async (chat: string, content: string, role: "user" | "assistant") => {
@@ -85,7 +86,7 @@ export const addMessage = async (chat: string, content: string, role: "user" | "
 }
 
 export const getChats = async () => {
-    return await pb.collection('chats').getFullList({ sort: '-created' });
+    return await pb.collection('chats').getFullList({ sort: '-updated' });
 }
 
 export const addChat = async (file: string) => {
@@ -121,4 +122,8 @@ export const generateAiResponse = async (messages: Message[]) => {
             messages,
         }
     });
+}
+
+type ExpandMessages = {
+    messages: MessagesResponse[]
 }
