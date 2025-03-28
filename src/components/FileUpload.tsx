@@ -86,10 +86,10 @@ export function FileUpload({
   });
 
   return (
-    <div className="flex flex-col h-full w-full relative pt-4">
+    <div className="h-full w-full">
       <Dropzone {...dropzone}>
-        <div className="h-full w-full px-4 mb-4">
-          <DropZoneArea className="h-full w-full overflow-y-auto pt-0">
+        <div className="h-full w-full max-h-[calc(100vh-114px)] p-2">
+          <DropZoneArea className="h-full w-full">
             {uploads.length === 0 && (
               <DropzoneTrigger className="flex h-full w-full flex-col items-center justify-center bg-transparent text-center text-sm">
                 <div className="items-center justify-center flex flex-col gap-2">
@@ -103,7 +103,7 @@ export function FileUpload({
               </DropzoneTrigger>
             )}
             {uploads.length > 0 && (
-              <div className="flex flex-col h-full gap-3 w-full pt-2 px-0">
+              <div className="flex flex-col h-full gap-3 w-full overflow-y-auto ">
                 {uploads.map((upload) => {
                   if (upload.status === "pending") {
                     return (
@@ -178,7 +178,6 @@ export function FileUpload({
                                 <div className="flex-1">
                                   <label className="text-xs font-medium mb-1 block">Title</label>
                                   <Input
-                                    placeholder="Book title"
                                     value={upload.title}
                                     onChange={handleTitleChange(upload)}
                                     className="h-7 text-sm"
@@ -187,7 +186,6 @@ export function FileUpload({
                                 <div className="flex-1">
                                   <label className="text-xs font-medium mb-1 block">Author</label>
                                   <Input
-                                    placeholder="Author name"
                                     value={upload.author}
                                     onChange={handleAuthorChange(upload)}
                                     className="h-7 text-sm"
@@ -215,18 +213,14 @@ export function FileUpload({
             )}
           </DropZoneArea>
         </div>
-      </Dropzone>
-      {uploads.length > 0 && (
-        <div className="border-t bg-background p-4 flex items-center justify-end gap-2">
-          <Button
-            variant={"ghost"}
-            onClick={() => {
-              const input = document.createElement("input");
-              input.type = "file";
-              input.multiple = true;
-              input.accept = allowedMimeTypes.join(",");
-              input.onchange = (e) => {
-                const files = (e.target as HTMLInputElement).files;
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4">
+          <div className="flex justify-end items-center gap-4">
+            <input
+              type="file"
+              multiple
+              accept={allowedMimeTypes.join(",")}
+              onChange={(e) => {
+                const files = e.target.files;
                 if (files) {
                   Array.from(files).forEach((file) => {
                     const { valid, error } = validateFile(file);
@@ -248,17 +242,28 @@ export function FileUpload({
                     }
                   });
                 }
-              };
-              input.click();
-            }}
-          >
-            Add Files
-          </Button>
-          <Button onClick={handleUpload} className="bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all">
-            Start Upload
-          </Button>
+              }}
+              className="hidden"
+              id="file-upload-input"
+            />
+            <Button
+              variant={"ghost"}
+              onClick={() => {
+                const fileInput = document.getElementById("file-upload-input") as HTMLInputElement;
+                fileInput.click();
+              }}
+            >
+              Add Files
+            </Button>
+            <Button
+              onClick={handleUpload}
+              className="bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all"
+            >
+              Start Upload
+            </Button>
+          </div>
         </div>
-      )}
+      </Dropzone>
     </div>
   );
 }

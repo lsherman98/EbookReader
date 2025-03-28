@@ -32,11 +32,11 @@ function LibraryPage() {
 
   const createCoverImageUrl = (file: FilesResponse) => {
     return `${import.meta.env.VITE_BASE_URL}/api/files/${file.collectionId}/${file.id}/${file.cover_image}`;
-  }
+  };
 
   if (data?.totalItems === 0) {
     return (
-      <div className="flex flex-grow items-center justify-center">
+      <div className="h-full flex items-center justify-center">
         <div className="flex flex-col items-center justify-center space-y-4">
           <CloudAlert className="h-16 w-16 text-muted-foreground" />
           <p className="text-lg text-muted-foreground text-center">
@@ -51,21 +51,23 @@ function LibraryPage() {
   }
 
   return (
-    <div className="container py-6 space-y-8">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Library</h1>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+    <div className="h-full overflow-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-4">
         {data?.items.map((file: FilesResponse) => (
-          <Card key={file.id} className="overflow-hidden">
+          <Card key={file.id}>
             <CardHeader className="p-0 h-48 flex items-center justify-center">
-                {file.cover_image ? (
-                <img src={createCoverImageUrl(file)} alt={file.title} className="object-cover h-full w-full" style={{ objectFit: "contain" }} />
-                ) : file.type === "epub" || file.type === "mobi" ? (
+              {file.cover_image ? (
+                <img
+                  src={createCoverImageUrl(file)}
+                  alt={file.title}
+                  className="object-cover h-full w-full"
+                  style={{ objectFit: "contain" }}
+                />
+              ) : file.type === "epub" || file.type === "mobi" ? (
                 <BookIcon className="h-16 w-16 text-muted-foreground" />
-                ) : (
+              ) : (
                 <FileIcon className="h-16 w-16 text-muted-foreground" />
-                )}
+              )}
             </CardHeader>
             <CardContent className="pt-3 px-3 pb-0">
               <div className="space-y-1">
@@ -121,7 +123,6 @@ function LibraryPage() {
                     </DialogContent>
                   </Dialog>
                   <DropdownMenuSeparator />
-                  {/* Delete Confirmation Dialog */}
                   <Dialog>
                     <DialogTrigger asChild>
                       <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
@@ -148,20 +149,16 @@ function LibraryPage() {
           </Card>
         ))}
       </div>
-
-      {data?.totalPages && data.totalPages > 1 && (
-        <div className="flex items-center justify-center space-x-2 py-4">
-          <Button variant="outline" size="sm">
-            Previous
-          </Button>
-          <div className="flex items-center space-x-1">
-            <Button className="w-9">1</Button>
-          </div>
-          <Button variant="outline" size="sm">
-            Next
-          </Button>
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4">
+        <div className="flex justify-end items-center gap-4">
+          <p className="text-sm text-muted-foreground">
+            Showing {data?.items.length} of {data?.totalItems} files
+          </p>
+          <Link to="/upload">
+            <Button>Upload More Files</Button>
+          </Link>
         </div>
-      )}
+      </div>
     </div>
   );
 }

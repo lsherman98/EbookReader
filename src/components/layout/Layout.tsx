@@ -18,10 +18,10 @@ export default function Layout({ children }: PropsWithChildren) {
       }
     >
       <AppSidebar />
-      <SidebarInset>
-        <header className="sticky top-0 flex shrink-0 items-center gap-2 border-b bg-background p-4 h-[50px]"></header>
-        <div className="ml-14 flex flex-1 flex-col">
-          <main className="flex h-full w-full">{children}</main>
+      <SidebarInset className="ml-14">
+        <header className="sticky top-0 z-5 h-[50px] flex items-center shrink-0 gap-2 border-b bg-background p-4"></header>
+        <div className="flex flex-col h-[calc(100%-50px)]">
+          <main className="h-full">{children}</main>
           <Toaster />
         </div>
       </SidebarInset>

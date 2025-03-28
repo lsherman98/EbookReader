@@ -1,6 +1,7 @@
 import { Message } from "@/components/ui/chat-message";
 import { pb } from "../pocketbase";
 import { ChatsResponse, Collections, MessagesResponse } from "../pocketbase-types";
+import { FileUploadObj } from "@/pages/_app/upload.lazy";
 
 export const getFiles = async (page: number, limit: number) => {
     const user = pb.authStore.record;
@@ -28,21 +29,29 @@ export const downloadFile = async (id: string) => {
     return pb.files.getURL(record, filename, { 'download': true, 'token': fileToken });
 }
 
-export const uploadFile = async (file: File) => {
+export const uploadFile = async (upload: FileUploadObj) => {
     const user = pb.authStore.record;
     if (!user?.id) {
         throw new Error('User is not logged in');
     }
 
-    // auto create chat
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: any = {
+        title: upload.title || upload.file.name,
+        type: upload.file.type,
+        user: user.id,
+        file: new File([upload.file], upload.file.name, { type: upload.file.type }),
+    }
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('user', user.id);
-    formData.append('title', file.name);
-    formData.append('type', file.type);
+    if (upload.cover) {
+        data.cover_image = new File([upload.cover], upload.cover.name, { type: upload.cover.type });
+    }
 
-    return await pb.collection('files').create(formData, { requestKey: file.name });
+    if (upload.author) {
+        data.author = upload.author;
+    }
+
+    return await pb.collection('files').create(data, { requestKey: upload.file.name });
 }
 
 export const updateFile = async (id: string, title?: string, coverImage?: File, author?: string) => {
@@ -85,8 +94,17 @@ export const addMessage = async (chat: string, content: string, role: "user" | "
     return await pb.collection('messages').create({ chat, content, role, user: user.id });
 }
 
-export const getChats = async () => {
-    return await pb.collection('chats').getFullList({ sort: '-updated' });
+export const getChats = async (file: string) => {
+    const chatCount = (await pb.collection(Collections.Chats).getList(1, 1)).totalItems;
+    if (chatCount === 0) {
+        const user = pb.authStore.record;
+        if (!user?.id) {
+            throw new Error('User is not logged in');
+        }
+        await pb.collection(Collections.Chats).create({ title: "New Chat", file, user: user.id });
+    }
+
+    return await pb.collection(Collections.Chats).getFullList({ sort: '-updated' });
 }
 
 export const addChat = async (file: string) => {

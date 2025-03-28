@@ -2,16 +2,17 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addChat, addMessage, deleteChat, deleteFile, downloadFile, generateAiResponse, updateChat, updateFile, uploadFile } from "./api";
 import { handleError } from "../utils";
 import { Message } from "@/components/ui/chat-message";
+import { FileUploadObj } from "@/pages/_app/upload.lazy";
 
-export function useUploadFile() {
+export function useUploadFiles() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (file: File) => uploadFile(file),
+        mutationFn: (file: FileUploadObj) => uploadFile(file),
         onError: handleError,
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['files'] });
-        }
+        },
     })
 }
 

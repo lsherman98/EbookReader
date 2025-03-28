@@ -16,6 +16,8 @@ export function ChatSideBarContent({ selectedChatId }: { selectedChatId: string 
   useEffect(() => {
     if (!isMessagesPending && messagesData && "expand" in messagesData && messagesData.expand?.messages) {
       setMessages(messagesData.expand?.messages as Message[]);
+    } else if (!isMessagesPending && messagesData) {
+      setMessages([]);
     }
   }, [messagesData, isMessagesPending]);
 

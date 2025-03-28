@@ -25,10 +25,10 @@ export function useGetMessagesByChatId(chatId?: string) {
     });
 }
 
-export function useGetChats() {
+export function useGetChats(fileId: string) {
     return useQuery({
         queryKey: ['chats'],
-        queryFn: () => getChats(),
+        queryFn: () => getChats(fileId),
         placeholderData: keepPreviousData
     });
 }

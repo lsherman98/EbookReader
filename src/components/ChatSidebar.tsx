@@ -1,7 +1,7 @@
 import { useAddChat, useUpdateChat } from "@/lib/api/mutations";
 import { useGetChats } from "@/lib/api/queries";
 import { ChatsRecord } from "@/lib/pocketbase-types";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarHeader } from "./ui/sidebar";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Button } from "./ui/button";
@@ -15,24 +15,24 @@ export function ChatSidebar() {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [chatTitle, setChatTitle] = useState(selectedChat?.title || "");
 
-  const { data: chatsData, isPending: isChatsPending } = useGetChats();
+  const { data: chatsData, isPending: isChatsPending } = useGetChats("93259vt13kfeme2");
 
   const addChatMutation = useAddChat();
   const updateChatMutation = useUpdateChat();
 
-  const addChat = async () => {
+  const addChat = useCallback(async () => {
     const newChat = await addChatMutation.mutateAsync("93259vt13kfeme2");
     if (newChat) {
       setSelectedChat(newChat);
       setIsEditingTitle(true);
     }
-  };
+  }, [addChatMutation]);
 
   useEffect(() => {
     if (!isChatsPending && chatsData?.length && !selectedChat) {
       setSelectedChat(chatsData[0]);
-    }
-  }, [isChatsPending, chatsData, selectedChat]);
+    } 
+  }, [isChatsPending, chatsData, selectedChat, addChat]);
 
   useEffect(() => {
     if (selectedChat) {

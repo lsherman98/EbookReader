@@ -191,28 +191,18 @@ export function Chat({
   return (
     <ChatContainer className={className}>
       {isEmpty && append && suggestions ? (
-        <PromptSuggestions
-          label="Try these prompts ✨"
-          append={append}
-          suggestions={suggestions}
-        />
+        <PromptSuggestions label="Try these prompts ✨" append={append} suggestions={suggestions} />
       ) : null}
 
       {messages.length > 0 ? (
         <ChatMessages messages={messages}>
-          <MessageList
-            messages={messages}
-            isTyping={isTyping}
-            messageOptions={messageOptions}
-          />
+          <MessageList messages={messages} isTyping={isTyping} messageOptions={messageOptions} />
         </ChatMessages>
-      ) : <div className="w-full h-full flex items-center justify-center">placeholder instructions</div>}
+      ) : (
+        <div className="w-full h-full flex items-center justify-center">placeholder instructions</div>
+      )}
 
-      <ChatForm
-        className="mt-auto"
-        isPending={isGenerating || isTyping}
-        handleSubmit={handleSubmit}
-      >
+      <ChatForm className="mt-auto" isPending={isGenerating || isTyping} handleSubmit={handleSubmit}>
         {() => (
           <MessageInput
             value={input}
@@ -225,7 +215,7 @@ export function Chat({
         )}
       </ChatForm>
     </ChatContainer>
-  )
+  );
 }
 Chat.displayName = "Chat"
 

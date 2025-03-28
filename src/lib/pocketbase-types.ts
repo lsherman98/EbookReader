@@ -99,14 +99,6 @@ export type ChatsRecord = {
 	user: RecordIdString
 }
 
-export enum FilesTypeOptions {
-	"txt" = "txt",
-	"pdf" = "pdf",
-	"mobi" = "mobi",
-	"epub" = "epub",
-	"html" = "html",
-	"xml" = "xml",
-}
 export type FilesRecord = {
 	author?: string
 	chats?: RecordIdString[]
@@ -115,7 +107,7 @@ export type FilesRecord = {
 	file: string
 	id: string
 	title: string
-	type: FilesTypeOptions
+	type?: string
 	updated?: IsoDateString
 	user: RecordIdString
 }
