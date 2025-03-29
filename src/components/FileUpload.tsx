@@ -1,6 +1,6 @@
 import { Dropzone, DropZoneArea, DropzoneTrigger, useDropzone } from "@/components/ui/dropzone";
 import { toast } from "@/hooks/use-toast";
-import { CloudUploadIcon, ImageIcon, Trash, TriangleAlert } from "lucide-react";
+import { CloudUploadIcon, ImageIcon, Trash, TriangleAlert, CheckCircle, Loader2 } from "lucide-react";
 import { Card, CardDescription, CardFooter, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { FileUploadObj } from "@/pages/_app/upload.lazy";
@@ -202,6 +202,108 @@ export function FileUpload({
                                   {!upload.title ? "Adding a title is recommended" : "Adding an author is recommended"}
                                 </div>
                               )}
+                            </CardFooter>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  } else if (upload.status === "uploading") {
+                    return (
+                      <Card key={upload.file.name} className="w-full mx-0 relative bg-muted/20 opacity-80">
+                        <div className="flex items-center w-full">
+                          {/* Cover Image Area */}
+                          <div className="p-2 border-r flex flex-col items-center justify-center min-w-[100px]">
+                            {upload.coverPreview ? (
+                              <div className="relative">
+                                <img
+                                  src={upload.coverPreview}
+                                  alt="Cover Preview"
+                                  className="h-24 w-24 object-cover rounded-md opacity-60"
+                                />
+                              </div>
+                            ) : (
+                              <div className="h-24 w-24 border-2 border-dashed rounded-md flex flex-col items-center justify-center opacity-60">
+                                <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                <span className="text-xs text-muted-foreground mt-1">Cover</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 flex flex-col p-3">
+                            <div className="flex items-center justify-between w-full">
+                              {/* Left side: Title and Description */}
+                              <div className="flex-shrink-0 mr-4 w-[25%]">
+                                <CardTitle className="text-sm truncate">{upload.file.name}</CardTitle>
+                                <CardDescription className="text-xs">
+                                  {(upload.file.size / (1024 * 1024)).toFixed(2)} MB
+                                </CardDescription>
+                              </div>
+                              <div className="flex-1 pr-12 flex flex-row gap-3 items-center min-w-[180px]">
+                                <div className="flex-1">
+                                  <label className="text-xs font-medium mb-1 block">Title</label>
+                                  <Input value={upload.title} disabled className="h-7 text-sm bg-muted/50" />
+                                </div>
+                                <div className="flex-1">
+                                  <label className="text-xs font-medium mb-1 block">Author</label>
+                                  <Input value={upload.author} disabled className="h-7 text-sm bg-muted/50" />
+                                </div>
+                              </div>
+                            </div>
+                            <CardFooter className="p-0 pt-2 flex items-center mt-auto">
+                              <div className="flex items-center text-xs text-blue-500 font-medium gap-1">
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                                Uploading...
+                              </div>
+                            </CardFooter>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  } else if (upload.status === "success") {
+                    return (
+                      <Card key={upload.file.name} className="w-full mx-0 relative bg-muted/20 opacity-80">
+                        <div className="flex items-center w-full">
+                          {/* Cover Image Area */}
+                          <div className="p-2 border-r flex flex-col items-center justify-center min-w-[100px]">
+                            {upload.coverPreview ? (
+                              <div className="relative">
+                                <img
+                                  src={upload.coverPreview}
+                                  alt="Cover Preview"
+                                  className="h-24 w-24 object-cover rounded-md opacity-60"
+                                />
+                              </div>
+                            ) : (
+                              <div className="h-24 w-24 border-2 border-dashed rounded-md flex flex-col items-center justify-center opacity-60">
+                                <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                <span className="text-xs text-muted-foreground mt-1">Cover</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 flex flex-col p-3">
+                            <div className="flex items-center justify-between w-full">
+                              {/* Left side: Title and Description */}
+                              <div className="flex-shrink-0 mr-4 w-[25%]">
+                                <CardTitle className="text-sm truncate">{upload.file.name}</CardTitle>
+                                <CardDescription className="text-xs">
+                                  {(upload.file.size / (1024 * 1024)).toFixed(2)} MB
+                                </CardDescription>
+                              </div>
+                              <div className="flex-1 pr-12 flex flex-row gap-3 items-center min-w-[180px]">
+                                <div className="flex-1">
+                                  <label className="text-xs font-medium mb-1 block">Title</label>
+                                  <Input value={upload.title} disabled className="h-7 text-sm bg-muted/50" />
+                                </div>
+                                <div className="flex-1">
+                                  <label className="text-xs font-medium mb-1 block">Author</label>
+                                  <Input value={upload.author} disabled className="h-7 text-sm bg-muted/50" />
+                                </div>
+                              </div>
+                            </div>
+                            <CardFooter className="p-0 pt-2 flex items-center mt-auto">
+                              <div className="flex items-center text-xs text-blue-500 font-medium gap-1">
+                                <CheckCircle className="h-3 w-3" />
+                                Upload complete
+                              </div>
                             </CardFooter>
                           </div>
                         </div>

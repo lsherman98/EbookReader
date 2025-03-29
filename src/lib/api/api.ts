@@ -35,8 +35,7 @@ export const uploadFile = async (upload: FileUploadObj) => {
         throw new Error('User is not logged in');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data: any = {
+    const data: UploadFileRequest = {
         title: upload.title || upload.file.name,
         type: upload.file.type,
         user: user.id,
@@ -60,6 +59,7 @@ export const updateFile = async (id: string, title?: string, coverImage?: File, 
         cover_image?: File,
         author?: string,
     } = {}
+    
     if (title) {
         data['title'] = title;
     }
@@ -144,4 +144,13 @@ export const generateAiResponse = async (messages: Message[]) => {
 
 type ExpandMessages = {
     messages: MessagesResponse[]
+}
+
+type UploadFileRequest = {
+    title: string;
+    type: string;
+    user: string;
+    file: File;
+    cover_image?: File;
+    author?: string;
 }

@@ -4,7 +4,7 @@ import { handleError } from "../utils";
 import { Message } from "@/components/ui/chat-message";
 import { FileUploadObj } from "@/pages/_app/upload.lazy";
 
-export function useUploadFiles() {
+export function useUploadFile() {
     const queryClient = useQueryClient();
 
     return useMutation({

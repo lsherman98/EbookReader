@@ -1,5 +1,5 @@
 import { FileUpload } from "@/components/FileUpload";
-import { useUploadFiles } from "@/lib/api/mutations";
+import { useUploadFile } from "@/lib/api/mutations";
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -9,12 +9,22 @@ export const Route = createLazyFileRoute("/_app/upload")({
 
 function Index() {
   const [uploads, setUploads] = useState<FileUploadObj[]>([]);
-  const uploadFilesMutation = useUploadFiles();
+  const uploadFilesMutation = useUploadFile();
 
   const handleUpload = () => {
     uploads.forEach((upload) => {
       if (upload.status === "pending") {
-        uploadFilesMutation.mutate(upload);
+        setUploads((prev) => prev.map((u) => (u.file.name === upload.file.name ? { ...u, status: "uploading" } : u)));
+        uploadFilesMutation.mutateAsync(upload).then(() => {
+          setUploads((prev) =>
+            prev.map((u) => {
+              if (u.file.name === upload.file.name) {
+                return { ...u, status: "success" };
+              }
+              return u;
+            }),
+          );
+        });
       }
     });
   };
