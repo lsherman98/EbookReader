@@ -178,23 +178,10 @@ export function MessageInput({
   })
 
   return (
-    <div
-      className="relative flex w-full"
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
-    >
-      {enableInterrupt && (
-        <InterruptPrompt
-          isOpen={showInterruptPrompt}
-          close={() => setShowInterruptPrompt(false)}
-        />
-      )}
+    <div className="relative flex w-full" onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}>
+      {enableInterrupt && <InterruptPrompt isOpen={showInterruptPrompt} close={() => setShowInterruptPrompt(false)} />}
 
-      <RecordingPrompt
-        isVisible={isRecording}
-        onStopRecording={stopRecording}
-      />
+      <RecordingPrompt isVisible={isRecording} onStopRecording={stopRecording} />
 
       <div className="relative flex w-full items-center space-x-2">
         <div className="relative flex-1">
@@ -225,17 +212,15 @@ export function MessageInput({
                         file={file}
                         onRemove={() => {
                           props.setFiles((files) => {
-                            if (!files) return null
+                            if (!files) return null;
 
-                            const filtered = Array.from(files).filter(
-                              (f) => f !== file
-                            )
-                            if (filtered.length === 0) return null
-                            return filtered
-                          })
+                            const filtered = Array.from(files).filter((f) => f !== file);
+                            if (filtered.length === 0) return null;
+                            return filtered;
+                          });
                         }}
                       />
-                    )
+                    );
                   })}
                 </AnimatePresence>
               </div>
@@ -253,8 +238,8 @@ export function MessageInput({
             className="h-8 w-8"
             aria-label="Attach a file"
             onClick={async () => {
-              const files = await showFileUploadDialog()
-              addFiles(files)
+              const files = await showFileUploadDialog();
+              addFiles(files);
             }}
           >
             <Paperclip className="h-4 w-4" />
@@ -273,13 +258,7 @@ export function MessageInput({
           </Button>
         )}
         {isGenerating && stop ? (
-          <Button
-            type="button"
-            size="icon"
-            className="h-8 w-8"
-            aria-label="Stop generating"
-            onClick={stop}
-          >
+          <Button type="button" size="icon" className="h-8 w-8" aria-label="Stop generating" onClick={stop}>
             <Square className="h-3 w-3 animate-pulse" fill="currentColor" />
           </Button>
         ) : (
@@ -305,7 +284,7 @@ export function MessageInput({
         onStopRecording={stopRecording}
       />
     </div>
-  )
+  );
 }
 MessageInput.displayName = "MessageInput"
 

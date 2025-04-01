@@ -41,10 +41,10 @@ export function ChatSideBarContent({ selectedChatId }: { selectedChatId: string 
 
   const handleSubmit = async (event?: { preventDefault?: () => void }) => {
     event?.preventDefault?.();
-
     if (!input || !selectedChatId) {
       return;
     }
+    setInput("");
 
     let data = await addMessageMutation.mutateAsync({
       chat: selectedChatId,
@@ -53,7 +53,6 @@ export function ChatSideBarContent({ selectedChatId }: { selectedChatId: string 
     });
 
     let message = createMessageObject(data);
-
     const updatedMessages = [...messages, message];
     setMessages(updatedMessages);
 
@@ -66,9 +65,7 @@ export function ChatSideBarContent({ selectedChatId }: { selectedChatId: string 
     });
 
     message = createMessageObject(data);
-
     setMessages((prev) => [...prev, message]);
-    setInput("");
   };
 
   return (

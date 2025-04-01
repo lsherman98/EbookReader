@@ -7,12 +7,12 @@ import { ChatSidebar } from "../ChatSidebar";
 import { useLocation } from "@tanstack/react-router";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-    const location = useLocation();
+  const location = useLocation();
 
   return (
-    <Sidebar collapsible="icon" className="overflow-hidden [&>[data-sidebar=sidebar]]:flex-row" {...props} >
+    <Sidebar collapsible="icon" className="overflow-hidden [&>[data-sidebar=sidebar]]:flex-row" {...props}>
       <MainNavigation />
-      {location.pathname === "/reader" && <ChatSidebar />}
+      <ChatSidebar hidden={location.pathname === "/reader"} />
     </Sidebar>
   );
 }

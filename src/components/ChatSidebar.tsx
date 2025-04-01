@@ -10,28 +10,29 @@ import { ChatList } from "./ChatList";
 import { Input } from "./ui/input";
 import { ChatSideBarContent } from "./ChatSideBarContent";
 
-export function ChatSidebar() {
+export function ChatSidebar({ hidden }: { hidden?: boolean }) {
   const [selectedChat, setSelectedChat] = useState<ChatsRecord>();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [chatTitle, setChatTitle] = useState(selectedChat?.title || "");
+  const [bookId, setBookId] = useState<string>();
 
-  const { data: chatsData, isPending: isChatsPending } = useGetChats("93259vt13kfeme2");
+  const { data: chatsData, isPending: isChatsPending } = useGetChats(bookId);
 
   const addChatMutation = useAddChat();
   const updateChatMutation = useUpdateChat();
 
   const addChat = useCallback(async () => {
-    const newChat = await addChatMutation.mutateAsync("93259vt13kfeme2");
+    const newChat = await addChatMutation.mutateAsync(bookId);
     if (newChat) {
       setSelectedChat(newChat);
       setIsEditingTitle(true);
     }
-  }, [addChatMutation]);
+  }, [addChatMutation, bookId]);
 
   useEffect(() => {
     if (!isChatsPending && chatsData?.length && !selectedChat) {
       setSelectedChat(chatsData[0]);
-    } 
+    }
   }, [isChatsPending, chatsData, selectedChat, addChat]);
 
   useEffect(() => {
@@ -50,7 +51,7 @@ export function ChatSidebar() {
   };
 
   return (
-    <Sidebar collapsible="none" className="hidden flex-1 md:flex">
+    <Sidebar collapsible="none" className={`${hidden ? "hidden" : ""} flex-1 md:flex ml-14`}>
       <SidebarHeader className="gap-3.5 border-b p-4 h-[50px] justify-between flex-row w-full items-center">
         <Popover>
           <PopoverTrigger asChild>

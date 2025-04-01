@@ -2,43 +2,39 @@ import { Message } from "@/components/ui/chat-message";
 import { pb } from "../pocketbase";
 import { ChatsResponse, Collections, MessagesResponse } from "../pocketbase-types";
 import { FileUploadObj } from "@/pages/_app/upload.lazy";
+import { getUserId } from "../utils";
 
-export const getFiles = async (page: number, limit: number) => {
-    const user = pb.authStore.record;
-    if (!user?.id) {
-        throw new Error('User is not logged in');
-    }
-    return await pb.collection('files').getList(page, limit);
+export const getBooks = async (page: number, limit: number) => {
+    if (!getUserId()) return
+    return await pb.collection(Collections.Books).getList(page, limit);
 }
 
-export const getFileById = async (id: string) => {
-    const user = pb.authStore.record;
-    if (!user?.id) {
-        throw new Error('User is not logged in');
-    }
+export const getBookById = async (id: string) => {
+    if (!getUserId()) return
+
     const fileToken = await pb.files.getToken();
-    const record = await pb.collection('files').getOne(id);
+    const record = await pb.collection(Collections.Books).getOne(id);
     const filename = record.file;
     return pb.files.getURL(record, filename, { 'download': false, 'token': fileToken });
 }
 
-export const downloadFile = async (id: string) => {
+export const downloadBook = async (id: string) => {
+    if (!getUserId()) return
+
     const fileToken = await pb.files.getToken();
-    const record = await pb.collection('files').getOne(id);
+    const record = await pb.collection(Collections.Books).getOne(id);
     const filename = record.file;
     return pb.files.getURL(record, filename, { 'download': true, 'token': fileToken });
 }
 
-export const uploadFile = async (upload: FileUploadObj) => {
-    const user = pb.authStore.record;
-    if (!user?.id) {
-        throw new Error('User is not logged in');
+export const uploadBook = async (upload: FileUploadObj) => {
+    const userId = getUserId();
+    if (!userId) {
+        return
     }
 
     const data: UploadFileRequest = {
-        title: upload.title || upload.file.name,
-        type: upload.file.type,
-        user: user.id,
+        user: userId,
         file: new File([upload.file], upload.file.name, { type: upload.file.type }),
     }
 
@@ -46,14 +42,15 @@ export const uploadFile = async (upload: FileUploadObj) => {
         data.cover_image = new File([upload.cover], upload.cover.name, { type: upload.cover.type });
     }
 
-    if (upload.author) {
-        data.author = upload.author;
-    }
-
-    return await pb.collection('files').create(data, { requestKey: upload.file.name });
+    return await pb.collection(Collections.Books).create(data, { requestKey: upload.file.name });
 }
 
-export const updateFile = async (id: string, title?: string, coverImage?: File, author?: string) => {
+export const updateBook = async (id: string, title?: string, coverImage?: File, author?: string) => {
+    const userId = getUserId();
+    if (!userId) {
+        return
+    }
+
     const data: {
         title?: string,
         cover_image?: File,
@@ -70,70 +67,74 @@ export const updateFile = async (id: string, title?: string, coverImage?: File, 
         data['author'] = author;
     }
 
-    return await pb.collection('files').update(id, data);
+    return await pb.collection(Collections.Books).update(id, data);
 }
 
-export const deleteFile = async (id: string) => {
-    return await pb.collection('files').delete(id);
+export const deleteBook = async (id: string) => {
+    if (!getUserId()) return
+
+    return await pb.collection(Collections.Books).delete(id);
 }
 
-export const getMessagesByChatId = async (chatId?: string) => {
-    if (!chatId) {
-        // handle error
-        return [];
-    }
+export const getMessagesByChatId = async (chatId: string) => {
+    if (!getUserId()) return
+    
     return await pb.collection(Collections.Chats).getOne<ChatsResponse<ExpandMessages>>(chatId, { expand: "messages" });
 }
 
 export const addMessage = async (chat: string, content: string, role: "user" | "assistant") => {
-    const user = pb.authStore.record;
-    if (!user?.id) {
-        throw new Error('User is not logged in');
+    const userId = getUserId();
+    if (!userId) {
+        return
     }
 
-    return await pb.collection('messages').create({ chat, content, role, user: user.id });
+    return await pb.collection(Collections.Messages).create({ chat, content, role, user: userId });
 }
 
 export const getChats = async (file: string) => {
-    const chatCount = (await pb.collection(Collections.Chats).getList(1, 1)).totalItems;
-    if (chatCount === 0) {
-        const user = pb.authStore.record;
-        if (!user?.id) {
-            throw new Error('User is not logged in');
-        }
-        await pb.collection(Collections.Chats).create({ title: "New Chat", file, user: user.id });
+    const userId = getUserId();
+    if (!userId) {
+        return
     }
+
+    // const chatCount = (await pb.collection(Collections.Chats).getList(1, 1, {
+    //     filter: `book="${file}" && user="${userId}"`,
+    // })).totalItems;
+
+    // if (chatCount === 0) {
+    //     await pb.collection(Collections.Chats).create({ title: "New Chat", book: file, user: userId });
+    // }
 
     return await pb.collection(Collections.Chats).getFullList({ sort: '-updated' });
 }
 
 export const addChat = async (file: string) => {
-    const user = pb.authStore.record;
-    if (!user?.id) {
-        throw new Error('User is not logged in');
+    const userId = getUserId();
+    if (!userId) {
+        return
     }
 
-    return await pb.collection('chats').create({ title: "New Chat", file, user: user.id });
+    return await pb.collection(Collections.Chats).create({ title: "New Chat", book: file, user: userId });
 }
 
-export const updateChat = async (id: string, title?: string, archive?: boolean) => {
+export const updateChat = async (id: string, title?: string) => {
+    if (!getUserId()) return
+
     const chat: { title?: string, archived?: boolean } = {}
     if (title) {
         chat['title'] = title;
     }
-    if (archive !== undefined) {
-        chat['archived'] = archive;
-    }
 
-    return await pb.collection('chats').update(id, chat);
-
+    return await pb.collection(Collections.Chats).update(id, chat);
 }
 
 export const deleteChat = async (id: string) => {
-    return await pb.collection('chats').delete(id);
+    if (!getUserId()) return
+    return await pb.collection(Collections.Chats).delete(id);
 }
 
 export const generateAiResponse = async (messages: Message[]) => {
+    if (!getUserId()) return
     return await pb.send('/chat', {
         method: 'POST',
         body: {
@@ -147,10 +148,7 @@ type ExpandMessages = {
 }
 
 type UploadFileRequest = {
-    title: string;
-    type: string;
     user: string;
     file: File;
     cover_image?: File;
-    author?: string;
 }

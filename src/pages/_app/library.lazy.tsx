@@ -13,8 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BookIcon, FileIcon, MoreVertical, DownloadIcon, PencilIcon, TrashIcon, CloudAlert } from "lucide-react";
-import { FilesResponse } from "@/lib/pocketbase-types";
+import { BookIcon, MoreVertical, DownloadIcon, PencilIcon, TrashIcon, CloudAlert } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { BooksResponse } from "@/lib/pocketbase-types";
 
 export const Route = createLazyFileRoute("/_app/library")({
   component: LibraryPage,
@@ -30,7 +30,7 @@ export const Route = createLazyFileRoute("/_app/library")({
 function LibraryPage() {
   const { data } = useGetFiles();
 
-  const createCoverImageUrl = (file: FilesResponse) => {
+  const createCoverImageUrl = (file: BooksResponse) => {
     return `${import.meta.env.VITE_BASE_URL}/api/files/${file.collectionId}/${file.id}/${file.cover_image}`;
   };
 
@@ -53,7 +53,7 @@ function LibraryPage() {
   return (
     <div className="h-full overflow-auto">
       <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-4">
-        {data?.items.map((file: FilesResponse) => (
+        {data?.items.map((file: BooksResponse) => (
           <Card key={file.id}>
             <CardHeader className="p-0 h-48 flex items-center justify-center">
               {file.cover_image ? (
@@ -63,19 +63,14 @@ function LibraryPage() {
                   className="object-cover h-full w-full"
                   style={{ objectFit: "contain" }}
                 />
-              ) : file.type === "epub" || file.type === "mobi" ? (
-                <BookIcon className="h-16 w-16 text-muted-foreground" />
               ) : (
-                <FileIcon className="h-16 w-16 text-muted-foreground" />
+                <BookIcon className="h-16 w-16 text-muted-foreground" />
               )}
             </CardHeader>
             <CardContent className="pt-3 px-3 pb-0">
               <div className="space-y-1">
                 <h3 className="font-semibold text-sm line-clamp-1">{file.title}</h3>
                 {file.author && <p className="text-xs text-muted-foreground line-clamp-1">{file.author}</p>}
-                <span className="inline-block text-xs font-medium uppercase tracking-wider bg-secondary text-secondary-foreground rounded-sm px-2 py-0.5">
-                  {file.type}
-                </span>
               </div>
             </CardContent>
             <CardFooter className="flex justify-end p-2">

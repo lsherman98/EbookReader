@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { pb } from "./pocketbase";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -8,7 +9,6 @@ export function cn(...inputs: ClassValue[]) {
 export function handleError(error: Error) {
   // TODO: Implement error logging and handling - use toast
   console.error(error)
-  alert(error.message)
 }
 
 export function formatBytes(bytes: number): string {
@@ -30,4 +30,13 @@ export function formatDate(date: string): string {
     month: 'short',
     day: 'numeric',
   });
+}
+
+export function getUserId(msg: string = 'User is not logged in'): string | null {
+  const user = pb.authStore.record;
+  if (!user?.id) {
+    handleError(new Error(msg));
+    return null;
+  }
+  return user.id;
 }

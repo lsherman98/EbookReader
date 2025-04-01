@@ -7,6 +7,8 @@ require (
 	github.com/tmc/langchaingo v0.1.13
 )
 
+require github.com/timsims/pamphlet v0.1.6 // indirect
+
 require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect

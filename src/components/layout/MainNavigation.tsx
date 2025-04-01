@@ -1,19 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { GearIcon, RocketIcon } from "@radix-ui/react-icons";
+import { GearIcon } from "@radix-ui/react-icons";
 import { MENU_ENTRIES } from "@/config/menu";
 import { cn } from "@/lib/utils";
 import UserMenu from "./UserMenu";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "../ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 const MainNavigation: React.FC = () => {
@@ -45,7 +34,7 @@ const MainNavigation: React.FC = () => {
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <Link
-                href="#"
+                href="/settings"
                 className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
               >
                 <GearIcon className="h-5 w-5" />
@@ -57,51 +46,6 @@ const MainNavigation: React.FC = () => {
           <UserMenu />
         </nav>
       </aside>
-
-      <Sidebar collapsible="none" className="!w-[calc(var(--sidebar-width-icon)_+_1px)] border-r">
-        <SidebarHeader>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton size="lg" asChild>
-                <Link to="/">
-                  <RocketIcon />
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {MENU_ENTRIES.map((item) => (
-                  <SidebarMenuItem key={item.label}>
-                    <SidebarMenuButton
-                      tooltip={{
-                        children: item.label,
-                        hidden: false,
-                      }}
-                      isActive={resolvedLocation.href === item.label}
-                    >
-                      <Link to={item.href} className={cn("", resolvedLocation.href === item.href && "")}>
-                        <item.icon />
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
-        <SidebarFooter>
-          <SidebarMenuButton size="lg" asChild>
-            <Link to="/">
-              <GearIcon />
-            </Link>
-          </SidebarMenuButton>
-          <UserMenu />
-        </SidebarFooter>
-      </Sidebar>
     </>
   );
 };

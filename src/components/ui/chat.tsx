@@ -15,6 +15,7 @@ import { MessageInput } from "@/components/ui/message-input"
 import { MessageList } from "@/components/ui/message-list"
 import { PromptSuggestions } from "@/components/ui/prompt-suggestions"
 import { useAutoScroll } from "@/hooks/use-auto-scroll"
+import { useLocation } from "@tanstack/react-router"
 
 interface ChatPropsBase {
   handleSubmit: (
@@ -63,6 +64,7 @@ export function Chat({
 }: ChatProps) {
   const isEmpty = messages.length === 0
   const isTyping = isGenerating
+  const location = useLocation();
 
   const messagesRef = useRef(messages)
   messagesRef.current = messages

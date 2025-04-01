@@ -8,7 +8,7 @@ interface ChatListProps {
   isCollapsed: boolean;
   chats: ChatsRecord[];
   onClick?: () => void;
-  selectedChatId: string | undefined;
+  selectedChatId: string;
   setSelectedChat: (chat: ChatsRecord) => void;
 }
 

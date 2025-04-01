@@ -1,5 +1,5 @@
 import { FileUpload } from "@/components/FileUpload";
-import { useUploadFile } from "@/lib/api/mutations";
+import { useUploadBook } from "@/lib/api/mutations";
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -9,7 +9,7 @@ export const Route = createLazyFileRoute("/_app/upload")({
 
 function Index() {
   const [uploads, setUploads] = useState<FileUploadObj[]>([]);
-  const uploadFilesMutation = useUploadFile();
+  const uploadFilesMutation = useUploadBook();
 
   const handleUpload = () => {
     uploads.forEach((upload) => {
@@ -20,6 +20,15 @@ function Index() {
             prev.map((u) => {
               if (u.file.name === upload.file.name) {
                 return { ...u, status: "success" };
+              }
+              return u;
+            }),
+          );
+        }).catch((error: Error) => {
+          setUploads((prev) =>
+            prev.map((u) => {
+              if (u.file.name === upload.file.name) {
+                return { ...u, status: "error", error: error.message };
               }
               return u;
             }),
@@ -40,8 +49,6 @@ export type FileUploadObj = {
   file: File;
   status: "pending" | "success" | "error" | "uploading";
   error?: string;
-  title?: string;
-  author?: string;
   cover?: File;
   coverPreview?: string;
 };

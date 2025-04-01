@@ -1,48 +1,48 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { addChat, addMessage, deleteChat, deleteFile, downloadFile, generateAiResponse, updateChat, updateFile, uploadFile } from "./api";
+import { addChat, addMessage, deleteBook, deleteChat, downloadBook, generateAiResponse, updateBook, updateChat, uploadBook } from "./api";
 import { handleError } from "../utils";
 import { Message } from "@/components/ui/chat-message";
 import { FileUploadObj } from "@/pages/_app/upload.lazy";
 
-export function useUploadFile() {
+export function useUploadBook() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (file: FileUploadObj) => uploadFile(file),
+        mutationFn: (file: FileUploadObj) => uploadBook(file),
         onError: handleError,
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ['files'] });
+            await queryClient.invalidateQueries({ queryKey: ['books'] });
         },
     })
 }
 
-export function useUpdateFile() {
+export function useUpdateBook() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (id: string, title?: string, coverImage?: File, author?: string) => updateFile(id, title, coverImage, author),
+        mutationFn: (id: string, title?: string, coverImage?: File, author?: string) => updateBook(id, title, coverImage, author),
         onError: handleError,
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ['files'] });
+            await queryClient.invalidateQueries({ queryKey: ['books'] });
         }
     })
 }
 
-export function useDeleteFile() {
+export function useDeleteBook() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (id: string) => deleteFile(id),
+        mutationFn: (id: string) => deleteBook(id),
         onError: handleError,
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ['files'] });
+            await queryClient.invalidateQueries({ queryKey: ['book'] });
         }
     })
 }
 
-export function useDownloadFile() {
+export function useDownloadBook() {
     return useMutation({
-        mutationFn: (id: string) => downloadFile(id),
+        mutationFn: (id: string) => downloadBook(id),
         onError: handleError,
     })
 }
