@@ -64,7 +64,6 @@ export function Chat({
 }: ChatProps) {
   const isEmpty = messages.length === 0
   const isTyping = isGenerating
-  const location = useLocation();
 
   const messagesRef = useRef(messages)
   messagesRef.current = messages

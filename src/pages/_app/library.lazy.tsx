@@ -1,19 +1,20 @@
 import { createLazyFileRoute, Link } from "@tanstack/react-router";
-import { useGetFiles } from "@/lib/api/queries";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Book, BookImage, CloudAlert, Download, MoreHorizontal, Trash } from "lucide-react";
+import { BooksResponse } from "@/lib/pocketbase-types";
+import { useGetBooks } from "@/lib/api/queries";
+import { useDeleteBook, useDownloadBook } from "@/lib/api/mutations";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { BookIcon, MoreVertical, DownloadIcon, PencilIcon, TrashIcon, CloudAlert } from "lucide-react";
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,20 +22,95 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { BooksResponse } from "@/lib/pocketbase-types";
 
 export const Route = createLazyFileRoute("/_app/library")({
   component: LibraryPage,
 });
 
 function LibraryPage() {
-  const { data } = useGetFiles();
+  const [currentPage, setCurrentPage] = useState(1);
+  const limit = 10;
+
+  const { data: booksData } = useGetBooks(currentPage, limit);
+  const deleteBookMutation = useDeleteBook();
+  const downloadBookMutation = useDownloadBook();
+
+  const totalPages = booksData ? Math.ceil(booksData.totalItems / limit) : 0;
 
   const createCoverImageUrl = (file: BooksResponse) => {
     return `${import.meta.env.VITE_BASE_URL}/api/files/${file.collectionId}/${file.id}/${file.cover_image}`;
   };
 
-  if (data?.totalItems === 0) {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
+  };
+
+  const handleDeleteBook = async (bookId: string) => {
+    await deleteBookMutation.mutateAsync(bookId);
+  };
+
+  const handleDownloadBook = async (bookId: string) => {
+    await downloadBookMutation.mutateAsync(bookId);
+  };
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxPagesToShow = 5;
+
+    if (totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      pageNumbers.push(1);
+
+      let startPage = Math.max(2, currentPage - 1);
+      let endPage = Math.min(totalPages - 1, currentPage + 1);
+
+      if (currentPage <= 3) {
+        startPage = 2;
+        endPage = Math.min(4, totalPages - 1);
+      }
+
+      if (currentPage >= totalPages - 2) {
+        startPage = Math.max(2, totalPages - 3);
+        endPage = totalPages - 1;
+      }
+
+      if (startPage > 2) {
+        pageNumbers.push("...");
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pageNumbers.push(i);
+      }
+
+      if (endPage < totalPages - 1) {
+        pageNumbers.push("...");
+      }
+
+      if (totalPages > 1) {
+        pageNumbers.push(totalPages);
+      }
+    }
+
+    return pageNumbers;
+  };
+
+  if (booksData?.totalItems === 0) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="flex flex-col items-center justify-center space-y-4">
@@ -51,107 +127,139 @@ function LibraryPage() {
   }
 
   return (
-    <div className="h-full overflow-auto">
-      <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-4">
-        {data?.items.map((file: BooksResponse) => (
-          <Card key={file.id}>
-            <CardHeader className="p-0 h-48 flex items-center justify-center">
-              {file.cover_image ? (
-                <img
-                  src={createCoverImageUrl(file)}
-                  alt={file.title}
-                  className="object-cover h-full w-full"
-                  style={{ objectFit: "contain" }}
-                />
-              ) : (
-                <BookIcon className="h-16 w-16 text-muted-foreground" />
-              )}
-            </CardHeader>
-            <CardContent className="pt-3 px-3 pb-0">
-              <div className="space-y-1">
-                <h3 className="font-semibold text-sm line-clamp-1">{file.title}</h3>
-                {file.author && <p className="text-xs text-muted-foreground line-clamp-1">{file.author}</p>}
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-end p-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreVertical className="h-4 w-4" />
-                    <span className="sr-only">Open menu</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem>
-                    <DownloadIcon className="mr-2 h-4 w-4" />
-                    Download
-                  </DropdownMenuItem>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                        <PencilIcon className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Edit File</DialogTitle>
-                      </DialogHeader>
-                      <form>
-                        <div className="grid gap-4 py-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="title">Title</Label>
-                            <Input id="title" required />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="author">Author</Label>
-                            <Input id="author" />
-                          </div>
-                        </div>
-                      </form>
-                      <DialogFooter>
-                        <Button type="button" variant="outline">
-                          Cancel
-                        </Button>
-                        <Button type="submit">Save Changes</Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                  <DropdownMenuSeparator />
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                        <TrashIcon className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Confirm Deletion</DialogTitle>
-                        <DialogDescription>
-                          Are you sure you want to delete ""? This action cannot be undone.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogFooter>
-                        <Button variant="outline">Cancel</Button>
-                        <Button variant="destructive">Delete</Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4">
-        <div className="flex justify-end items-center gap-4">
-          <p className="text-sm text-muted-foreground">
-            Showing {data?.items.length} of {data?.totalItems} files
-          </p>
-          <Link to="/upload">
-            <Button>Upload More Files</Button>
-          </Link>
+    <div className="h-full flex flex-col">
+      <div className="flex flex-col flex-grow overflow-auto">
+        <div className="min-h-0 flex-grow">
+          <Table className="h-full">
+            <TableHeader className="sticky top-0 bg-background z-10">
+              <TableRow>
+                <TableHead className="w-36 text-center">Cover</TableHead>
+                <TableHead className="w-1/4">Title</TableHead>
+                <TableHead className="w-1/6">Author</TableHead>
+                <TableHead className="w-24 text-center">Progress</TableHead>
+                <TableHead className="w-20 text-center">Pages</TableHead>
+                <TableHead className="w-1/6">Uploaded</TableHead>
+                <TableHead className="w-48 text-center">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {booksData?.items.map((book) => (
+                <TableRow key={book.id}>
+                  <TableCell className="w-36 text-center">
+                    {book.cover_image ? (
+                      <img
+                        src={createCoverImageUrl(book)}
+                        alt={book.title}
+                        className="w-24 h-32 object-cover mx-auto"
+                      />
+                    ) : (
+                      <div className="w-24 h-32 border flex flex-col items-center justify-center p-2 mx-auto">
+                        <BookImage className="h-12 w-12 text-muted-foreground" />
+                        <div className="mt-2" />
+                        <span className="text-sm text-muted-foreground">No Cover</span>
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell className="w-1/4 align-middle font-bold">{book.title}</TableCell>
+                  <TableCell className="w-1/6 align-middle">{book.author}</TableCell>
+                  <TableCell className="w-24 text-center align-middle">{book.reading_progress}</TableCell>
+                  <TableCell className="w-20 text-center align-middle">{book.num_pages}</TableCell>
+                  <TableCell className="w-1/6 align-middle">{formatDate(book.created)}</TableCell>
+                  <TableCell className="w-48">
+                    <div className="flex justify-center">
+                      <div className="relative">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Actions</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => {}}>
+                              <Book className="mr-2 h-4 w-4" />
+                              <span>Read</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleDownloadBook(book.id)}>
+                              <Download className="mr-2 h-4 w-4" />
+                              <span>Download</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteBook(book.id)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash className="mr-2 h-4 w-4" />
+                              <span>Delete</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="mt-auto">
+          <Table>
+            <TableFooter>
+              <TableRow>
+                <TableCell colSpan={7}>
+                  <div className="flex justify-between items-center gap-4">
+                    <div className="text-sm text-muted-foreground whitespace-nowrap">
+                      Showing {booksData?.items.length || 0} of {booksData?.totalItems || 0}
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Link to="/upload">
+                        <Button variant={"outline"}>Upload More Files</Button>
+                      </Link>
+                      <Pagination>
+                        <PaginationContent>
+                          <PaginationItem>
+                            <PaginationPrevious
+                              onClick={() => handlePageChange(currentPage - 1)}
+                              className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            />
+                          </PaginationItem>
+                          {getPageNumbers().map((page, index) =>
+                            page === "..." ? (
+                              <PaginationItem key={`ellipsis-${index}`}>
+                                <PaginationEllipsis />
+                              </PaginationItem>
+                            ) : (
+                              <PaginationItem key={`page-${page}`}>
+                                <PaginationLink
+                                  onClick={() => handlePageChange(page as number)}
+                                  isActive={currentPage === page}
+                                  className="cursor-pointer"
+                                >
+                                  {page}
+                                </PaginationLink>
+                              </PaginationItem>
+                            ),
+                          )}
+
+                          <PaginationItem>
+                            <PaginationNext
+                              onClick={() => handlePageChange(currentPage + 1)}
+                              className={
+                                currentPage === totalPages || totalPages === 0
+                                  ? "pointer-events-none opacity-50"
+                                  : "cursor-pointer"
+                              }
+                            />
+                          </PaginationItem>
+                        </PaginationContent>
+                      </Pagination>
+                    </div>
+                  </div>
+                </TableCell>
+              </TableRow>
+            </TableFooter>
+          </Table>
         </div>
       </div>
     </div>

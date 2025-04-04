@@ -98,6 +98,8 @@ export type BooksRecord = {
 	created?: IsoDateString
 	file: string
 	id: string
+	num_pages?: number
+	reading_progress?: number
 	title?: string
 	updated?: IsoDateString
 	user: RecordIdString

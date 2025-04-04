@@ -3,16 +3,18 @@ import { Button } from "@/components/ui/button";
 import { ChatsRecord } from "@/lib/pocketbase-types";
 import { Trash2 } from "lucide-react";
 import { useDeleteChat } from "@/lib/api/mutations";
+import { useEffect } from "react";
 
 interface ChatListProps {
   isCollapsed: boolean;
+  bookId: string;
   chats: ChatsRecord[];
   onClick?: () => void;
-  selectedChatId: string;
+  selectedChatId?: string;
   setSelectedChat: (chat: ChatsRecord) => void;
 }
 
-export function ChatList({ chats, selectedChatId, setSelectedChat, isCollapsed }: ChatListProps) {
+export function ChatList({ chats, selectedChatId, setSelectedChat, isCollapsed, bookId }: ChatListProps) {
   const deleteChatMutation = useDeleteChat();
 
   const formatDate = (dateString: string) => {
@@ -24,6 +26,12 @@ export function ChatList({ chats, selectedChatId, setSelectedChat, isCollapsed }
       minute: "2-digit",
     });
   };
+
+  useEffect(() => {
+    if (chats.length > 0 && !selectedChatId) {
+      setSelectedChat(chats[0]);
+    }
+  }, [chats, selectedChatId, setSelectedChat]);
 
   return (
     <div
@@ -55,7 +63,7 @@ export function ChatList({ chats, selectedChatId, setSelectedChat, isCollapsed }
                 className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/item:opacity-80 transition-opacity hover:bg-transparent"
                 onClick={(e) => {
                   e.stopPropagation();
-                  deleteChatMutation.mutate(chat.id);
+                  deleteChatMutation.mutate({ chatId: chat.id, bookId });
                 }}
                 aria-label="Delete chat"
               >

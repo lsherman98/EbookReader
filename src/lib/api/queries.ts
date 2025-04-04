@@ -1,34 +1,36 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { getBookById, getBooks, getChats,  getMessagesByChatId } from "./api";
 
-export function useGetFiles(page: number = 1, limit: number = 25) {
+export function useGetBooks(page: number = 1, limit: number = 25) {
     return useQuery({
-        queryKey: ['files', { page, limit }],
+        queryKey: ['books'],
         queryFn: () => getBooks(page, limit),
         placeholderData: keepPreviousData
     });
 }
 
-export function useGetFileById(id: string) {
+export function useGetBookById(bookId: string) {
     return useQuery({
-        queryKey: ['file', id],
-        queryFn: () => getBookById(id),
+        queryKey: ['book', bookId],
+        queryFn: () => getBookById(bookId),
         placeholderData: keepPreviousData
     });
 }
 
-export function useGetMessagesByChatId(chatId: string) {
+export function useGetMessagesByChatId(chatId?: string) {
     return useQuery({
         queryKey: ['messages', chatId],
         queryFn: () => getMessagesByChatId(chatId),
         placeholderData: keepPreviousData,
+        enabled: !!chatId,
     });
 }
 
-export function useGetChats(fileId: string) {
+export function useGetChats(bookId?: string) {
     return useQuery({
         queryKey: ['chats'],
-        queryFn: () => getChats(fileId),
-        placeholderData: keepPreviousData
+        queryFn: () => getChats(bookId),
+        placeholderData: keepPreviousData,
+        enabled: !!bookId,
     });
 }

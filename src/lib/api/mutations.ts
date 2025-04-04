@@ -20,7 +20,7 @@ export function useUpdateBook() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (id: string, title?: string, coverImage?: File, author?: string) => updateBook(id, title, coverImage, author),
+        mutationFn: (bookId: string, title?: string, coverImage?: File, author?: string) => updateBook(bookId, title, coverImage, author),
         onError: handleError,
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['books'] });
@@ -32,18 +32,28 @@ export function useDeleteBook() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (id: string) => deleteBook(id),
+        mutationFn: (bookId: string) => deleteBook(bookId),
         onError: handleError,
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ['book'] });
+            await queryClient.invalidateQueries({ queryKey: ['books'] });
         }
     })
 }
 
 export function useDownloadBook() {
     return useMutation({
-        mutationFn: (id: string) => downloadBook(id),
+        mutationFn: (bookId: string) => downloadBook(bookId),
         onError: handleError,
+        onSuccess(data) {
+            const link = document.createElement('a');
+            if (data) {
+                link.href = data;
+                link.download = 'download';
+                document.body.appendChild(link);
+            }
+            link.click();
+            document.body.removeChild(link);
+        },
     })
 }
 
@@ -51,7 +61,7 @@ export function useAddMessage() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ chat, content, role }: { chat: string; content: string; role: "user" | "assistant" }) => addMessage(chat, content, role),
+        mutationFn: ({ chatId, content, role }: { chatId: string; content: string; role: "user" | "assistant" }) => addMessage(chatId, content, role),
         onError: handleError,
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['messages'] });
@@ -63,7 +73,7 @@ export function useAddChat() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (fileId: string) => addChat(fileId),
+        mutationFn: (bookId: string) => addChat(bookId),
         onError: handleError,
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['chats'] });
@@ -75,7 +85,7 @@ export function useUpdateChat() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ id, title }: { id: string, title?: string }) => updateChat(id, title),
+        mutationFn: ({ chatId, title }: { chatId: string, title?: string }) => updateChat(chatId, title),
         onError: handleError,
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['chats'] });
@@ -87,7 +97,7 @@ export function useDeleteChat() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (id: string) => deleteChat(id),
+        mutationFn: ({ chatId, bookId }: { chatId: string, bookId: string }) => deleteChat(chatId, bookId),
         onError: handleError,
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['chats'] });

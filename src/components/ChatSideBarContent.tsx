@@ -3,6 +3,7 @@ import { Chat } from "./ui/chat";
 import { Message } from "./ui/chat-message";
 import { useGetMessagesByChatId } from "@/lib/api/queries";
 import { useAddMessage, useGenerateAIResponse } from "@/lib/api/mutations";
+import { handleError } from "@/lib/utils";
 
 export function ChatSideBarContent({ selectedChatId }: { selectedChatId: string | undefined }) {
   const [input, setInput] = useState<string>("");
@@ -44,25 +45,38 @@ export function ChatSideBarContent({ selectedChatId }: { selectedChatId: string 
     if (!input || !selectedChatId) {
       return;
     }
+
     setInput("");
 
     let data = await addMessageMutation.mutateAsync({
-      chat: selectedChatId,
+      chatId: selectedChatId,
       content: input,
       role: "user",
     });
+    if (!data) {
+      handleError(new Error("Failed to add message"));
+      return;
+    }
 
     let message = createMessageObject(data);
     const updatedMessages = [...messages, message];
     setMessages(updatedMessages);
 
-    // handle error - set failed = true on message
     data = await generateAiResponseMutation.mutateAsync(updatedMessages);
+    if (!data) {
+      handleError(new Error("Failed to generate AI response"));
+      return;
+    }
+
     data = await addMessageMutation.mutateAsync({
-      chat: selectedChatId,
+      chatId: selectedChatId,
       content: data.content,
       role: data.role,
     });
+    if (!data) {
+      handleError(new Error("Failed to add AI response message"));
+      return;
+    }
 
     message = createMessageObject(data);
     setMessages((prev) => [...prev, message]);
