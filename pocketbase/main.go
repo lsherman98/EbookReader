@@ -92,7 +92,6 @@ func main() {
 		userID := bookRecord.GetString("user")
 		bookID := bookRecord.Id
 
-		// Initialize collections
 		chatsCollection, err := app.FindCollectionByNameOrId("chats")
 		if err != nil {
 			return err
@@ -103,7 +102,6 @@ func main() {
 			return err
 		}
 
-		// Create Chat Record
 		chatRecord := core.NewRecord(chatsCollection)
 		chatRecord.Set("user", userID)
 		chatRecord.Set("book", bookID)
@@ -113,7 +111,6 @@ func main() {
 			return err
 		}
 
-		// Read Book File
 		fileKey := bookRecord.BaseFilesPath() + "/" + bookRecord.GetString("file")
 
 		fsys, err := app.NewFilesystem()
@@ -133,7 +130,6 @@ func main() {
 			return err
 		}
 
-		// Parse Book
 		parser, err := pamphlet.OpenBytes(data)
 		if err != nil {
 			log.Fatal(err)
@@ -142,11 +138,9 @@ func main() {
 
 		parsedBook := parser.GetBook()
 
-		// Update Book Record
 		bookRecord.Set("title", parsedBook.Title)
 		bookRecord.Set("author", parsedBook.Author)
 
-		// Create Chapter Records - Asynchronously
 		var chapterRecordsIds []string
 
 		routine.FireAndForget(func() {
@@ -160,7 +154,7 @@ func main() {
 				content, err := chapter.GetContent()
 				if err != nil {
 					log.Printf("Failed to get content for chapter %d: %v\n", i+1, err)
-					continue // Skip to the next chapter if content retrieval fails
+					continue
 				}
 
 				htmlContent := "<!DOCTYPE html>" + content
@@ -168,14 +162,13 @@ func main() {
 				f, err := filesystem.NewFileFromBytes([]byte(htmlContent), filename)
 				if err != nil {
 					log.Printf("Failed to create file for chapter %d: %v\n", i+1, err)
-					continue // Skip to the next chapter if file creation fails
+					continue 
 				}
 
 				chapterRecord.Set("chapter", f)
 				records = append(records, chapterRecord)
 			}
 
-			// Save all chapter records in a single transaction
 			err := app.RunInTransaction(func(txApp core.App) error {
 				for _, record := range records {
 					if err := txApp.Save(record); err != nil {
@@ -191,7 +184,6 @@ func main() {
 				return
 			}
 
-			// Update Book Record with Chapter IDs
 			bookRecord.Set("chapters+", chapterRecordsIds)
 			bookRecord.Set("available", true)
 

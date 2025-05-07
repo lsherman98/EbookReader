@@ -137,7 +137,6 @@ function LibraryPage() {
                 <TableHead className="w-1/4">Title</TableHead>
                 <TableHead className="w-1/6">Author</TableHead>
                 <TableHead className="w-24 text-center">Progress</TableHead>
-                <TableHead className="w-20 text-center">Pages</TableHead>
                 <TableHead className="w-1/6">Uploaded</TableHead>
                 <TableHead className="w-48 text-center">Actions</TableHead>
               </TableRow>
@@ -163,7 +162,6 @@ function LibraryPage() {
                   <TableCell className="w-1/4 align-middle font-bold">{book.title}</TableCell>
                   <TableCell className="w-1/6 align-middle">{book.author}</TableCell>
                   <TableCell className="w-24 text-center align-middle">{book.reading_progress}</TableCell>
-                  <TableCell className="w-20 text-center align-middle">{book.num_pages}</TableCell>
                   <TableCell className="w-1/6 align-middle">{formatDate(book.created)}</TableCell>
                   <TableCell className="w-48">
                     <div className="flex justify-center">

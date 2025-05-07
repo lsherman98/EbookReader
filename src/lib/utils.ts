@@ -1,14 +1,19 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { pb } from "./pocketbase";
+import { toast } from "@/hooks/use-toast";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
 export function handleError(error: Error) {
-  // TODO: Implement error logging and handling - use toast
   console.error(error)
+  toast({
+    title: "Error",
+    description: error.message,
+    variant: "destructive",
+  })
 }
 
 export function formatBytes(bytes: number): string {
