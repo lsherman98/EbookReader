@@ -12,7 +12,6 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
-	"github.com/pocketbase/pocketbase/tools/filesystem"
 	"github.com/pocketbase/pocketbase/tools/routine"
 	"github.com/timsims/pamphlet"
 	"github.com/tmc/langchaingo/llms"
@@ -140,16 +139,26 @@ func main() {
 
 		bookRecord.Set("title", parsedBook.Title)
 		bookRecord.Set("author", parsedBook.Author)
+		bookRecord.Set("description", parsedBook.Description)
+		bookRecord.Set("language", parsedBook.Language)
+		bookRecord.Set("date", parsedBook.Date)
+		bookRecord.Set("subject", parsedBook.Subject)
 
 		var chapterRecordsIds []string
 
 		routine.FireAndForget(func() {
 			var records []*core.Record
 			for i, chapter := range parsedBook.Chapters {
+				if chapter.Title == "" {
+					continue
+				}
+
 				chapterRecord := core.NewRecord(chaptersCollection)
 				chapterRecord.Set("book", bookID)
 				chapterRecord.Set("title", chapter.Title)
 				chapterRecord.Set("order", chapter.Order)
+				chapterRecord.Set("href", chapter.Href)
+				chapterRecord.Set("has_toc", chapter.HasToc)
 
 				content, err := chapter.GetContent()
 				if err != nil {
@@ -158,14 +167,7 @@ func main() {
 				}
 
 				htmlContent := "<!DOCTYPE html>" + content
-				filename := chapter.Title + ".html"
-				f, err := filesystem.NewFileFromBytes([]byte(htmlContent), filename)
-				if err != nil {
-					log.Printf("Failed to create file for chapter %d: %v\n", i+1, err)
-					continue 
-				}
-
-				chapterRecord.Set("chapter", f)
+				chapterRecord.Set("content", htmlContent)
 				records = append(records, chapterRecord)
 			}
 

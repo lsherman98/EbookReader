@@ -12,7 +12,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" className="overflow-hidden [&>[data-sidebar=sidebar]]:flex-row" {...props}>
       <MainNavigation />
-      <ChatSidebar hidden={location.pathname === "/reader"} />
+      <ChatSidebar hidden={!location.pathname.startsWith("/reader")} />
     </Sidebar>
   );
 }

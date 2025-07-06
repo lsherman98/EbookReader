@@ -1,4 +1,4 @@
-import { createLazyFileRoute, Link } from "@tanstack/react-router";
+import { createLazyFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Book, BookImage, CloudAlert, Download, MoreHorizontal, Trash } from "lucide-react";
 import { BooksResponse } from "@/lib/pocketbase-types";
@@ -34,6 +34,7 @@ function LibraryPage() {
   const { data: booksData } = useGetBooks(currentPage, limit);
   const deleteBookMutation = useDeleteBook();
   const downloadBookMutation = useDownloadBook();
+  const navigate = useNavigate();
 
   const totalPages = booksData ? Math.ceil(booksData.totalItems / limit) : 0;
 
@@ -131,7 +132,7 @@ function LibraryPage() {
       <div className="flex flex-col flex-grow overflow-auto">
         <div className="min-h-0 flex-grow">
           <Table className="h-full">
-            <TableHeader className="sticky top-0 bg-background z-10">
+            <TableHeader className="sticky top-0 bg-background z-5">
               <TableRow>
                 <TableHead className="w-36 text-center">Cover</TableHead>
                 <TableHead className="w-1/4">Title</TableHead>
@@ -174,7 +175,11 @@ function LibraryPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => {}}>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                navigate({ to: `/reader/${book.id}` });
+                              }}
+                            >
                               <Book className="mr-2 h-4 w-4" />
                               <span>Read</span>
                             </DropdownMenuItem>

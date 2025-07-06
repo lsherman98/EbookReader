@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { getBookById, getBooks, getChats,  getMessagesByChatId } from "./api";
+import { getBookById, getBooks, getChapterById, getChats, getMessagesByChatId } from "./api";
 
 export function useGetBooks(page: number = 1, limit: number = 25) {
     return useQuery({
@@ -13,6 +13,14 @@ export function useGetBookById(bookId: string) {
     return useQuery({
         queryKey: ['book', bookId],
         queryFn: () => getBookById(bookId),
+        placeholderData: keepPreviousData
+    });
+}
+
+export function useGetChapterById(chapterId: string) {
+    return useQuery({
+        queryKey: ['chapter', chapterId],
+        queryFn: () => getChapterById(chapterId),
         placeholderData: keepPreviousData
     });
 }

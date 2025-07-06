@@ -1,6 +1,6 @@
 import { Message } from "@/components/ui/chat-message";
 import { pb } from "../pocketbase";
-import { ChatsResponse, Collections, MessagesResponse } from "../pocketbase-types";
+import { BooksResponse, ChaptersResponse, ChatsResponse, Collections, MessagesResponse } from "../pocketbase-types";
 import { FileUploadObj } from "@/pages/_app/upload.lazy";
 import { getUserId, handleError } from "../utils";
 
@@ -12,10 +12,9 @@ export const getBooks = async (page: number, limit: number) => {
 export const getBookById = async (bookId: string) => {
     if (!getUserId()) return
 
-    const fileToken = await pb.files.getToken();
-    const record = await pb.collection(Collections.Books).getOne(bookId);
-    const filename = record.file;
-    return pb.files.getURL(record, filename, { 'download': false, 'token': fileToken });
+    return await pb.collection(Collections.Books).getOne<BooksResponse<ExpandChapters>>(bookId, {
+        expand: "chapters",
+    });
 }
 
 export const downloadBook = async (bookId: string) => {
@@ -56,7 +55,7 @@ export const updateBook = async (bookId: string, title?: string, coverImage?: Fi
         cover_image?: File,
         author?: string,
     } = {}
-    
+
     if (title) {
         data['title'] = title;
     }
@@ -76,9 +75,14 @@ export const deleteBook = async (bookId: string) => {
     return await pb.collection(Collections.Books).delete(bookId);
 }
 
+export const getChapterById = async (chapterId: string) => {
+    if (!getUserId()) return
+    return await pb.collection(Collections.Chapters).getOne(chapterId);
+}
+
 export const getMessagesByChatId = async (chatId?: string) => {
     if (!getUserId() || !chatId) return
-    
+
     return await pb.collection(Collections.Chats).getOne<ChatsResponse<ExpandMessages>>(chatId, { expand: "messages" });
 }
 
@@ -150,6 +154,10 @@ export const generateAiResponse = async (messages: Message[]) => {
 
 type ExpandMessages = {
     messages: MessagesResponse[]
+}
+
+type ExpandChapters = {
+    chapters: ChaptersResponse[]
 }
 
 type UploadFileRequest = {

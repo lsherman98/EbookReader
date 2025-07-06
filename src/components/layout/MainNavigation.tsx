@@ -1,9 +1,9 @@
-import { Link, useRouterState } from "@tanstack/react-router";
 import { GearIcon } from "@radix-ui/react-icons";
 import { MENU_ENTRIES } from "@/config/menu";
 import { cn } from "@/lib/utils";
 import UserMenu from "./UserMenu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { Link, useRouterState } from "@tanstack/react-router";
 
 const MainNavigation: React.FC = () => {
   const { resolvedLocation } = useRouterState();
@@ -19,7 +19,7 @@ const MainNavigation: React.FC = () => {
                   to={entry.href}
                   className={cn(
                     "flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
-                    resolvedLocation.href === entry.href && "bg-accent text-accent-foreground",
+                    resolvedLocation?.href === entry.href && "bg-accent text-accent-foreground",
                   )}
                 >
                   <entry.icon className="h-5 w-5" />
@@ -34,7 +34,7 @@ const MainNavigation: React.FC = () => {
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <Link
-                href="/settings"
+                to="/settings"
                 className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
               >
                 <GearIcon className="h-5 w-5" />
