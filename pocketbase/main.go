@@ -91,6 +91,20 @@ func main() {
 		userID := bookRecord.GetString("user")
 		bookID := bookRecord.Id
 
+		lastRecord, _ := app.FindFirstRecordByData("last_read", "user", userID)
+		if lastRecord == nil {
+			lastReadCollection, err := app.FindCollectionByNameOrId("last_read")
+			if err != nil {
+				return err
+			}
+			lastRecord = core.NewRecord(lastReadCollection)
+			lastRecord.Set("user", userID)
+			lastRecord.Set("book", bookID)
+			if err := app.Save(lastRecord); err != nil {
+				return err
+			}
+		}
+
 		chatsCollection, err := app.FindCollectionByNameOrId("chats")
 		if err != nil {
 			return err
@@ -188,6 +202,7 @@ func main() {
 
 			bookRecord.Set("chapters+", chapterRecordsIds)
 			bookRecord.Set("available", true)
+			bookRecord.Set("current_chapter", chapterRecordsIds[0]) 
 
 			if err := app.Save(bookRecord); err != nil {
 				log.Println("Failed to update book record:", err)

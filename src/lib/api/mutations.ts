@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { addChat, addMessage, deleteBook, deleteChat, downloadBook, generateAiResponse, updateBook, updateChat, uploadBook } from "./api";
+import { addChat, addMessage, deleteBook, deleteChat, downloadBook, generateAiResponse, setLastReadBook, setLastReadChapter, updateBook, updateChat, uploadBook } from "./api";
 import { handleError } from "../utils";
 import { Message } from "@/components/ui/chat-message";
 import { FileUploadObj } from "@/pages/_app/upload.lazy";
@@ -110,4 +110,23 @@ export function useGenerateAIResponse() {
         mutationFn: (messages: Message[]) => generateAiResponse(messages),
         onError: handleError,
     })
+}
+
+export function useSetLastReadBook() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (bookId: string) => setLastReadBook(bookId),
+        onError: handleError,
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['lastReadBook'] });
+        }
+    });
+}
+
+export function useSetLastReadChapter() {
+    return useMutation({
+        mutationFn: ({ bookId, chapterId }: { bookId: string, chapterId: string }) => setLastReadChapter(bookId, chapterId),
+        onError: handleError,
+    });
 }

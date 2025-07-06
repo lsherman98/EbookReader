@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useGetBookById, useGetChapterById } from "@/lib/api/queries";
+import { useGetBookById, useGetChapterById, useGetLastReadBook } from "@/lib/api/queries";
 import { Plate, usePlateEditor } from "platejs/react";
 import { Editor, EditorContainer } from "@/components/ui/editor";
 import { BasicBlocksKit } from "@/components/editor/plugins/basic-blocks-kit";
 import { useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_app/reader/$bookId")({
   component: Index,
@@ -11,28 +12,40 @@ export const Route = createFileRoute("/_app/reader/$bookId")({
 
 function Index() {
   const bookId = Route.useParams().bookId;
+  const navigate = useNavigate();
 
   const [htmlString, setHtmlString] = useState<string>("");
   const [chapterId, setChapterId] = useState<string>("");
 
-  const { data: book } = useGetBookById(bookId);
-  const { data: chapter, refetch: refetchChapter } = useGetChapterById(chapterId);
+  const { data: lastReadBook } = useGetLastReadBook();
+  const { data: book } = useGetBookById(
+    bookId && bookId !== "undefined" ? bookId : lastReadBook?.book || "",
+  );
+  const { data: chapter } = useGetChapterById(chapterId);
 
   const editor = usePlateEditor({
     plugins: [...BasicBlocksKit],
   });
 
   useEffect(() => {
-    if (book && book.chapters && book.chapters.length > 0) {
+    if (book?.current_chapter) {
+      setChapterId(book.current_chapter);
+    } else if (book && book.chapters) {
       setChapterId(book.chapters[0]);
     }
-  }, [book, refetchChapter]);
+  }, [book]);
 
   useEffect(() => {
     if (chapter) {
       setHtmlString(chapter.content || "<p>Loading...</p>");
     }
   }, [chapter]);
+
+  useEffect(() => {
+    if ((!bookId || bookId === "undefined") && lastReadBook?.book) {
+      navigate({ to: "/reader/$bookId", params: { bookId: lastReadBook.book } });
+    }
+  }, [bookId, lastReadBook?.book, navigate]);
 
   useEffect(() => {
     if (!editor || !htmlString) return;

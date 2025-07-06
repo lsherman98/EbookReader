@@ -152,6 +152,34 @@ export const generateAiResponse = async (messages: Message[]) => {
     });
 }
 
+export const getLastReadBook = async () => {
+    if (!getUserId()) return
+    return await pb.collection(Collections.LastRead).getFirstListItem(`user="${getUserId()}"`);
+}
+
+export const setLastReadBook = async (bookId: string) => {
+    const userId = getUserId();
+    if (!userId) return;
+
+    const record = await pb.collection(Collections.LastRead).getFirstListItem(`user="${userId}"`);
+    if (record) {
+        return await pb.collection(Collections.LastRead).update(record.id, {
+            book: bookId,
+        });
+    }
+    return await pb.collection(Collections.LastRead).create({
+        user: userId,
+        book: bookId,
+    });
+}
+
+export const setLastReadChapter = async (bookId: string, chapterId: string) => {
+    if (!getUserId()) return
+    return await pb.collection(Collections.Books).update(bookId, {
+        current_chapter: chapterId,
+    });
+}
+
 type ExpandMessages = {
     messages: MessagesResponse[]
 }
