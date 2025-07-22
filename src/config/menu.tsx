@@ -1,4 +1,4 @@
-import type { LinkProps } from "@tanstack/react-router";
+import { LinkProps } from "@tanstack/react-router";
 import { BookOpenText, CloudUpload, LibraryBig, LucideProps } from "lucide-react";
 
 export interface MenuEntry {

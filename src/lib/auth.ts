@@ -12,7 +12,7 @@ const REDIRECT_PARAM = "redirect";
 export const protectPage = (location?: ParsedLocation) => {
   if (location?.pathname === "/") {
     throw redirect({
-      to: "/reader",
+      to: "/library",
     });
   }
 

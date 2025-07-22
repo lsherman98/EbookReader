@@ -7,14 +7,14 @@ import {
 } from '@platejs/basic-nodes';
 import { BaseParagraphPlugin } from 'platejs';
 
-import { BlockquoteElementStatic } from '@/components/blockquote-node-static';
+import { BlockquoteElementStatic } from '@/components/ui/blockquote-node-static';
 import {
   H1ElementStatic,
   H2ElementStatic,
   H3ElementStatic,
-} from '@/components/heading-node-static';
-import { HrElementStatic } from '@/components/hr-node-static';
-import { ParagraphElementStatic } from '@/components/paragraph-node-static';
+} from '@/components/ui/heading-node-static';
+import { HrElementStatic } from '@/components/ui/hr-node-static';
+import { ParagraphElementStatic } from '@/components/ui/paragraph-node-static';
 
 export const BaseBasicBlocksKit = [
   BaseParagraphPlugin.withComponent(ParagraphElementStatic),
