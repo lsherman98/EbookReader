@@ -24,6 +24,11 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
+	err = vector_store.Init(app, "vectors")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	llm, err := openai.New()
 	if err != nil {
 		log.Fatal(err)
@@ -202,7 +207,7 @@ func main() {
 
 			bookRecord.Set("chapters+", chapterRecordsIds)
 			bookRecord.Set("available", true)
-			bookRecord.Set("current_chapter", chapterRecordsIds[0]) 
+			bookRecord.Set("current_chapter", chapterRecordsIds[0])
 
 			if err := app.Save(bookRecord); err != nil {
 				log.Println("Failed to update book record:", err)
