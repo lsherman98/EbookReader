@@ -40,7 +40,6 @@ export const uploadBook = async (upload: FileUploadObj) => {
     if (upload.cover) {
         data.cover_image = new File([upload.cover], upload.cover.name, { type: upload.cover.type });
     }
-
     return await pb.collection(Collections.Books).create(data, { requestKey: upload.file.name });
 }
 
@@ -92,7 +91,7 @@ export const addMessage = async (chatId: string, content: string, role: "user" |
         return
     }
 
-    return await pb.collection(Collections.Messages).create({ chatId, content, role, user: userId });
+    return await pb.collection(Collections.Messages).create({ chat: chatId, content, role, user: userId });
 }
 
 export const getChats = async (bookId?: string) => {

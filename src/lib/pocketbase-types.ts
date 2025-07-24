@@ -17,6 +17,7 @@ export enum Collections {
 	LastRead = "last_read",
 	Messages = "messages",
 	Users = "users",
+	Vectors = "vectors",
 }
 
 // Alias types for improved usability
@@ -174,6 +175,19 @@ export type UsersRecord = {
 	verified?: boolean
 }
 
+export type VectorsRecord = {
+	book?: RecordIdString[]
+	chapter?: RecordIdString[]
+	content: string
+	created?: IsoDateString
+	end_index?: number
+	id: string
+	start_index?: number
+	title?: string
+	updated?: IsoDateString
+	vector_id?: number
+}
+
 // Response types include system fields and match responses from the PocketBase API
 export type AuthoriginsResponse<Texpand = unknown> = Required<AuthoriginsRecord> & BaseSystemFields<Texpand>
 export type ExternalauthsResponse<Texpand = unknown> = Required<ExternalauthsRecord> & BaseSystemFields<Texpand>
@@ -186,6 +200,7 @@ export type ChatsResponse<Texpand = unknown> = Required<ChatsRecord> & BaseSyste
 export type LastReadResponse<Texpand = unknown> = Required<LastReadRecord> & BaseSystemFields<Texpand>
 export type MessagesResponse<Texpand = unknown> = Required<MessagesRecord> & BaseSystemFields<Texpand>
 export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>
+export type VectorsResponse<Texpand = unknown> = Required<VectorsRecord> & BaseSystemFields<Texpand>
 
 // Types containing all Records and Responses, useful for creating typing helper functions
 
@@ -201,6 +216,7 @@ export type CollectionRecords = {
 	last_read: LastReadRecord
 	messages: MessagesRecord
 	users: UsersRecord
+	vectors: VectorsRecord
 }
 
 export type CollectionResponses = {
@@ -215,6 +231,7 @@ export type CollectionResponses = {
 	last_read: LastReadResponse
 	messages: MessagesResponse
 	users: UsersResponse
+	vectors: VectorsResponse
 }
 
 // Type for usage with type asserted PocketBase instance
@@ -232,4 +249,5 @@ export type TypedPocketBase = PocketBase & {
 	collection(idOrName: 'last_read'): RecordService<LastReadResponse>
 	collection(idOrName: 'messages'): RecordService<MessagesResponse>
 	collection(idOrName: 'users'): RecordService<UsersResponse>
+	collection(idOrName: 'vectors'): RecordService<VectorsResponse>
 }

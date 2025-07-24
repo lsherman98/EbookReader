@@ -1,0 +1,54 @@
+// In your frontend code (e.g., in a React component)
+
+/**
+ * Highlights a range of text within an element based on HTML character offsets.
+ * @param element The container element with the rendered HTML.
+ * @param startIndex The starting character offset in the HTML string.
+ * @param endIndex The ending character offset in the HTML string.
+ */
+function highlightText(element: HTMLElement, startIndex: number, endIndex: number) {
+  // 1. Create a Range object
+  const range = document.createRange();
+  let charCount = 0;
+  let startNode: Node | undefined;
+  let startOffset = 0;
+  let endNode: Node | undefined;
+  let endOffset = 0;
+
+  // 2. Use a TreeWalker to iterate through only the text nodes of the element
+  const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null);
+
+  while (treeWalker.nextNode()) {
+    const node = treeWalker.currentNode;
+    const textLength = node.textContent?.length || 0;
+
+    // 3. Find the start node and offset
+    if (!startNode && startIndex < charCount + textLength) {
+      startNode = node;
+      startOffset = startIndex - charCount;
+    }
+
+    // 4. Find the end node and offset
+    if (!endNode && endIndex <= charCount + textLength) {
+      endNode = node;
+      endOffset = endIndex - charCount;
+      break; // Found both, we can stop
+    }
+
+    charCount += textLength;
+  }
+
+  if (startNode && endNode) {
+    // 5. Set the start and end of the range
+    range.setStart(startNode, startOffset);
+    range.setEnd(endNode, endOffset);
+
+    // 6. Highlight the range (e.g., by wrapping it in a <mark> tag)
+    // Clear previous highlights first
+    const mark = document.createElement('mark');
+    range.surroundContents(mark);
+
+    // 7. Scroll to the highlighted element
+    mark.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}

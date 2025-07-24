@@ -2,29 +2,68 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
+	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/vector_search"
+	"github.com/mattn/go-sqlite3"
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/routine"
 	"github.com/timsims/pamphlet"
+	"github.com/tmc/langchaingo/documentloaders"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/openai"
+	"github.com/tmc/langchaingo/textsplitter"
 )
 
+// register a new driver with default PRAGMAs and the same query
+// builder implementation as the already existing sqlite3 builder
+func init() {
+	// initialize default PRAGMAs for each new connection
+	sql.Register("pb_sqlite3",
+		&sqlite3.SQLiteDriver{
+			ConnectHook: func(conn *sqlite3.SQLiteConn) error {
+				_, err := conn.Exec(`
+                    PRAGMA busy_timeout       = 10000;
+                    PRAGMA journal_mode       = WAL;
+                    PRAGMA journal_size_limit = 200000000;
+                    PRAGMA synchronous        = NORMAL;
+                    PRAGMA foreign_keys       = ON;
+                    PRAGMA temp_store         = MEMORY;
+                    PRAGMA cache_size         = -16000;
+                `, nil)
+
+				return err
+			},
+		},
+	)
+
+	dbx.BuilderFuncMap["pb_sqlite3"] = dbx.BuilderFuncMap["sqlite3"]
+}
+
 func main() {
-	app := pocketbase.New()
+	app := pocketbase.NewWithConfig(pocketbase.Config{
+		DBConnect: func(dbPath string) (*dbx.DB, error) {
+			return dbx.Open("pb_sqlite3", dbPath)
+		},
+	})
+
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
-	err = vector_store.Init(app, "vectors")
+	err := vector_search.Init(app, vector_search.VectorCollection{
+		Name: "vectors",
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -92,6 +131,7 @@ func main() {
 	})
 
 	app.OnRecordAfterCreateSuccess("books").BindFunc(func(e *core.RecordEvent) error {
+		log.Println("Processing new book record...")
 		bookRecord := e.Record
 		userID := bookRecord.GetString("user")
 		bookID := bookRecord.Id
@@ -137,7 +177,7 @@ func main() {
 		}
 		defer fsys.Close()
 
-		r, err := fsys.GetFile(fileKey)
+		r, err := fsys.GetReader(fileKey)
 		if err != nil {
 			return err
 		}
@@ -213,6 +253,46 @@ func main() {
 				log.Println("Failed to update book record:", err)
 			}
 		})
+
+		return e.Next()
+	})
+
+	app.OnRecordAfterCreateSuccess("chapters").BindFunc(func(e *core.RecordEvent) error {
+		vectorCollection, err := app.FindCollectionByNameOrId("vectors")
+		if err != nil {
+			return err
+		}
+		content := e.Record.GetString("content")
+		chapterId := e.Record.Id
+		bookId := e.Record.GetString("book")
+
+		p := documentloaders.NewText(strings.NewReader(content))
+		split := textsplitter.NewRecursiveCharacter()
+		split.ChunkSize = 500
+		split.ChunkOverlap = 50
+		docs, err := p.LoadAndSplit(context.Background(), split)
+		if err != nil {
+			return err
+		}
+
+		for _, doc := range docs {
+			startIndex := strings.Index(content, doc.PageContent)
+			endIndex := -1
+			if startIndex != -1 {
+				endIndex = startIndex + len(doc.PageContent)
+			}
+
+			vector := core.NewRecord(vectorCollection)
+			vector.Set("title", e.Record.GetString("title"))
+			vector.Set("content", doc.PageContent)
+			vector.Set("chapter", chapterId)
+			vector.Set("book", bookId)
+			vector.Set("start_index", startIndex)
+			vector.Set("end_index", endIndex)
+			if err := app.Save(vector); err != nil {
+				return err
+			}
+		}
 
 		return e.Next()
 	})
