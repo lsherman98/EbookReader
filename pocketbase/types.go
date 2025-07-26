@@ -1,7 +1,10 @@
 package main
 
 type ChatRequest struct {
-	Messages []ChatMessage `json:"messages"`
+	Messages  []ChatMessage `json:"messages"`
+	BookID    string        `json:"bookId,omitempty"`
+	ChapterID string        `json:"chapterId,omitempty"`
+	ChatID    string        `json:"chatId,omitempty"`
 }
 
 type ChatMessage struct {

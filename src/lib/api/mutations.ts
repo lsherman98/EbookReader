@@ -107,7 +107,7 @@ export function useDeleteChat() {
 
 export function useGenerateAIResponse() {
     return useMutation({
-        mutationFn: (messages: Message[]) => generateAiResponse(messages),
+        mutationFn: ({ messages, bookId, chatId, chapterId }: { messages: Message[], bookId: string, chatId: string, chapterId?: string }) => generateAiResponse(messages, bookId, chatId, chapterId),
         onError: handleError,
     })
 }

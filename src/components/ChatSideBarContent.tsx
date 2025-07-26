@@ -5,7 +5,7 @@ import { useGetMessagesByChatId } from "@/lib/api/queries";
 import { useAddMessage, useGenerateAIResponse } from "@/lib/api/mutations";
 import { handleError } from "@/lib/utils";
 
-export function ChatSideBarContent({ selectedChatId }: { selectedChatId: string | undefined }) {
+export function ChatSideBarContent({ selectedChatId, selectedBookId, selectedChapterId }: { selectedChatId: string | undefined, selectedBookId: string, selectedChapterId: string | undefined }) {
   const [input, setInput] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
 
@@ -62,7 +62,12 @@ export function ChatSideBarContent({ selectedChatId }: { selectedChatId: string 
     const updatedMessages = [...messages, message];
     setMessages(updatedMessages);
 
-    data = await generateAiResponseMutation.mutateAsync(updatedMessages);
+    data = await generateAiResponseMutation.mutateAsync({
+      messages: updatedMessages,
+      chatId: selectedChatId,
+      bookId: selectedBookId,
+      chapterId: selectedChapterId,
+    });
     if (!data) {
       handleError(new Error("Failed to generate AI response"));
       return;

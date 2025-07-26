@@ -64,7 +64,7 @@ function Index() {
           </PopoverTrigger>
           <PopoverContent align="start">
             <ul className="p-1 flex flex-col gap-2 max-h-96 overflow-y-auto overflow-x-hidden no-scrollbar">
-              {chapters.map((chapter) => (
+              {chapters?.map((chapter) => (
                 <li
                   key={chapter.id}
                   onClick={() => {

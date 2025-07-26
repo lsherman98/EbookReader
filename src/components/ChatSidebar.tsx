@@ -17,6 +17,7 @@ export function ChatSidebar({ hidden }: { hidden?: boolean }) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [chatTitle, setChatTitle] = useState(selectedChat?.title || "");
   const [bookId, setBookId] = useState<string>();
+  const [chatWithChapter] = useState(false);
 
   const { data: bookData, isPending: isBooksPending } = useGetBooks();
   const { data: chatsData, isPending: isChatsPending } = useGetChats(bookId);
@@ -147,7 +148,11 @@ export function ChatSidebar({ hidden }: { hidden?: boolean }) {
       <SidebarContent>
         <SidebarGroup className="px-0 h-full">
           <SidebarGroupContent className="h-full">
-            <ChatSideBarContent selectedChatId={selectedChat?.id} />
+            <ChatSideBarContent
+              selectedChatId={selectedChat?.id}
+              selectedBookId={bookId}
+              selectedChapterId={chatWithChapter ? selectedChat?.id : undefined}
+            />
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

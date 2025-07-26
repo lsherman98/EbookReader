@@ -8,7 +8,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/vector_search"
@@ -19,10 +21,9 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/routine"
 	"github.com/timsims/pamphlet"
-	"github.com/tmc/langchaingo/documentloaders"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/openai"
-	"github.com/tmc/langchaingo/textsplitter"
+	"golang.org/x/net/html"
 )
 
 // register a new driver with default PRAGMAs and the same query
@@ -86,18 +87,42 @@ func main() {
 				return e.BadRequestError("Failed to read request data", err)
 			}
 
-			content := make([]llms.MessageContent, len(data.Messages))
-			for i, msg := range data.Messages {
+			lastMessage := data.Messages[len(data.Messages)-1]
+			searchResults, err := vector_search.Search(app, "", lastMessage.Content, data.BookID, data.ChapterID, 5)
+			if err != nil {
+				log.Println("Failed to perform vector search:", err)
+			}
+
+			var contextBuilder strings.Builder
+			if len(searchResults) > 0 {
+				contextBuilder.WriteString("Use the following context to answer the user's question. Please include relevant quotes from the context in your response. The user cannot see this context, so quote directly from it when relevant:\n")
+				for _, result := range searchResults {
+					if content, ok := result["content"].(string); ok {
+						contextBuilder.WriteString("- ")
+						contextBuilder.WriteString(content)
+						contextBuilder.WriteString("\n")
+					}
+				}
+			}
+
+			content := make([]llms.MessageContent, 0, len(data.Messages)+1)
+			if contextBuilder.Len() > 0 {
+				content = append(content, llms.TextParts(llms.ChatMessageTypeSystem, contextBuilder.String()))
+			}
+
+			log.Println(content)
+
+			for _, msg := range data.Messages {
 				messageType := llms.ChatMessageTypeAI
 				if msg.Role == "user" {
 					messageType = llms.ChatMessageTypeHuman
 				}
-				content[i] = llms.TextParts(messageType, msg.Content)
+				content = append(content, llms.TextParts(messageType, msg.Content))
 			}
 
-			completion, err := llm.GenerateContent(ctx, content, llms.WithStreamingFunc(func(ctx context.Context, chunk []byte) error {
+			completion, err := llm.GenerateContent(ctx, content, llms.WithStreamingFunc(func(streamCtx context.Context, chunk []byte) error {
 				return nil
-			}))
+			}), llms.WithJSONMode())
 			if err != nil {
 				return e.InternalServerError("Failed to generate completion", err)
 			}
@@ -131,7 +156,6 @@ func main() {
 	})
 
 	app.OnRecordAfterCreateSuccess("books").BindFunc(func(e *core.RecordEvent) error {
-		log.Println("Processing new book record...")
 		bookRecord := e.Record
 		userID := bookRecord.GetString("user")
 		bookID := bookRecord.Id
@@ -205,6 +229,8 @@ func main() {
 
 		var chapterRecordsIds []string
 
+		re := regexp.MustCompile(`(?s)^.*@page\s*\{[^}]*\}\s*`)
+
 		routine.FireAndForget(func() {
 			var records []*core.Record
 			for i, chapter := range parsedBook.Chapters {
@@ -224,6 +250,8 @@ func main() {
 					log.Printf("Failed to get content for chapter %d: %v\n", i+1, err)
 					continue
 				}
+
+				content = re.ReplaceAllString(content, "")
 
 				htmlContent := "<!DOCTYPE html>" + content
 				chapterRecord.Set("content", htmlContent)
@@ -266,33 +294,38 @@ func main() {
 		chapterId := e.Record.Id
 		bookId := e.Record.GetString("book")
 
-		p := documentloaders.NewText(strings.NewReader(content))
-		split := textsplitter.NewRecursiveCharacter()
-		split.ChunkSize = 500
-		split.ChunkOverlap = 50
-		docs, err := p.LoadAndSplit(context.Background(), split)
+		// Parse HTML into individual nodes
+		htmlNodes, err := parseHTMLIntoNodes(content)
 		if err != nil {
 			return err
 		}
 
-		for _, doc := range docs {
-			startIndex := strings.Index(content, doc.PageContent)
-			endIndex := -1
-			if startIndex != -1 {
-				endIndex = startIndex + len(doc.PageContent)
-			}
+		routine.FireAndForget(func() {
+			batchSize := 1000
+			for i := 0; i < len(htmlNodes); i += batchSize {
+				end := min(i+batchSize, len(htmlNodes))
+				batch := htmlNodes[i:end]
 
-			vector := core.NewRecord(vectorCollection)
-			vector.Set("title", e.Record.GetString("title"))
-			vector.Set("content", doc.PageContent)
-			vector.Set("chapter", chapterId)
-			vector.Set("book", bookId)
-			vector.Set("start_index", startIndex)
-			vector.Set("end_index", endIndex)
-			if err := app.Save(vector); err != nil {
-				return err
+				for j, nodeHTML := range batch {
+					index := i + j
+
+					vector := core.NewRecord(vectorCollection)
+					vector.Set("title", e.Record.GetString("title"))
+					vector.Set("content", nodeHTML)
+					vector.Set("chapter", chapterId)
+					vector.Set("book", bookId)
+					vector.Set("index", index)
+					if err := app.Save(vector); err != nil {
+						log.Println("Failed to save vector:", err)
+					}
+				}
+
+				if end < len(htmlNodes) {
+					log.Println("Waiting for 1 minute before processing next batch of vectors...")
+					time.Sleep(1 * time.Minute)
+				}
 			}
-		}
+		})
 
 		return e.Next()
 	})
@@ -300,4 +333,40 @@ func main() {
 	if err := app.Start(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func parseHTMLIntoNodes(htmlContent string) ([]string, error) {
+	doc, err := html.Parse(strings.NewReader(htmlContent))
+	if err != nil {
+		return nil, err
+	}
+
+	ignoredTags := map[string]bool{
+		"head": true,
+		"meta": true,
+		"link": true,
+		"td":   true,
+		"tr":   true,
+	}
+
+	var nodes []string
+	var traverse func(*html.Node)
+	traverse = func(n *html.Node) {
+		if n.Type == html.ElementNode {
+			// Skip ignored tags
+			if !ignoredTags[n.Data] {
+				var buf strings.Builder
+				html.Render(&buf, n)
+				nodeHTML := buf.String()
+				if strings.TrimSpace(nodeHTML) != "" {
+					nodes = append(nodes, nodeHTML)
+				}
+			}
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			traverse(c)
+		}
+	}
+	traverse(doc)
+	return nodes, nil
 }

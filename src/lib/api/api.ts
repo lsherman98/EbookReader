@@ -141,12 +141,19 @@ export const deleteChat = async (chatId: string, bookId: string) => {
     return await pb.collection(Collections.Chats).delete(chatId);
 }
 
-export const generateAiResponse = async (messages: Message[]) => {
+export const generateAiResponse = async (messages: Message[]
+    , bookId: string
+    , chatId: string
+    , chapterId?: string
+) => {
     if (!getUserId()) return
     return await pb.send('/chat', {
         method: 'POST',
         body: {
             messages,
+            bookId,
+            chapterId,
+            chatId
         }
     });
 }

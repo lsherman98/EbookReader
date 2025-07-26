@@ -3,6 +3,7 @@ package vector_search
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -21,10 +22,13 @@ type VectorCollection struct {
 
 var ColPrefix = "$$$"
 
+var client *genai.Client
+
 func Init(app *pocketbase.PocketBase, collections ...VectorCollection) error {
 	sqlite_vec.Auto()
 
-	client, err := createGoogleAiClient()
+	var err error
+	client, err = createGoogleAiClient()
 	if err != nil {
 		return err
 	}
@@ -108,15 +112,11 @@ func Init(app *pocketbase.PocketBase, collections ...VectorCollection) error {
 	})
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		e.Router.GET("/vector-search", func(e *core.RequestEvent) error {
-			target := "vectors"
-			if _, err := app.FindCollectionByNameOrId(target); err != nil {
-				app.Logger().Error(fmt.Sprint(err))
-				return err
-			}
-
 			title := e.Request.URL.Query().Get("title")
 			content := e.Request.URL.Query().Get("search")
 			k := e.Request.URL.Query().Get("k")
+			chapter := e.Request.URL.Query().Get("chapter")
+			book := e.Request.URL.Query().Get("book")
 			kNum := 5
 			if k != "" {
 				val, err := strconv.Atoi(k)
@@ -129,54 +129,13 @@ func Init(app *pocketbase.PocketBase, collections ...VectorCollection) error {
 				return e.NoContent(204)
 			}
 
-			vector, err := googleAiEmbedContent(client, genai.TaskTypeRetrievalQuery, title, genai.Text(content))
-			if err != nil {
-				return err
-			}
-			jsonVec, err := json.Marshal(vector)
-			if err != nil {
-				return err
-			}
-
-			stmt := "SELECT v.id, distance, v.content, v.created, v.updated "
-			stmt += "FROM " + target + "_embeddings "
-			stmt += "LEFT JOIN " + target + " v ON v.vector_id = " + target + "_embeddings.id "
-			stmt += "WHERE embedding MATCH {:embedding} "
-			stmt += "AND k = {:k};"
-
-			results := []dbx.NullStringMap{}
-			err = app.DB().
-				NewQuery(stmt).
-				Bind(dbx.Params{
-					"embedding": string(jsonVec),
-					"k":         kNum,
-				}).
-				All(&results)
+			results, err := Search(app, title, content, book, chapter, kNum)
 			if err != nil {
 				app.Logger().Error(fmt.Sprint(err))
 				return err
 			}
-			app.Logger().Info(fmt.Sprint(results))
 
-			e.Response.Header().Set("Content-Type", "application/json")
-			items := []map[string]any{}
-			for _, result := range results {
-				m := make(map[string]interface{})
-				for key := range result {
-					val := result[key]
-					value, err := val.Value()
-					if err != nil || !val.Valid {
-						m[key] = nil
-					} else {
-						m[key] = value
-					}
-				}
-				items = append(items, m)
-			}
-
-			// TODO: Paging result
-			return e.JSON(200, items)
-
+			return e.JSON(200, results)
 		})
 
 		e.Router.GET("/embeddings", func(e *core.RequestEvent) error {
@@ -220,6 +179,80 @@ func Init(app *pocketbase.PocketBase, collections ...VectorCollection) error {
 	return nil
 }
 
+func Search(app *pocketbase.PocketBase, title, content, book, chapter string, kNum int) ([]map[string]any, error) {
+	target := "vectors"
+	if _, err := app.FindCollectionByNameOrId(target); err != nil {
+		app.Logger().Error(fmt.Sprint(err))
+		return nil, err
+	}
+
+	vector, err := googleAiEmbedContent(client, genai.TaskTypeRetrievalQuery, title, genai.Text(content))
+	if err != nil {
+		return nil, err
+	}
+	jsonVec, err := json.Marshal(vector)
+	if err != nil {
+		return nil, err
+	}
+
+	params := dbx.Params{
+		"embedding": string(jsonVec),
+		"k":         kNum,
+	}
+
+	whereClauses := []string{}
+	if book != "" {
+		whereClauses = append(whereClauses, "book = {:book}")
+		params["book"] = book
+	}
+	if chapter != "" {
+		whereClauses = append(whereClauses, "chapter = {:chapter}")
+		params["chapter"] = chapter
+	}
+
+	stmt := ""
+	if len(whereClauses) > 0 {
+		stmt += "WITH filtered_vectors AS (SELECT vector_id FROM " + target + " WHERE " + strings.Join(whereClauses, " AND ") + " AND vector_id IS NOT NULL) "
+		stmt += "SELECT v.id, ve.distance, v.content, v.title, v.book, v.chapter, v.\"index\", v.created, v.updated "
+		stmt += "FROM " + target + "_embeddings ve "
+		stmt += "JOIN " + target + " v ON v.vector_id = ve.id "
+		stmt += "WHERE ve.embedding MATCH {:embedding} AND k = {:k} AND ve.id IN (SELECT vector_id FROM filtered_vectors);"
+	} else {
+		stmt += "SELECT v.id, ve.distance, v.content, v.title, v.book, v.chapter, v.\"index\", v.created, v.updated "
+		stmt += "FROM " + target + "_embeddings ve "
+		stmt += "JOIN " + target + " v ON v.vector_id = ve.id "
+		stmt += "WHERE ve.embedding MATCH {:embedding} AND k = {:k};"
+	}
+	log.Println(stmt)
+
+	results := []dbx.NullStringMap{}
+	err = app.DB().
+		NewQuery(stmt).
+		Bind(params).
+		All(&results)
+	if err != nil {
+		app.Logger().Error(fmt.Sprint(err))
+		return nil, err
+	}
+	app.Logger().Info(fmt.Sprint(results))
+
+	items := []map[string]any{}
+	for _, result := range results {
+		m := make(map[string]interface{})
+		for key := range result {
+			val := result[key]
+			value, err := val.Value()
+			if err != nil || !val.Valid {
+				m[key] = nil
+			} else {
+				m[key] = value
+			}
+		}
+		items = append(items, m)
+	}
+	return items, nil
+}
+
 func deleteCollection(app *pocketbase.PocketBase, target string) error {
 	if _, err := app.DB().
 		NewQuery("DELETE FROM " + target + "_embeddings;").
@@ -235,12 +268,7 @@ func deleteCollection(app *pocketbase.PocketBase, target string) error {
 }
 
 func modelDelete(app *pocketbase.PocketBase, target string, e *core.RecordEvent) error {
-	_, err := e.App.FindRecordById(e.Record.TableName(), e.Record.Id)
-	if err != nil {
-		return err
-	}
-	deleteEmbeddingsForRecord(app, target, e)
-	return nil
+	return deleteEmbeddingsForRecord(app, target, e)
 }
 
 func modelModify(app *pocketbase.PocketBase, target string, client *genai.Client, e *core.RecordEvent) error {
@@ -274,7 +302,7 @@ func modelModify(app *pocketbase.PocketBase, target string, client *genai.Client
 				"embedding": vector,
 			}).Execute()
 			if err != nil {
-				return nil
+				return err
 			}
 			vectorId, err := res.LastInsertId()
 			if err != nil {
@@ -291,19 +319,19 @@ func modelModify(app *pocketbase.PocketBase, target string, client *genai.Client
 }
 
 func deleteEmbeddingsForRecord(app *pocketbase.PocketBase, target string, e *core.RecordEvent) error {
-	record, err := e.App.FindRecordById(e.Record.TableName(), e.Record.Id)
-	if err != nil {
-		return err
-	}
+	record := e.Record
 
 	type Meta struct {
 		Id string `db:"id" json:"id"`
 	}
 	vectorId := record.GetInt("vector_id")
+	if vectorId == 0 {
+		return nil
+	}
 	items := []*Meta{}
 	stmt := "SELECT id FROM " + target + "_embeddings "
 	stmt += "WHERE id = {:id};"
-	err = app.DB().NewQuery(stmt).Bind(dbx.Params{
+	err := app.DB().NewQuery(stmt).Bind(dbx.Params{
 		"id": vectorId,
 	}).All(&items)
 	if err != nil {
@@ -337,9 +365,9 @@ func createCollection(app *pocketbase.PocketBase, target string, extraFields ...
 	}
 
 	fields := []core.Field{
-        &core.TextField{
-            Name:     "title",
-        },
+		&core.TextField{
+			Name: "title",
+		},
 		&core.TextField{
 			Name:     "content",
 			Required: true,
@@ -364,12 +392,9 @@ func createCollection(app *pocketbase.PocketBase, target string, extraFields ...
 			Name:         "chapter",
 			CollectionId: chaptersCollection.Id,
 		},
-        &core.NumberField{
-            Name: "start_index",
-        },
-        &core.NumberField{
-            Name: "end_index",
-        },
+		&core.NumberField{
+			Name: "index",
+		},
 	}
 
 	for _, field := range extraFields {
