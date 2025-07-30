@@ -1,100 +1,118 @@
-import React, { Suspense } from "react"
-import Markdown from "react-markdown"
-import remarkGfm from "remark-gfm"
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { JSX, Suspense } from "react";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
-import { cn } from "@/lib/utils"
-import { CopyButton } from "@/components/ui/copy-button"
+import { cn } from "@/lib/utils";
+import { CopyButton } from "@/components/ui/copy-button";
 
 interface MarkdownRendererProps {
-  children: string
+  children: string;
+  onCitationClick: (citationIndex: string) => void;
 }
 
-export function MarkdownRenderer({ children }: MarkdownRendererProps) {
+export function MarkdownRenderer({ children, onCitationClick }: MarkdownRendererProps) {
+  const components = {
+    ...COMPONENTS,
+    a: ({ href, children, ...props }: any) => {
+      const indexes = children.split("-");
+      if (!href && indexes.length === 2 && !isNaN(parseInt(indexes[0])) && !isNaN(parseInt(indexes[1]))) {
+        const displayIndex = indexes[0];
+        const citationIndex = indexes[1];
+
+        return (
+          <sup
+            onClick={() => onCitationClick(citationIndex)}
+            className="text-primary underline underline-offset-2 hover:bg-primary/10 rounded px-1 cursor-pointer"
+            {...props}
+          >
+            {displayIndex}
+          </sup>
+        );
+      }
+
+      // Regular link
+      return (
+        <a href={href} className="text-primary underline underline-offset-2" {...props}>
+          {children}
+        </a>
+      );
+    },
+  };
+
   return (
     <div className="space-y-3">
-      <Markdown remarkPlugins={[remarkGfm]} components={COMPONENTS}>
+      <Markdown remarkPlugins={[remarkGfm]} components={components}>
         {children}
       </Markdown>
     </div>
-  )
+  );
 }
 
 interface HighlightedPre extends React.HTMLAttributes<HTMLPreElement> {
-  children: string
-  language: string
+  children: string;
+  language: string;
 }
 
-const HighlightedPre = React.memo(
-  async ({ children, language, ...props }: HighlightedPre) => {
-    const { codeToTokens, bundledLanguages } = await import("shiki")
+const HighlightedPre = React.memo(async ({ children, language, ...props }: HighlightedPre) => {
+  const { codeToTokens, bundledLanguages } = await import("shiki");
 
-    if (!(language in bundledLanguages)) {
-      return <pre {...props}>{children}</pre>
-    }
-
-    const { tokens } = await codeToTokens(children, {
-      lang: language as keyof typeof bundledLanguages,
-      defaultColor: false,
-      themes: {
-        light: "github-light",
-        dark: "github-dark",
-      },
-    })
-
-    return (
-      <pre {...props}>
-        <code>
-          {tokens.map((line, lineIndex) => (
-            <>
-              <span key={lineIndex}>
-                {line.map((token, tokenIndex) => {
-                  const style =
-                    typeof token.htmlStyle === "string"
-                      ? undefined
-                      : token.htmlStyle
-
-                  return (
-                    <span
-                      key={tokenIndex}
-                      className="text-shiki-light bg-shiki-light-bg dark:text-shiki-dark dark:bg-shiki-dark-bg"
-                      style={style}
-                    >
-                      {token.content}
-                    </span>
-                  )
-                })}
-              </span>
-              {lineIndex !== tokens.length - 1 && "\n"}
-            </>
-          ))}
-        </code>
-      </pre>
-    )
+  if (!(language in bundledLanguages)) {
+    return <pre {...props}>{children}</pre>;
   }
-)
-HighlightedPre.displayName = "HighlightedCode"
+
+  const { tokens } = await codeToTokens(children, {
+    lang: language as keyof typeof bundledLanguages,
+    defaultColor: false,
+    themes: {
+      light: "github-light",
+      dark: "github-dark",
+    },
+  });
+
+  return (
+    <pre {...props}>
+      <code>
+        {tokens.map((line, lineIndex) => (
+          <>
+            <span key={lineIndex}>
+              {line.map((token, tokenIndex) => {
+                const style = typeof token.htmlStyle === "string" ? undefined : token.htmlStyle;
+
+                return (
+                  <span
+                    key={tokenIndex}
+                    className="text-shiki-light bg-shiki-light-bg dark:text-shiki-dark dark:bg-shiki-dark-bg"
+                    style={style}
+                  >
+                    {token.content}
+                  </span>
+                );
+              })}
+            </span>
+            {lineIndex !== tokens.length - 1 && "\n"}
+          </>
+        ))}
+      </code>
+    </pre>
+  );
+});
+HighlightedPre.displayName = "HighlightedCode";
 
 interface CodeBlockProps extends React.HTMLAttributes<HTMLPreElement> {
-  children: React.ReactNode
-  className?: string
-  language: string
+  children: React.ReactNode;
+  className?: string;
+  language: string;
 }
 
-const CodeBlock = ({
-  children,
-  className,
-  language,
-  ...restProps
-}: CodeBlockProps) => {
-  const code =
-    typeof children === "string"
-      ? children
-      : childrenTakeAllStringContents(children)
+const CodeBlock = ({ children, className, language, ...restProps }: CodeBlockProps) => {
+  const code = typeof children === "string" ? children : childrenTakeAllStringContents(children);
 
   const preClass = cn(
     "overflow-x-scroll rounded-md border bg-background/50 p-4 font-mono text-sm [scrollbar-width:none]",
-    className
-  )
+    className,
+  );
 
   return (
     <div className="group/code relative mb-4">
@@ -114,27 +132,25 @@ const CodeBlock = ({
         <CopyButton content={code} copyMessage="Copied code to clipboard" />
       </div>
     </div>
-  )
-}
+  );
+};
 
 function childrenTakeAllStringContents(element: any): string {
   if (typeof element === "string") {
-    return element
+    return element;
   }
 
   if (element?.props?.children) {
-    let children = element.props.children
+    const children = element.props.children;
 
     if (Array.isArray(children)) {
-      return children
-        .map((child) => childrenTakeAllStringContents(child))
-        .join("")
+      return children.map((child) => childrenTakeAllStringContents(child)).join("");
     } else {
-      return childrenTakeAllStringContents(children)
+      return childrenTakeAllStringContents(children);
     }
   }
 
-  return ""
+  return "";
 }
 
 const COMPONENTS = {
@@ -144,10 +160,9 @@ const COMPONENTS = {
   h4: withClass("h4", "font-semibold text-base"),
   h5: withClass("h5", "font-medium"),
   strong: withClass("strong", "font-semibold"),
-  a: withClass("a", "text-primary underline underline-offset-2"),
   blockquote: withClass("blockquote", "border-l-2 border-primary pl-4"),
   code: ({ children, className, node, ...rest }: any) => {
-    const match = /language-(\w+)/.exec(className || "")
+    const match = /language-(\w+)/.exec(className || "");
     return match ? (
       <CodeBlock className={className} language={match[1]} {...rest}>
         {children}
@@ -155,41 +170,36 @@ const COMPONENTS = {
     ) : (
       <code
         className={cn(
-          "font-mono [:not(pre)>&]:rounded-md [:not(pre)>&]:bg-background/50 [:not(pre)>&]:px-1 [:not(pre)>&]:py-0.5"
+          "font-mono [:not(pre)>&]:rounded-md [:not(pre)>&]:bg-background/50 [:not(pre)>&]:px-1 [:not(pre)>&]:py-0.5",
         )}
         {...rest}
       >
         {children}
       </code>
-    )
+    );
   },
   pre: ({ children }: any) => children,
   ol: withClass("ol", "list-decimal space-y-2 pl-6"),
   ul: withClass("ul", "list-disc space-y-2 pl-6"),
   li: withClass("li", "my-1.5"),
-  table: withClass(
-    "table",
-    "w-full border-collapse overflow-y-auto rounded-md border border-foreground/20"
-  ),
+  table: withClass("table", "w-full border-collapse overflow-y-auto rounded-md border border-foreground/20"),
   th: withClass(
     "th",
-    "border border-foreground/20 px-4 py-2 text-left font-bold [&[align=center]]:text-center [&[align=right]]:text-right"
+    "border border-foreground/20 px-4 py-2 text-left font-bold [&[align=center]]:text-center [&[align=right]]:text-right",
   ),
   td: withClass(
     "td",
-    "border border-foreground/20 px-4 py-2 text-left [&[align=center]]:text-center [&[align=right]]:text-right"
+    "border border-foreground/20 px-4 py-2 text-left [&[align=center]]:text-center [&[align=right]]:text-right",
   ),
   tr: withClass("tr", "m-0 border-t p-0 even:bg-muted"),
   p: withClass("p", "whitespace-pre-wrap"),
   hr: withClass("hr", "border-foreground/20"),
-}
+};
 
 function withClass(Tag: keyof JSX.IntrinsicElements, classes: string) {
-  const Component = ({ node, ...props }: any) => (
-    <Tag className={classes} {...props} />
-  )
-  Component.displayName = Tag
-  return Component
+  const Component = ({ node, ...props }: any) => <Tag className={classes} {...props} />;
+  Component.displayName = Tag;
+  return Component;
 }
 
-export default MarkdownRenderer
+export default MarkdownRenderer;

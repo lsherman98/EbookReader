@@ -61,7 +61,7 @@ export function useAddMessage() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ chatId, content, role }: { chatId: string; content: string; role: "user" | "assistant" }) => addMessage(chatId, content, role),
+        mutationFn: ({ chatId, content, role, parts }: { chatId: string; content: string; role: "user" | "assistant", parts: Citation[] | null }) => addMessage(chatId, content, role, parts),
         onError: handleError,
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['messages'] });
@@ -103,6 +103,18 @@ export function useDeleteChat() {
             await queryClient.invalidateQueries({ queryKey: ['chats'] });
         }
     })
+}
+
+export interface Citation {
+    text_snippet: string;
+    index: string;
+    uniqueId?: string;
+}
+
+export interface StructuredChatResponse {
+    role: "assistant";
+    content: string;
+    parts: Citation[];
 }
 
 export function useGenerateAIResponse() {

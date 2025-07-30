@@ -3,7 +3,6 @@ package vector_search
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
@@ -223,7 +222,6 @@ func Search(app *pocketbase.PocketBase, title, content, book, chapter string, kN
 		stmt += "JOIN " + target + " v ON v.vector_id = ve.id "
 		stmt += "WHERE ve.embedding MATCH {:embedding} AND k = {:k};"
 	}
-	log.Println(stmt)
 
 	results := []dbx.NullStringMap{}
 	err = app.DB().

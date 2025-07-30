@@ -150,8 +150,9 @@ export enum MessagesRoleOptions {
 	"user" = "user",
 	"assistant" = "assistant",
 }
-export type MessagesRecord = {
+export type MessagesRecord<Tcitations = unknown> = {
 	chat: RecordIdString
+	citations?: null | Tcitations
 	content: string
 	created?: IsoDateString
 	failed?: boolean
@@ -180,9 +181,8 @@ export type VectorsRecord = {
 	chapter?: RecordIdString[]
 	content: string
 	created?: IsoDateString
-	end_index?: number
 	id: string
-	start_index?: number
+	index?: number
 	title?: string
 	updated?: IsoDateString
 	vector_id?: number
@@ -198,7 +198,7 @@ export type BooksResponse<Texpand = unknown> = Required<BooksRecord> & BaseSyste
 export type ChaptersResponse<Texpand = unknown> = Required<ChaptersRecord> & BaseSystemFields<Texpand>
 export type ChatsResponse<Texpand = unknown> = Required<ChatsRecord> & BaseSystemFields<Texpand>
 export type LastReadResponse<Texpand = unknown> = Required<LastReadRecord> & BaseSystemFields<Texpand>
-export type MessagesResponse<Texpand = unknown> = Required<MessagesRecord> & BaseSystemFields<Texpand>
+export type MessagesResponse<Tcitations = unknown, Texpand = unknown> = Required<MessagesRecord<Tcitations>> & BaseSystemFields<Texpand>
 export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>
 export type VectorsResponse<Texpand = unknown> = Required<VectorsRecord> & BaseSystemFields<Texpand>
 

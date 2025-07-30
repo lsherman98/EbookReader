@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -69,7 +71,49 @@ func main() {
 		log.Fatal(err)
 	}
 
-	llm, err := openai.New()
+	// Create structured response format
+	responseFormat := &openai.ResponseFormat{
+		Type: "json_schema",
+		JSONSchema: &openai.ResponseFormatJSONSchema{
+			Name: "structured_chat_response",
+			Schema: &openai.ResponseFormatJSONSchemaProperty{
+				Type: "object",
+				Properties: map[string]*openai.ResponseFormatJSONSchemaProperty{
+					"answer": {
+						Type:        "string",
+						Description: "The complete answer to the user's question",
+					},
+					"citations": {
+						Type:        "array",
+						Description: "Array of citations with text snippets and their indices",
+						Items: &openai.ResponseFormatJSONSchemaProperty{
+							Type: "object",
+							Properties: map[string]*openai.ResponseFormatJSONSchemaProperty{
+								"text_snippet": {
+									Type:        "string",
+									Description: "The relevant text snippet from the context",
+								},
+								"index": {
+									Type:        "string",
+									Description: "The index of the HTML node in the document",
+								},
+								"chapter": {
+									Type:        "string",
+									Description: "The chapter ID that this citation belongs to",
+								},
+							},
+							Required: []string{"text_snippet", "index", "chapter"},
+						},
+					},
+				},
+				AdditionalProperties: false,
+				Required:             []string{"answer", "citations"},
+			},
+			Strict: true,
+		},
+	}
+
+	OpenAI4oStructured, err := openai.New(openai.WithModel("gpt-4o"), openai.WithResponseFormat(responseFormat))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -83,24 +127,32 @@ func main() {
 		se.Router.POST("/chat", func(e *core.RequestEvent) error {
 			ctx := context.Background()
 			var data ChatRequest
+
 			if err := e.BindBody(&data); err != nil {
 				return e.BadRequestError("Failed to read request data", err)
 			}
 
 			lastMessage := data.Messages[len(data.Messages)-1]
+
 			searchResults, err := vector_search.Search(app, "", lastMessage.Content, data.BookID, data.ChapterID, 5)
 			if err != nil {
-				log.Println("Failed to perform vector search:", err)
+				return e.InternalServerError("Failed to search vectors", err)
 			}
-
 			var contextBuilder strings.Builder
 			if len(searchResults) > 0 {
-				contextBuilder.WriteString("Use the following context to answer the user's question. Please include relevant quotes from the context in your response. The user cannot see this context, so quote directly from it when relevant:\n")
-				for _, result := range searchResults {
+				contextBuilder.WriteString("You are an AI assistant helping users understand their book content. Use the following context to answer the user's question.\n\nIMPORTANT INSTRUCTIONS:\n- Quote extensively and directly from the provided context when answering\n- The user cannot see this context, so you must include relevant quotes in your response\n- When quoting or referencing information, ALWAYS cite it using the index number in square brackets\n- Format citations like this: \"This is a direct quote from the text.\"[75]\n- Prefer longer, more complete quotes over brief paraphrases\n- If the context doesn't contain enough information to fully answer the question, say so clearly\n\nCONTEXT:\n\n")
+				for i, result := range searchResults {
 					if content, ok := result["content"].(string); ok {
-						contextBuilder.WriteString("- ")
-						contextBuilder.WriteString(content)
-						contextBuilder.WriteString("\n")
+						var chapterInfo string
+						if chapterID, hasChapter := result["chapter"]; hasChapter {
+							chapterInfo = fmt.Sprintf(" (Chapter: %v)", chapterID)
+						}
+
+						if index, hasIndex := result["index"]; hasIndex {
+							contextBuilder.WriteString(fmt.Sprintf("[Index: %v%s] %s\n\n", index, chapterInfo, content))
+						} else {
+							contextBuilder.WriteString(fmt.Sprintf("[Index: %d%s] %s\n\n", i, chapterInfo, content))
+						}
 					}
 				}
 			}
@@ -110,8 +162,6 @@ func main() {
 				content = append(content, llms.TextParts(llms.ChatMessageTypeSystem, contextBuilder.String()))
 			}
 
-			log.Println(content)
-
 			for _, msg := range data.Messages {
 				messageType := llms.ChatMessageTypeAI
 				if msg.Role == "user" {
@@ -120,17 +170,23 @@ func main() {
 				content = append(content, llms.TextParts(messageType, msg.Content))
 			}
 
-			completion, err := llm.GenerateContent(ctx, content, llms.WithStreamingFunc(func(streamCtx context.Context, chunk []byte) error {
+			completion, err := OpenAI4oStructured.GenerateContent(ctx, content, llms.WithStreamingFunc(func(streamCtx context.Context, chunk []byte) error {
 				return nil
 			}), llms.WithJSONMode())
+
 			if err != nil {
 				return e.InternalServerError("Failed to generate completion", err)
 			}
 
+			var structuredResponse StructuredChatResponse
+			if err := json.Unmarshal([]byte(completion.Choices[0].Content), &structuredResponse); err != nil {
+				return e.InternalServerError("Failed to parse structured response", err)
+			}
+
 			e.JSON(http.StatusOK, ChatResponse{
-				Content: completion.Choices[0].Content,
+				Content: structuredResponse.Answer,
 				Role:    "assistant",
-				Parts:   []any{},
+				Parts:   structuredResponse.Citations,
 			})
 
 			return nil
