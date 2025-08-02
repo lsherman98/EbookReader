@@ -108,7 +108,8 @@ export function useDeleteChat() {
 export interface Citation {
     text_snippet: string;
     index: string;
-    uniqueId?: string;
+    chapter: string;
+    id?: string;
 }
 
 export interface StructuredChatResponse {

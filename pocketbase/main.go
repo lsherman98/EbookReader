@@ -91,7 +91,7 @@ func main() {
 							Properties: map[string]*openai.ResponseFormatJSONSchemaProperty{
 								"text_snippet": {
 									Type:        "string",
-									Description: "The relevant text snippet from the context",
+									Description: "The specific text snippet used in the response, not the entire context quote",
 								},
 								"index": {
 									Type:        "string",
@@ -140,7 +140,7 @@ func main() {
 			}
 			var contextBuilder strings.Builder
 			if len(searchResults) > 0 {
-				contextBuilder.WriteString("You are an AI assistant helping users understand their book content. Use the following context to answer the user's question.\n\nIMPORTANT INSTRUCTIONS:\n- Quote extensively and directly from the provided context when answering\n- The user cannot see this context, so you must include relevant quotes in your response\n- When quoting or referencing information, ALWAYS cite it using the index number in square brackets\n- Format citations like this: \"This is a direct quote from the text.\"[75]\n- Prefer longer, more complete quotes over brief paraphrases\n- If the context doesn't contain enough information to fully answer the question, say so clearly\n\nCONTEXT:\n\n")
+				contextBuilder.WriteString("You are an AI assistant helping users understand their book content. Use the following context to answer the user's question.\n\nIMPORTANT INSTRUCTIONS:\n- Quote extensively and directly from the provided context when answering\n- The user cannot see this context, so you must include relevant quotes in your response\n- When quoting or referencing information, ALWAYS cite it using the index number in square brackets\n- Format citations like this: \"This is a direct quote from the text.\"[75]\n- CRITICAL: Every individual quote, phrase, or piece of information from the context must have its own citation immediately after it, even if multiple quotes come from the same index\n- Example: \"The monster was gigantic in stature\"[69], \"yet uncouth and distorted in its proportions\"[69]. \"His face was of such loathsome yet appalling hideousness\"[69] that it caused fear.\n- Prefer longer, more complete quotes over brief paraphrases\n- MANDATORY: For EVERY quote you use from the context, you MUST include that exact quoted text in the citations array\n- Each citation in the citations array must include the exact text_snippet that was quoted, the index number, and the chapter ID\n- Do not add bracket citations [XX] to your answer unless you are actually quoting or referencing specific content from the context\n- Every piece of quoted text must appear in both your answer (with bracket citation) AND in the citations array\n- If you paraphrase instead of quote, do not use bracket citations\n- If the context doesn't contain enough information to fully answer the question, say so clearly\n- Focus on direct quotes with proper citations rather than paraphrasing without citations\n\nCONTEXT:\n\n")
 				for i, result := range searchResults {
 					if content, ok := result["content"].(string); ok {
 						var chapterInfo string
@@ -181,6 +181,31 @@ func main() {
 			var structuredResponse StructuredChatResponse
 			if err := json.Unmarshal([]byte(completion.Choices[0].Content), &structuredResponse); err != nil {
 				return e.InternalServerError("Failed to parse structured response", err)
+			}
+
+			// Validate that all bracket citations in the answer have corresponding entries in citations array
+			citationRegex := regexp.MustCompile(`\[(\d+)\]`)
+			citationsInText := citationRegex.FindAllStringSubmatch(structuredResponse.Answer, -1)
+
+			// Create a map of citation indices from the citations array
+			citationMap := make(map[string]bool)
+			for _, citation := range structuredResponse.Citations {
+				citationMap[citation.Index] = true
+			}
+
+			// Check if all bracket citations have corresponding entries
+			var missingCitations []string
+			for _, match := range citationsInText {
+				if len(match) > 1 {
+					index := match[1]
+					if !citationMap[index] {
+						missingCitations = append(missingCitations, index)
+					}
+				}
+			}
+
+			if len(missingCitations) > 0 {
+				return e.InternalServerError(fmt.Sprintf("Response contains bracket citations %v that are missing from citations array. Every bracket citation must have a corresponding entry in the citations array with the quoted text.", missingCitations), nil)
 			}
 
 			e.JSON(http.StatusOK, ChatResponse{
@@ -350,7 +375,6 @@ func main() {
 		chapterId := e.Record.Id
 		bookId := e.Record.GetString("book")
 
-		// Parse HTML into individual nodes
 		htmlNodes, err := parseHTMLIntoNodes(content)
 		if err != nil {
 			return err
@@ -358,6 +382,7 @@ func main() {
 
 		routine.FireAndForget(func() {
 			batchSize := 1000
+
 			for i := 0; i < len(htmlNodes); i += batchSize {
 				end := min(i+batchSize, len(htmlNodes))
 				batch := htmlNodes[i:end]
@@ -372,15 +397,18 @@ func main() {
 					vector.Set("book", bookId)
 					vector.Set("index", index)
 					if err := app.Save(vector); err != nil {
-						log.Println("Failed to save vector:", err)
+						log.Printf("Failed to save vector at index %d: %v", index, err)
+					} else {
+						log.Printf("Successfully saved vector at index %d", index)
 					}
 				}
 
 				if end < len(htmlNodes) {
-					log.Println("Waiting for 1 minute before processing next batch of vectors...")
+					log.Printf("Completed batch, waiting 1 minute before next batch. Progress: %d/%d", end, len(htmlNodes))
 					time.Sleep(1 * time.Minute)
 				}
 			}
+			log.Printf("Completed all vector processing for chapter %s", chapterId)
 		})
 
 		return e.Next()
@@ -394,35 +422,73 @@ func main() {
 func parseHTMLIntoNodes(htmlContent string) ([]string, error) {
 	doc, err := html.Parse(strings.NewReader(htmlContent))
 	if err != nil {
+		log.Printf("Failed to parse HTML: %v", err)
 		return nil, err
 	}
 
 	ignoredTags := map[string]bool{
-		"head": true,
-		"meta": true,
-		"link": true,
-		"td":   true,
-		"tr":   true,
+		"head":  true,
+		"meta":  true,
+		"link":  true,
+		"td":    true,
+		"tr":    true,
+		"a":     true,
+		"title": true,
+		"html":  true,
+		"body":  true,
+		"i":     true,
 	}
 
 	var nodes []string
-	var traverse func(*html.Node)
-	traverse = func(n *html.Node) {
+	nodeCount := 0
+
+	var traverse func(*html.Node, int)
+	traverse = func(n *html.Node, depth int) {
 		if n.Type == html.ElementNode {
-			// Skip ignored tags
-			if !ignoredTags[n.Data] {
+			if ignoredTags[n.Data] {
+				for c := n.FirstChild; c != nil; c = c.NextSibling {
+					traverse(c, depth+1)
+				}
+				return
+			}
+
+			hasElementChildren := false
+			for c := n.FirstChild; c != nil; c = c.NextSibling {
+				if c.Type == html.ElementNode && !ignoredTags[c.Data] {
+					hasElementChildren = true
+					break
+				}
+			}
+
+			if !hasElementChildren {
 				var buf strings.Builder
 				html.Render(&buf, n)
 				nodeHTML := buf.String()
-				if strings.TrimSpace(nodeHTML) != "" {
+				trimmed := strings.TrimSpace(nodeHTML)
+
+				if trimmed != "" {
 					nodes = append(nodes, nodeHTML)
+					nodeCount++
+				}
+			} else {
+				for c := n.FirstChild; c != nil; c = c.NextSibling {
+					traverse(c, depth+1)
 				}
 			}
-		}
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			traverse(c)
+		} else if n.Type == html.TextNode {
+			text := strings.TrimSpace(n.Data)
+			if text != "" && len(text) > 10 {
+				nodes = append(nodes, text)
+				nodeCount++
+			}
+		} else {
+			for c := n.FirstChild; c != nil; c = c.NextSibling {
+				traverse(c, depth+1)
+			}
 		}
 	}
-	traverse(doc)
+
+	traverse(doc, 0)
+
 	return nodes, nil
 }

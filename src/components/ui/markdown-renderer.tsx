@@ -17,13 +17,13 @@ export function MarkdownRenderer({ children, onCitationClick }: MarkdownRenderer
     ...COMPONENTS,
     a: ({ href, children, ...props }: any) => {
       const indexes = children.split("-");
-      if (!href && indexes.length === 2 && !isNaN(parseInt(indexes[0])) && !isNaN(parseInt(indexes[1]))) {
+      if (!href && indexes.length === 2 && !isNaN(parseInt(indexes[0]))) {
         const displayIndex = indexes[0];
-        const citationIndex = indexes[1];
+        const textHash = indexes[1];
 
         return (
           <sup
-            onClick={() => onCitationClick(citationIndex)}
+            onClick={() => onCitationClick(textHash)}
             className="text-primary underline underline-offset-2 hover:bg-primary/10 rounded px-1 cursor-pointer"
             {...props}
           >

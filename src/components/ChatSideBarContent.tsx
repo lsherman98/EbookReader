@@ -4,6 +4,8 @@ import { Message } from "./ui/chat-message";
 import { useGetMessagesByChatId } from "@/lib/api/queries";
 import { useAddMessage, useGenerateAIResponse, StructuredChatResponse, Citation } from "@/lib/api/mutations";
 import { handleError } from "@/lib/utils";
+import { useNavigate } from "@tanstack/react-router";
+import { useCitationStore } from "@/lib/stores/citation-store";
 
 const generateTextHash = (text: string): string => {
   let hash = 0;
@@ -27,6 +29,8 @@ export function ChatSideBarContent({
   const [input, setInput] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [citationMap, setCitationMap] = useState<Map<string, Citation>>(new Map());
+  const navigate = useNavigate();
+  const { setCurrentCitation } = useCitationStore();
 
   const { data: messagesData, isPending: isMessagesPending } = useGetMessagesByChatId(selectedChatId);
 
@@ -52,8 +56,7 @@ export function ChatSideBarContent({
         if (message.citations && Array.isArray(message.citations)) {
           message.citations.forEach((citation) => {
             const textHash = generateTextHash(citation.text_snippet);
-            const uniqueKey = `${citation.index}_${textHash}`;
-            newCitationMap.set(uniqueKey, { ...citation, uniqueId: uniqueKey });
+            newCitationMap.set(textHash, { ...citation, id: textHash });
           });
         }
       });
@@ -84,25 +87,99 @@ export function ChatSideBarContent({
     };
   };
 
-  const scrollToCitation = (citationIndex: string) => {
-    console.log(citationMap);
-    console.log("Scrolling to citation:", citationIndex);
-    console.log("Citation", citationMap.get(citationIndex));
+  const goToCitation = (textHash: string) => {
+    const citation = citationMap.get(textHash);
+    if (citation) {
+      setCurrentCitation(undefined);
+      setTimeout(() => {
+        setCurrentCitation(citation);
+      }, 0);
+      navigate({
+        to: "/reader/$bookId",
+        params: { bookId: selectedBookId },
+        search: { chapter: citation.chapter },
+      });
+    }
   };
 
   const processCitationsForDisplay = (content: string, citations: Citation[]): string => {
     let processedContent = content;
-    let displayIndex = 0;
+    const usedCitations = new Set<string>();
 
-    processedContent = processedContent.replace(/\[(\d+)\]/g, (match, citationIndex) => {
-      const matchingCitation = citations.find((c) => c.index === citationIndex);
-      if (matchingCitation) {
-        const textHash = generateTextHash(matchingCitation.text_snippet);
-        const uniqueKey = `${citationIndex}_${textHash}`;
-        displayIndex += 1;
-        return `[${displayIndex}-${uniqueKey}]()`;
+    // Helper function to normalize text for comparison
+    const normalizeText = (text: string): string => {
+      return text
+        .toLowerCase()
+        .replace(/[^\w\s]/g, "") 
+        .replace(/\s+/g, " ") 
+        .trim();
+    };
+
+    const findBestCitation = (quote: string): Citation | null => {
+      const normalizedQuote = normalizeText(quote);
+      let bestMatch: Citation | null = null;
+      let bestScore = 0;
+
+      citations.forEach((citation) => {
+        const normalizedSnippet = normalizeText(citation.text_snippet);
+
+        // Calculate similarity score
+        let score = 0;
+        if (normalizedSnippet === normalizedQuote) {
+          score = 100; // Perfect match
+        } else if (normalizedSnippet.includes(normalizedQuote) || normalizedQuote.includes(normalizedSnippet)) {
+          score = 80; // Contains match
+        } else {
+          // Calculate word overlap
+          const quoteWords = normalizedQuote.split(" ");
+          const snippetWords = normalizedSnippet.split(" ");
+          const intersection = quoteWords.filter((word) => snippetWords.includes(word));
+          score = (intersection.length / Math.max(quoteWords.length, snippetWords.length)) * 60;
+        }
+
+        if (score > bestScore && score > 40) {
+          // Minimum threshold
+          bestScore = score;
+          bestMatch = citation;
+        }
+      });
+
+      return bestMatch;
+    };
+
+    // Process quotes and their citations
+    processedContent = processedContent.replace(/"([^"]+)"(\s*\[(\d+)\])?/g, (_, quote, __, citationIndex) => {
+      const citation = findBestCitation(quote);
+
+      if (citation) {
+        const textHash = generateTextHash(citation.text_snippet);
+        const citationKey = `${citation.index}-${textHash}`;
+
+        usedCitations.add(citationKey);
+        const displayNum = Array.from(usedCitations).indexOf(citationKey) + 1;
+        return `"${quote}"[${displayNum}-${textHash}]()`;
       }
-      return match;
+
+      // If no citation found but there was an existing citation marker, try to match by index
+      if (citationIndex) {
+        const indexBasedCitation = citations.find((c) => c.index === citationIndex);
+        if (indexBasedCitation) {
+          const textHash = generateTextHash(indexBasedCitation.text_snippet);
+          const citationKey = `${indexBasedCitation.index}-${textHash}`;
+
+          usedCitations.add(citationKey);
+          const displayNum = Array.from(usedCitations).indexOf(citationKey) + 1;
+          return `"${quote}"[${displayNum}-${textHash}]()`;
+        }
+      }
+
+      // Return original quote without citation if no match found
+      return `"${quote}"`;
+    });
+
+    // Handle any remaining citation markers that weren't part of quotes
+    processedContent = processedContent.replace(/\[(\d+)\]/g, () => {
+      return "";
     });
 
     return processedContent;
@@ -113,12 +190,10 @@ export function ChatSideBarContent({
       const newMap = new Map(prevMap);
       citations.forEach((citation) => {
         const textHash = generateTextHash(citation.text_snippet);
-        const uniqueKey = `${citation.index}_${textHash}`;
-        newMap.set(uniqueKey, { ...citation, uniqueId: uniqueKey });
+        newMap.set(textHash, { ...citation, id: textHash });
       });
       return newMap;
     });
-
     return answer;
   };
 
@@ -167,7 +242,7 @@ export function ChatSideBarContent({
 
     data = await addMessageMutation.mutateAsync({
       chatId: selectedChatId,
-      content: originalContent, // Store original content
+      content: originalContent,
       role: "assistant",
       parts: structuredResponse.parts,
     });
@@ -180,7 +255,7 @@ export function ChatSideBarContent({
 
     message = createMessageObject({
       ...data,
-      content: processedContentForDisplay, 
+      content: processedContentForDisplay,
       citations: data.citations as Citation[] | null,
     });
     setMessages((prev) => [...prev, message]);
@@ -196,7 +271,7 @@ export function ChatSideBarContent({
         isGenerating={generateAiResponseMutation.isPending}
         setMessages={setMessages}
         className="overflow-y-auto"
-        onCitationClick={scrollToCitation}
+        onCitationClick={goToCitation}
       />
     </div>
   );
