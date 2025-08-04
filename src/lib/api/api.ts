@@ -3,7 +3,7 @@ import { pb } from "../pocketbase";
 import { BooksResponse, ChaptersResponse, ChatsResponse, Collections, MessagesResponse } from "../pocketbase-types";
 import { FileUploadObj } from "@/pages/_app/upload.lazy";
 import { getUserId, handleError } from "../utils";
-import { Citation } from "./mutations";
+import { Citation } from "../types";
 
 export const getBooks = async (page: number, limit: number) => {
     if (!getUserId()) return
@@ -86,13 +86,13 @@ export const getMessagesByChatId = async (chatId?: string) => {
     return await pb.collection(Collections.Chats).getOne<ChatsResponse<ExpandMessages>>(chatId, { expand: "messages" });
 }
 
-export const addMessage = async (chatId: string, content: string, role: "user" | "assistant", parts: Citation[] | null) => {
+export const addMessage = async (chatId: string, content: string, role: "user" | "assistant", citations: Citation[] | null) => {
     const userId = getUserId();
     if (!userId) {
         return
     }
 
-    return await pb.collection(Collections.Messages).create({ chat: chatId, content, role, user: userId, citations: parts });
+    return await pb.collection(Collections.Messages).create({ chat: chatId, content, role, user: userId, citations });
 }
 
 export const getChats = async (bookId?: string) => {

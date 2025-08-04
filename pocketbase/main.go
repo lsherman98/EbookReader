@@ -211,7 +211,7 @@ func main() {
 			e.JSON(http.StatusOK, ChatResponse{
 				Content: structuredResponse.Answer,
 				Role:    "assistant",
-				Parts:   structuredResponse.Citations,
+				Citations:   structuredResponse.Citations,
 			})
 
 			return nil

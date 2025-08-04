@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Citation } from '@/lib/api/mutations';
+import { Citation } from '../types';
 
 interface CitationStore {
     currentCitation: Citation | undefined;

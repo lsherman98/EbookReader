@@ -3,6 +3,7 @@ import { addChat, addMessage, deleteBook, deleteChat, downloadBook, generateAiRe
 import { handleError } from "../utils";
 import { Message } from "@/components/ui/chat-message";
 import { FileUploadObj } from "@/pages/_app/upload.lazy";
+import { Citation } from "../types";
 
 export function useUploadBook() {
     const queryClient = useQueryClient();
@@ -61,7 +62,7 @@ export function useAddMessage() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ chatId, content, role, parts }: { chatId: string; content: string; role: "user" | "assistant", parts: Citation[] | null }) => addMessage(chatId, content, role, parts),
+        mutationFn: ({ chatId, content, role, citations }: { chatId: string; content: string; role: "user" | "assistant", citations: Citation[] | null }) => addMessage(chatId, content, role, citations),
         onError: handleError,
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['messages'] });
@@ -105,18 +106,7 @@ export function useDeleteChat() {
     })
 }
 
-export interface Citation {
-    text_snippet: string;
-    index: string;
-    chapter: string;
-    id?: string;
-}
 
-export interface StructuredChatResponse {
-    role: "assistant";
-    content: string;
-    parts: Citation[];
-}
 
 export function useGenerateAIResponse() {
     return useMutation({

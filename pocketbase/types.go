@@ -13,15 +13,15 @@ type ChatMessage struct {
 }
 
 type ChatResponse struct {
-	Content string     `json:"content"`
-	Role    string     `json:"role"`
-	Parts   []Citation `json:"parts"`
+	Content   string     `json:"content"`
+	Role      string     `json:"role"`
+	Citations []Citation `json:"citations"`
 }
 
 type Citation struct {
-	TextSnippet string `json:"text_snippet"`
-	Index       string `json:"index"`
-	Chapter     string `json:"chapter"`
+	Text    string `json:"text"`
+	Index   string `json:"index"`
+	Chapter string `json:"chapter"`
 }
 
 type StructuredChatResponse struct {
