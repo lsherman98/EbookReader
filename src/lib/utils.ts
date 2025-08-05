@@ -49,6 +49,7 @@ export function getUserId(msg: string = 'User is not logged in'): string | null 
 }
 
 export const normalizeText = (text: string, forCitation: boolean = false): string => {
+  if (!text) return '';
   let normalized = text.toLowerCase().replace(/\s+/g, " ")
 
   if (forCitation) {
@@ -61,6 +62,7 @@ export const normalizeText = (text: string, forCitation: boolean = false): strin
 };
 
 export function generateTextHash(text: string): string {
+  if (!text) return '';
   let hash = 0;
   for (let i = 0; i < text.length; i++) {
     const char = text.charCodeAt(i);
@@ -162,7 +164,7 @@ export function processMessagesWithCitations(messages: Message[]): Message[] {
   });
 }
 
-export const createMessageObject = (data: {
+export const createMessageObj = (data: {
   content: string;
   role: "user" | "assistant";
   id: string;

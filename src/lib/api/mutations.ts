@@ -1,7 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { addChat, addMessage, deleteBook, deleteChat, downloadBook, generateAiResponse, setLastReadBook, setLastReadChapter, updateBook, updateChat, uploadBook } from "./api";
+import { addChat, addMessage, deleteBook, deleteChat, downloadBook, generateAIResponse, updateBook, updateChapter, updateChat, uploadBook } from "./api";
 import { handleError } from "../utils";
-import { Message } from "@/components/ui/chat-message";
 import { FileUploadObj } from "@/pages/_app/upload.lazy";
 import { Citation } from "../types";
 
@@ -25,6 +24,18 @@ export function useUpdateBook() {
         onError: handleError,
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['books'] });
+        }
+    })
+}
+
+export function useUpdateChapter() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ chapterId, content }: { chapterId: string, content?: string }) => updateChapter(chapterId, content),
+        onError: handleError,
+        onSuccess: async (data) => {
+            await queryClient.invalidateQueries({ queryKey: ['chapter', data?.id] });
         }
     })
 }
@@ -62,7 +73,7 @@ export function useAddMessage() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ chatId, content, role, citations }: { chatId: string; content: string; role: "user" | "assistant", citations: Citation[] | null }) => addMessage(chatId, content, role, citations),
+        mutationFn: ({ chatId, content, role, citations = null }: { chatId: string; content: string; role: "user" | "assistant", citations?: Citation[] | null }) => addMessage(chatId, content, role, citations),
         onError: handleError,
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['messages'] });
@@ -106,30 +117,9 @@ export function useDeleteChat() {
     })
 }
 
-
-
 export function useGenerateAIResponse() {
     return useMutation({
-        mutationFn: ({ messages, bookId, chatId, chapterId }: { messages: Message[], bookId: string, chatId: string, chapterId?: string }) => generateAiResponse(messages, bookId, chatId, chapterId),
+        mutationFn: ({ bookId, chatId, chapterId }: { bookId: string, chatId: string, chapterId?: string }) => generateAIResponse(bookId, chatId, chapterId),
         onError: handleError,
     })
-}
-
-export function useSetLastReadBook() {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: (bookId: string) => setLastReadBook(bookId),
-        onError: handleError,
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ['lastReadBook'] });
-        }
-    });
-}
-
-export function useSetLastReadChapter() {
-    return useMutation({
-        mutationFn: ({ bookId, chapterId }: { bookId: string, chapterId: string }) => setLastReadChapter(bookId, chapterId),
-        onError: handleError,
-    });
 }

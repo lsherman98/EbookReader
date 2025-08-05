@@ -103,13 +103,11 @@ export type BooksRecord = {
 	chats?: RecordIdString[]
 	cover_image?: string
 	created?: IsoDateString
-	current_chapter?: RecordIdString
 	date?: string
 	description?: string
 	file: string
 	id: string
 	langauge?: string
-	reading_progress?: number
 	subject?: string
 	title?: string
 	updated?: IsoDateString
@@ -140,6 +138,7 @@ export type ChatsRecord = {
 
 export type LastReadRecord = {
 	book?: RecordIdString
+	chapter?: RecordIdString
 	created?: IsoDateString
 	id: string
 	updated?: IsoDateString

@@ -13,8 +13,10 @@ import { BasicMarksKit } from "@/components/editor/plugins/basic-marks-kit";
 import { FloatingToolbarKit } from "@/components/editor/plugins/floating-toolbar-kit";
 import { DisableTextInput } from "@/components/editor/plugins/disable-text-input";
 import { useCitationStore } from "@/lib/stores/citation-store";
-import { Node } from "platejs";
+import { createStaticEditor, Node, serializeHtml, Value } from "platejs";
 import { removeExistingHighlights, highlightCitationInElement } from "@/lib/utils";
+import { BaseEditorKit } from "@/components/editor/plugins/editor-base-kit";
+import { useUpdateChapter } from "@/lib/api/mutations";
 
 export const Route = createFileRoute("/_app/reader/$bookId")({
   component: Index,
@@ -30,13 +32,17 @@ function Index() {
   const search = Route.useSearch();
   const navigate = useNavigate();
 
-  const [htmlString, setHtmlString] = useState<string>("");
   const [chapterId, setChapterId] = useState<string>("");
   const [chapters, setChapters] = useState<ChaptersRecord[]>([]);
 
   const { data: lastReadBook } = useGetLastReadBook();
   const { data: book } = useGetBookById(bookId && bookId !== "undefined" ? bookId : lastReadBook?.book || "");
   const { data: chapter } = useGetChapterById(chapterId);
+
+  const handleChapterClick = (chapterId: string) => {
+    setChapterId(chapterId);
+    navigateTo(bookId, chapterId, false);
+  };
 
   const navigateTo = useCallback(
     (bookId: string, chapterId: string | undefined, replace: boolean) => {
@@ -51,37 +57,24 @@ function Index() {
   );
 
   useEffect(() => {
-    if (book) setChapters(book.expand.chapters);
+    if (!book) return;
+    setChapters(book.expand.chapters);
   }, [book]);
 
   useEffect(() => {
-    if (chapter) {
-      setHtmlString(chapter.content || "<p>Loading...</p>");
-    }
-  }, [chapter]);
-
-  useEffect(() => {
     if ((!bookId || bookId === "undefined") && lastReadBook?.book) {
-      navigateTo(lastReadBook.book, undefined, false);
+      navigateTo(lastReadBook.book, lastReadBook.chapter, false);
+      return;
     }
-  }, [bookId, lastReadBook?.book, navigate, navigateTo]);
 
-  useEffect(() => {
-    const chapterId = search.chapter || book?.current_chapter || book?.chapters?.[0];
-
-    if (chapterId) {
-      setChapterId(chapterId);
-
-      if (!search.chapter) {
-        navigateTo(bookId, chapterId, true);
-      }
-    }
-  }, [book, search.chapter, navigateTo, bookId]);
-
-  const handleChapterClick = (chapterId: string) => {
+    const chapterId = search.chapter || lastReadBook?.chapter || book?.chapters?.[0];
+    if (!chapterId) return;
     setChapterId(chapterId);
-    navigateTo(bookId, chapterId, false);
-  };
+
+    if (!search.chapter) {
+      navigateTo(bookId, chapterId, true);
+    }
+  }, [bookId, lastReadBook, book, search.chapter, navigateTo]);
 
   return (
     <div className="h-full w-full flex">
@@ -108,33 +101,52 @@ function Index() {
         </Popover>
       </div>
       <PlateController>
-        <PlateEditor htmlString={htmlString} bookId={bookId} chapterId={chapterId} />
+        <PlateEditor bookId={bookId} chapter={chapter} />
       </PlateController>
     </div>
   );
 }
 
-function PlateEditor({
-  htmlString = "",
-  bookId,
-  chapterId,
-}: {
-  htmlString?: string;
-  bookId: string;
-  chapterId: string;
-}) {
+function PlateEditor({ bookId, chapter }: { bookId: string; chapter?: ChaptersRecord }) {
+  const [htmlString, setHtmlString] = useState<string>("");
+
+  const { currentCitation, setCurrentCitation } = useCitationStore();
+  const updateChapterMutation = useUpdateChapter();
+
   const editor = usePlateEditor({
     plugins: [...BasicBlocksKit, ...BasicMarksKit, DisableTextInput, ...FloatingToolbarKit],
   });
 
-  const { currentCitation, setCurrentCitation } = useCitationStore();
+  const staticEditor = createStaticEditor({
+    plugins: BaseEditorKit,
+  });
+
+  const handleValueChange = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async (value: any) => {
+      if (!chapter) return;
+      if (value && value.editor.selection) {
+        const html = await serializeHtml(staticEditor, {
+          props: { value: value.value as Value },
+        });
+        setHtmlString(html);
+        updateChapterMutation.mutateAsync({ chapterId: chapter.id, content: html });
+      }
+    },
+    [chapter, staticEditor, updateChapterMutation],
+  );
 
   useEffect(() => {
     if (!editor || !htmlString) return;
     const value = editor.api.html.deserialize({ element: htmlString });
-    // @ts-expect-error ignore
-    editor.tf.setValue(value);
-  }, [editor, htmlString]);
+    editor.tf.setValue(value as Value);
+    staticEditor.tf.setValue(value as Value);
+  }, [editor, htmlString, staticEditor.tf]);
+
+  useEffect(() => {
+    if (!chapter) return;
+    setHtmlString(chapter.content || "<p>Loading...</p>");
+  }, [chapter]);
 
   useEffect(() => {
     if (!editor || !currentCitation) return;
@@ -144,20 +156,14 @@ function PlateEditor({
 
     const elementId = node?.id;
     const element = document.querySelector(`[data-block-id="${elementId}"]`);
+    if (!element) return;
 
-    if (element) {
-      removeExistingHighlights();
-
-      const cleanup = highlightCitationInElement(element, currentCitation.text, () =>
-        setCurrentCitation(undefined),
-      );
-
-      return cleanup || undefined;
-    }
-  }, [editor, htmlString, bookId, chapterId, currentCitation, setCurrentCitation]);
+    removeExistingHighlights();
+    return highlightCitationInElement(element, currentCitation.text, () => setCurrentCitation(undefined)) || undefined;
+  }, [editor, htmlString, bookId, chapter, currentCitation, setCurrentCitation]);
 
   return (
-    <Plate editor={editor}>
+    <Plate editor={editor} onValueChange={handleValueChange}>
       <EditorContainer className="h-full w-full max-h-[calc(100vh-50px)] overflow-hidden caret-transparent">
         <Editor />
       </EditorContainer>

@@ -9,11 +9,11 @@ import {
   processCitationsForDisplay,
   processMessagesWithCitations,
   buildCitationMap,
-  createMessageObject,
+  createMessageObj,
 } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 import { useCitationStore } from "@/lib/stores/citation-store";
-import { Citation, StructuredChatResponse } from "@/lib/types";
+import { AIChatResponse, Citation } from "@/lib/types";
 
 export function ChatSideBarContent({
   selectedBookId,
@@ -84,64 +84,49 @@ export function ChatSideBarContent({
   const handleSubmit = async (event?: { preventDefault?: () => void }) => {
     event?.preventDefault?.();
     if (!input || !selectedChatId) return;
-
     setInput("");
 
-    let data = await addMessageMutation.mutateAsync({
+    const msgData = await addMessageMutation.mutateAsync({
       chatId: selectedChatId,
       content: input,
       role: "user",
-      citations: null,
     });
 
-    if (!data) {
-      handleError(new Error("Failed to add message"));
-      return;
+    if (addMessageMutation.isError || !msgData) {
+      return handleError(addMessageMutation.error || new Error("Failed to add message"));
     }
 
-    let message = createMessageObject({
-      ...data,
-      citations: data.citations as Citation[] | null,
-    });
+    setMessages((prev) => [
+      ...prev,
+      createMessageObj({
+        ...msgData,
+        citations: msgData.citations as Citation[],
+      }),
+    ]);
 
-    const updatedMessages = [...messages, message];
-    setMessages(updatedMessages);
-
-    const aiResponse = await generateAIResponseMutation.mutateAsync({
-      messages: updatedMessages,
+    const AIResponse = await generateAIResponseMutation.mutateAsync({
       chatId: selectedChatId,
       bookId: selectedBookId,
       chapterId: selectedChapterId,
     });
 
-    if (!aiResponse) {
-      handleError(new Error("Failed to generate AI response"));
-      return;
+    if (generateAIResponseMutation.isError || !AIResponse) {
+      return handleError(generateAIResponseMutation.error || new Error("Failed to generate AI response"));
     }
 
-    const structuredResponse = aiResponse as StructuredChatResponse;
-    const originalContent = structuredResponse.content;
-    processCitations(originalContent, structuredResponse.citations);
+    const AIChatResponse = AIResponse as AIChatResponse;
+    processCitations(AIChatResponse.content, AIChatResponse.citations);
 
-    data = await addMessageMutation.mutateAsync({
-      chatId: selectedChatId,
-      content: originalContent,
-      role: "assistant",
-      citations: structuredResponse.citations,
-    });
-
-    if (!data) {
-      handleError(new Error("Failed to add AI response message"));
-      return;
-    }
-
-    const processedContentForDisplay = processCitationsForDisplay(originalContent, structuredResponse.citations);
-    message = createMessageObject({
-      ...data,
-      content: processedContentForDisplay,
-      citations: data.citations as Citation[] | null,
-    });
-    setMessages((prev) => [...prev, message]);
+    setMessages((prev) => [
+      ...prev,
+      createMessageObj({
+        role: "assistant",
+        created: AIChatResponse.created,
+        id: AIChatResponse.id,
+        content: processCitationsForDisplay(AIChatResponse.content, AIChatResponse.citations),
+        citations: AIChatResponse.citations,
+      }),
+    ]);
   };
 
   return (

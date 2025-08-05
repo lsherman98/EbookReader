@@ -132,9 +132,19 @@ func main() {
 				return e.BadRequestError("Failed to read request data", err)
 			}
 
-			lastMessage := data.Messages[len(data.Messages)-1]
+			messages, err := e.App.FindRecordsByFilter("messages", "chat = {:chatId}", "created", 0, 0, dbx.Params{"chatId": data.ChatID})
+			if err != nil {
+				return e.InternalServerError("Failed to find messages", err)
+			}
 
-			searchResults, err := vector_search.Search(app, "", lastMessage.Content, data.BookID, data.ChapterID, 5)
+			if len(messages) == 0 {
+				return e.BadRequestError("No messages found for the specified chat", nil)
+			}
+
+			lastMessage := messages[len(messages)-1]
+			e.App.Logger().Info("Last message content", "content", lastMessage.GetString("content"))
+
+			searchResults, err := vector_search.Search(app, "", lastMessage.GetString("content"), data.BookID, data.ChapterID, 5)
 			if err != nil {
 				return e.InternalServerError("Failed to search vectors", err)
 			}
@@ -157,17 +167,17 @@ func main() {
 				}
 			}
 
-			content := make([]llms.MessageContent, 0, len(data.Messages)+1)
+			content := make([]llms.MessageContent, 0, len(messages)+1)
 			if contextBuilder.Len() > 0 {
 				content = append(content, llms.TextParts(llms.ChatMessageTypeSystem, contextBuilder.String()))
 			}
 
-			for _, msg := range data.Messages {
+			for _, msg := range messages {
 				messageType := llms.ChatMessageTypeAI
-				if msg.Role == "user" {
+				if msg.GetString("role") == "user" {
 					messageType = llms.ChatMessageTypeHuman
 				}
-				content = append(content, llms.TextParts(messageType, msg.Content))
+				content = append(content, llms.TextParts(messageType, msg.GetString("content")))
 			}
 
 			completion, err := OpenAI4oStructured.GenerateContent(ctx, content, llms.WithStreamingFunc(func(streamCtx context.Context, chunk []byte) error {
@@ -183,17 +193,14 @@ func main() {
 				return e.InternalServerError("Failed to parse structured response", err)
 			}
 
-			// Validate that all bracket citations in the answer have corresponding entries in citations array
 			citationRegex := regexp.MustCompile(`\[(\d+)\]`)
 			citationsInText := citationRegex.FindAllStringSubmatch(structuredResponse.Answer, -1)
 
-			// Create a map of citation indices from the citations array
 			citationMap := make(map[string]bool)
 			for _, citation := range structuredResponse.Citations {
 				citationMap[citation.Index] = true
 			}
 
-			// Check if all bracket citations have corresponding entries
 			var missingCitations []string
 			for _, match := range citationsInText {
 				if len(match) > 1 {
@@ -208,10 +215,26 @@ func main() {
 				return e.InternalServerError(fmt.Sprintf("Response contains bracket citations %v that are missing from citations array. Every bracket citation must have a corresponding entry in the citations array with the quoted text.", missingCitations), nil)
 			}
 
+			messagesCollection, err := e.App.FindCollectionByNameOrId("messages")
+			if err != nil {
+				return e.InternalServerError("Failed to find messages collection", err)
+			}
+
+			newMessage := core.NewRecord(messagesCollection)
+			newMessage.Set("chat", data.ChatID)
+			newMessage.Set("role", "assistant")
+			newMessage.Set("content", structuredResponse.Answer)
+			newMessage.Set("citations", structuredResponse.Citations)
+			newMessage.Set("user", e.Auth.Id)
+			if err := app.Save(newMessage); err != nil {
+				return e.InternalServerError("Failed to save new message", err)
+			}
+
 			e.JSON(http.StatusOK, ChatResponse{
-				Content: structuredResponse.Answer,
-				Role:    "assistant",
-				Citations:   structuredResponse.Citations,
+				Content:   structuredResponse.Answer,
+				Citations: structuredResponse.Citations,
+				MessageId: newMessage.Id,
+				Created:   newMessage.GetDateTime("created").String(),
 			})
 
 			return nil
@@ -241,26 +264,26 @@ func main() {
 		userID := bookRecord.GetString("user")
 		bookID := bookRecord.Id
 
-		lastRecord, _ := app.FindFirstRecordByData("last_read", "user", userID)
+		lastRecord, _ := e.App.FindFirstRecordByData("last_read", "user", userID)
 		if lastRecord == nil {
-			lastReadCollection, err := app.FindCollectionByNameOrId("last_read")
+			lastReadCollection, err := e.App.FindCollectionByNameOrId("last_read")
 			if err != nil {
 				return err
 			}
 			lastRecord = core.NewRecord(lastReadCollection)
 			lastRecord.Set("user", userID)
 			lastRecord.Set("book", bookID)
-			if err := app.Save(lastRecord); err != nil {
+			if err := e.App.Save(lastRecord); err != nil {
 				return err
 			}
 		}
 
-		chatsCollection, err := app.FindCollectionByNameOrId("chats")
+		chatsCollection, err := e.App.FindCollectionByNameOrId("chats")
 		if err != nil {
 			return err
 		}
 
-		chaptersCollection, err := app.FindCollectionByNameOrId("chapters")
+		chaptersCollection, err := e.App.FindCollectionByNameOrId("chapters")
 		if err != nil {
 			return err
 		}
@@ -270,13 +293,13 @@ func main() {
 		chatRecord.Set("book", bookID)
 		chatRecord.Set("title", "New Chat")
 
-		if err := app.Save(chatRecord); err != nil {
+		if err := e.App.Save(chatRecord); err != nil {
 			return err
 		}
 
 		fileKey := bookRecord.BaseFilesPath() + "/" + bookRecord.GetString("file")
 
-		fsys, err := app.NewFilesystem()
+		fsys, err := e.App.NewFilesystem()
 		if err != nil {
 			return err
 		}
@@ -339,7 +362,7 @@ func main() {
 				records = append(records, chapterRecord)
 			}
 
-			err := app.RunInTransaction(func(txApp core.App) error {
+			err := e.App.RunInTransaction(func(txApp core.App) error {
 				for _, record := range records {
 					if err := txApp.Save(record); err != nil {
 						return err
@@ -358,7 +381,7 @@ func main() {
 			bookRecord.Set("available", true)
 			bookRecord.Set("current_chapter", chapterRecordsIds[0])
 
-			if err := app.Save(bookRecord); err != nil {
+			if err := e.App.Save(bookRecord); err != nil {
 				log.Println("Failed to update book record:", err)
 			}
 		})
@@ -367,7 +390,7 @@ func main() {
 	})
 
 	app.OnRecordAfterCreateSuccess("chapters").BindFunc(func(e *core.RecordEvent) error {
-		vectorCollection, err := app.FindCollectionByNameOrId("vectors")
+		vectorCollection, err := e.App.FindCollectionByNameOrId("vectors")
 		if err != nil {
 			return err
 		}
@@ -396,7 +419,7 @@ func main() {
 					vector.Set("chapter", chapterId)
 					vector.Set("book", bookId)
 					vector.Set("index", index)
-					if err := app.Save(vector); err != nil {
+					if err := e.App.Save(vector); err != nil {
 						log.Printf("Failed to save vector at index %d: %v", index, err)
 					} else {
 						log.Printf("Successfully saved vector at index %d", index)
@@ -410,6 +433,68 @@ func main() {
 			}
 			log.Printf("Completed all vector processing for chapter %s", chapterId)
 		})
+
+		return e.Next()
+	})
+
+	app.OnRecordViewRequest("books").BindFunc(func(e *core.RecordRequestEvent) error {
+		if e.Auth == nil {
+			return e.Next()
+		}
+
+		userID := e.Auth.Id
+		bookID := e.Record.Id
+
+		lastReadRecord, err := e.App.FindFirstRecordByData("last_read", "user", userID)
+		if err != nil || lastReadRecord == nil {
+			lastReadCollection, err := e.App.FindCollectionByNameOrId("last_read")
+			if err != nil {
+				return e.Next()
+			}
+			lastReadRecord = core.NewRecord(lastReadCollection)
+			lastReadRecord.Set("user", userID)
+			lastReadRecord.Set("book", bookID)
+			e.App.Save(lastReadRecord)
+		} else {
+			lastReadRecord.Set("book", bookID)
+			currentChapter := lastReadRecord.GetString("chapter")
+			if currentChapter != "" {
+				chapterRecord, err := e.App.FindRecordById("chapters", currentChapter)
+				if err != nil || chapterRecord.GetString("book") != bookID {
+					lastReadRecord.Set("chapter", "")
+				}
+			}
+			e.App.Save(lastReadRecord)
+		}
+
+		return e.Next()
+	})
+
+	app.OnRecordViewRequest("chapters").BindFunc(func(e *core.RecordRequestEvent) error {
+		if e.Auth == nil {
+			return e.Next()
+		}
+
+		userID := e.Auth.Id
+		chapterID := e.Record.Id
+		bookID := e.Record.GetString("book")
+
+		lastRecord, err := e.App.FindFirstRecordByData("last_read", "user", userID)
+		if err != nil || lastRecord == nil {
+			lastReadCollection, err := e.App.FindCollectionByNameOrId("last_read")
+			if err != nil {
+				return e.Next()
+			}
+			lastRecord = core.NewRecord(lastReadCollection)
+			lastRecord.Set("user", userID)
+			lastRecord.Set("book", bookID)
+			lastRecord.Set("chapter", chapterID)
+			e.App.Save(lastRecord)
+		} else {
+			lastRecord.Set("book", bookID)
+			lastRecord.Set("chapter", chapterID)
+			e.App.Save(lastRecord)
+		}
 
 		return e.Next()
 	})

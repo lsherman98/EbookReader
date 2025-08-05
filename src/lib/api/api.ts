@@ -1,9 +1,8 @@
-import { Message } from "@/components/ui/chat-message";
 import { pb } from "../pocketbase";
-import { BooksResponse, ChaptersResponse, ChatsResponse, Collections, MessagesResponse } from "../pocketbase-types";
+import { BooksResponse, ChatsResponse, Collections } from "../pocketbase-types";
 import { FileUploadObj } from "@/pages/_app/upload.lazy";
 import { getUserId, handleError } from "../utils";
-import { Citation } from "../types";
+import { Citation, ExpandChapters, ExpandMessages, UploadFileRequest } from "../types";
 
 export const getBooks = async (page: number, limit: number) => {
     if (!getUserId()) return
@@ -80,6 +79,12 @@ export const getChapterById = async (chapterId: string) => {
     return await pb.collection(Collections.Chapters).getOne(chapterId);
 }
 
+export const updateChapter = async (chapterId: string, content?: string) => {
+    if (!getUserId()) return
+
+    return await pb.collection(Collections.Chapters).update(chapterId, { content });
+}
+
 export const getMessagesByChatId = async (chatId?: string) => {
     if (!getUserId() || !chatId) return
 
@@ -142,19 +147,18 @@ export const deleteChat = async (chatId: string, bookId: string) => {
     return await pb.collection(Collections.Chats).delete(chatId);
 }
 
-export const generateAiResponse = async (messages: Message[]
-    , bookId: string
-    , chatId: string
-    , chapterId?: string
+export const generateAIResponse = async (
+    bookId: string,
+    chatId: string,
+    chapterId?: string
 ) => {
     if (!getUserId()) return
     return await pb.send('/chat', {
         method: 'POST',
         body: {
-            messages,
             bookId,
+            chatId,
             chapterId,
-            chatId
         }
     });
 }
@@ -162,41 +166,4 @@ export const generateAiResponse = async (messages: Message[]
 export const getLastReadBook = async () => {
     if (!getUserId()) return
     return await pb.collection(Collections.LastRead).getFirstListItem(`user="${getUserId()}"`);
-}
-
-export const setLastReadBook = async (bookId: string) => {
-    const userId = getUserId();
-    if (!userId) return;
-
-    const record = await pb.collection(Collections.LastRead).getFirstListItem(`user="${userId}"`);
-    if (record) {
-        return await pb.collection(Collections.LastRead).update(record.id, {
-            book: bookId,
-        });
-    }
-    return await pb.collection(Collections.LastRead).create({
-        user: userId,
-        book: bookId,
-    });
-}
-
-export const setLastReadChapter = async (bookId: string, chapterId: string) => {
-    if (!getUserId()) return
-    return await pb.collection(Collections.Books).update(bookId, {
-        current_chapter: chapterId,
-    });
-}
-
-type ExpandMessages = {
-    messages: MessagesResponse[]
-}
-
-type ExpandChapters = {
-    chapters: ChaptersResponse[]
-}
-
-type UploadFileRequest = {
-    user: string;
-    file: File;
-    cover_image?: File;
 }
