@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import * as React from 'react';
+import * as React from "react";
 
-import { useMarkToolbarButton, useMarkToolbarButtonState } from 'platejs/react';
+import { useMarkToolbarButton, useMarkToolbarButtonState } from "platejs/react";
 
-import { ToolbarButton } from './toolbar';
+import { ToolbarButton } from "./toolbar";
 
 export function MarkToolbarButton({
   clear,
@@ -17,5 +17,11 @@ export function MarkToolbarButton({
   const state = useMarkToolbarButtonState({ clear, nodeType });
   const { props: buttonProps } = useMarkToolbarButton(state);
 
-  return <ToolbarButton {...props} {...buttonProps} />;
+  const handleToolBarButtonClick: React.MouseEventHandler<HTMLButtonElement> = () => {
+    if (nodeType === "highlight") {
+      window.dispatchEvent(new CustomEvent("highlight-clicked"));
+    }
+  };
+
+  return <ToolbarButton {...props} {...buttonProps} onClick={handleToolBarButtonClick} />;
 }

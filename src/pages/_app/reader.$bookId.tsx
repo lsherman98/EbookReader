@@ -13,7 +13,7 @@ import { BasicMarksKit } from "@/components/editor/plugins/basic-marks-kit";
 import { FloatingToolbarKit } from "@/components/editor/plugins/floating-toolbar-kit";
 import { DisableTextInput } from "@/components/editor/plugins/disable-text-input";
 import { useCitationStore } from "@/lib/stores/citation-store";
-import { createStaticEditor, Node, serializeHtml, Value } from "platejs";
+import { createStaticEditor, Node, Range, serializeHtml, Value } from "platejs";
 import { removeExistingHighlights, highlightCitationInElement } from "@/lib/utils";
 import { BaseEditorKit } from "@/components/editor/plugins/editor-base-kit";
 import { useUpdateChapter } from "@/lib/api/mutations";
@@ -101,14 +101,15 @@ function Index() {
         </Popover>
       </div>
       <PlateController>
-        <PlateEditor bookId={bookId} chapter={chapter} />
+        <PlateEditor chapter={chapter} />
       </PlateController>
     </div>
   );
 }
 
-function PlateEditor({ bookId, chapter }: { bookId: string; chapter?: ChaptersRecord }) {
+function PlateEditor({ chapter }: { chapter?: ChaptersRecord }) {
   const [htmlString, setHtmlString] = useState<string>("");
+  const [currentSelection, setCurrentSelection] = useState<Range | null>(null);
 
   const { currentCitation, setCurrentCitation } = useCitationStore();
   const updateChapterMutation = useUpdateChapter();
@@ -128,6 +129,7 @@ function PlateEditor({ bookId, chapter }: { bookId: string; chapter?: ChaptersRe
       if (value && value.editor.selection) {
         const html = await serializeHtml(staticEditor, {
           props: { value: value.value as Value },
+          stripDataAttributes: true,
         });
         setHtmlString(html);
         updateChapterMutation.mutateAsync({ chapterId: chapter.id, content: html });
@@ -135,6 +137,22 @@ function PlateEditor({ bookId, chapter }: { bookId: string; chapter?: ChaptersRe
     },
     [chapter, staticEditor, updateChapterMutation],
   );
+
+  useEffect(() => {
+    const handleHighlightClicked = () => {
+      console.log("Highlight clicked event received in PlateEditor");
+      console.log("Current selection:", currentSelection);
+    };
+    window.addEventListener("highlight-clicked", handleHighlightClicked);
+    return () => {
+      window.removeEventListener("highlight-clicked", handleHighlightClicked);
+    };
+  }, [currentSelection]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleSelectionChange = useCallback((event: any) => {
+    setCurrentSelection(event.range as Range);
+  }, []);
 
   useEffect(() => {
     if (!editor || !htmlString) return;
@@ -149,21 +167,30 @@ function PlateEditor({ bookId, chapter }: { bookId: string; chapter?: ChaptersRe
   }, [chapter]);
 
   useEffect(() => {
-    if (!editor || !currentCitation) return;
+    if (!currentCitation || !htmlString || !editor) return;
 
-    const node: Node = editor.children[parseInt(currentCitation.index)];
-    // editor.tf.select(node);
+    const timer = setTimeout(() => {
+      const node: Node = editor.children[parseInt(currentCitation.index)];
+      // editor.tf.select(node);
 
-    const elementId = node?.id;
-    const element = document.querySelector(`[data-block-id="${elementId}"]`);
-    if (!element) return;
+      const elementId = node?.id;
+      const element = document.querySelector(`[data-block-id="${elementId}"]`);
+      if (!element) {
+        console.log("Element not found for citation:", currentCitation.index, elementId);
+        return;
+      }
 
-    removeExistingHighlights();
-    return highlightCitationInElement(element, currentCitation.text, () => setCurrentCitation(undefined)) || undefined;
-  }, [editor, htmlString, bookId, chapter, currentCitation, setCurrentCitation]);
+      removeExistingHighlights();
+      const cleanup = highlightCitationInElement(element, currentCitation.quote, () => setCurrentCitation(undefined));
+
+      return cleanup;
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [currentCitation, editor.children, setCurrentCitation, htmlString, editor]);
 
   return (
-    <Plate editor={editor} onValueChange={handleValueChange}>
+    <Plate editor={editor} onValueChange={handleValueChange} onSelectionChange={handleSelectionChange}>
       <EditorContainer className="h-full w-full max-h-[calc(100vh-50px)] overflow-hidden caret-transparent">
         <Editor />
       </EditorContainer>

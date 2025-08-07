@@ -1,9 +1,15 @@
-package main
+package chat
 
 type ChatRequest struct {
 	BookID    string `json:"bookId,omitempty"`
 	ChapterID string `json:"chapterId,omitempty"`
 	ChatID    string `json:"chatId,omitempty"`
+}
+
+type Citation struct {
+	Quote   string `json:"quote"`
+	Index   string `json:"index"`
+	Chapter string `json:"chapter"`
 }
 
 type ChatMessage struct {
@@ -13,16 +19,9 @@ type ChatMessage struct {
 
 type ChatResponse struct {
 	Content   string     `json:"content"`
-	Role      string     `json:"role"`
 	Citations []Citation `json:"citations"`
 	MessageId string     `json:"messageId"`
 	Created   string     `json:"created"`
-}
-
-type Citation struct {
-	Text    string `json:"text"`
-	Index   string `json:"index"`
-	Chapter string `json:"chapter"`
 }
 
 type StructuredChatResponse struct {

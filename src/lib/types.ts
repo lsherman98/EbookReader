@@ -1,7 +1,7 @@
 import { ChaptersResponse, MessagesResponse } from "./pocketbase-types";
 
 export interface Citation {
-    text: string;
+    quote: string;
     index: string;
     chapter: string;
     id?: string;
@@ -11,7 +11,7 @@ export interface AIChatResponse {
     content: string;
     citations: Citation[];
     created: string;
-    id: string;
+    messageId: string;
 }
 
 export type ExpandMessages = {

@@ -11,6 +11,7 @@ import (
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/routine"
 	"github.com/pocketbase/pocketbase/tools/types"
 )
 
@@ -20,7 +21,6 @@ type VectorCollection struct {
 }
 
 var ColPrefix = "$$$"
-
 var client *genai.Client
 
 func Init(app *pocketbase.PocketBase, collections ...VectorCollection) error {
@@ -38,8 +38,6 @@ func Init(app *pocketbase.PocketBase, collections ...VectorCollection) error {
 				stmt := "DELETE FROM " + target.Name + "_embeddings WHERE id NOT IN (SELECT vector_id FROM " + target.Name + " WHERE vector_id IS NOT NULL);"
 				if _, err := app.DB().NewQuery(stmt).Execute(); err != nil {
 					app.Logger().Error("failed to cleanup orphaned embeddings", "error", err)
-				} else {
-					app.Logger().Info("successfully cleaned up orphaned embeddings")
 				}
 			}
 		}
@@ -278,40 +276,46 @@ func modelModify(app *pocketbase.PocketBase, target string, client *genai.Client
 	content := record.GetString("content")
 
 	if content != "" {
-		result, err := googleAiEmbedContent(client, genai.TaskTypeRetrievalDocument, title, genai.Text(content))
-		if err != nil {
-			return err
-		}
-
-		vector := ""
-		jsonVec, err := json.Marshal(result)
-		if err != nil {
-			vector = "[]"
-		} else {
-			vector = string(jsonVec)
-		}
-
-		deleteEmbeddingsForRecord(app, target, e)
-
-		{
-			stmt := "INSERT INTO " + target + "_embeddings (embedding) "
-			stmt += "VALUES ({:embedding});"
-			res, err := app.DB().NewQuery(stmt).Bind(dbx.Params{
-				"embedding": vector,
-			}).Execute()
+		routine.FireAndForget(func() {
+			result, err := googleAiEmbedContent(client, genai.TaskTypeRetrievalDocument, title, genai.Text(content))
 			if err != nil {
-				return err
+				e.App.Logger().Error("Error embedding content:", "error", err.Error())
+				return
 			}
-			vectorId, err := res.LastInsertId()
-			if err != nil {
-				return err
-			}
-			record.Set("vector_id", vectorId)
-		}
 
-		if err := app.UnsafeWithoutHooks().Save(record); err != nil {
-			return err
-		}
+			vector := ""
+			jsonVec, err := json.Marshal(result)
+			if err != nil {
+				vector = "[]"
+			} else {
+				vector = string(jsonVec)
+			}
+
+			deleteEmbeddingsForRecord(app, target, e)
+
+			{
+				stmt := "INSERT INTO " + target + "_embeddings (embedding) "
+				stmt += "VALUES ({:embedding});"
+				res, err := app.DB().NewQuery(stmt).Bind(dbx.Params{
+					"embedding": vector,
+				}).Execute()
+				if err != nil {
+					e.App.Logger().Error("Error inserting vector embedding:", "error", err.Error())
+					return
+				}
+				vectorId, err := res.LastInsertId()
+				if err != nil {
+					e.App.Logger().Error("Error getting last insert ID:", "error", err.Error())
+					return
+				}
+				record.Set("vector_id", vectorId)
+			}
+
+			if err := app.UnsafeWithoutHooks().Save(record); err != nil {
+				e.App.Logger().Error("Error saving record with vector_id:", "error", err.Error())
+				return
+			}
+		})
 	}
 	return nil
 }

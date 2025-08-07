@@ -41,7 +41,7 @@ export function FloatingToolbarButtons() {
       </ToolbarGroup> */}
 
       {/* <ToolbarGroup> */}
-      <MarkToolbarButton nodeType={KEYS.highlight}>
+      <MarkToolbarButton nodeType={KEYS.highlight} >
         <Highlighter />
       </MarkToolbarButton>
       {/* <CommentToolbarButton /> */}

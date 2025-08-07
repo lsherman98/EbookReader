@@ -73,7 +73,7 @@ export function ChatSideBarContent({
     setCitationMap((prevMap) => {
       const newMap = new Map(prevMap);
       citations.forEach((citation) => {
-        const textHash = generateTextHash(citation.text);
+        const textHash = generateTextHash(citation.quote);
         newMap.set(textHash, { ...citation, id: textHash });
       });
       return newMap;
@@ -122,7 +122,7 @@ export function ChatSideBarContent({
       createMessageObj({
         role: "assistant",
         created: AIChatResponse.created,
-        id: AIChatResponse.id,
+        id: AIChatResponse.messageId,
         content: processCitationsForDisplay(AIChatResponse.content, AIChatResponse.citations),
         citations: AIChatResponse.citations,
       }),

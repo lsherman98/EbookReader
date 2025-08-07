@@ -78,7 +78,7 @@ export function findBestCitation(quote: string, citations: Citation[]): Citation
   let bestScore = 0;
 
   citations.forEach((citation) => {
-    const normalizedSnippet = normalizeText(citation.text, true);
+    const normalizedSnippet = normalizeText(citation.quote, true);
 
     let score = 0;
     if (normalizedSnippet === normalizedQuote) {
@@ -109,7 +109,7 @@ export function processCitationsForDisplay(content: string, citations: Citation[
     const citation = findBestCitation(quote, citations);
 
     if (citation) {
-      const textHash = generateTextHash(citation.text);
+      const textHash = generateTextHash(citation.quote);
       const citationKey = `${citation.index}-${textHash}`;
 
       usedCitations.add(citationKey);
@@ -120,7 +120,7 @@ export function processCitationsForDisplay(content: string, citations: Citation[
     if (citationIndex) {
       const indexBasedCitation = citations.find((c) => c.index === citationIndex);
       if (indexBasedCitation) {
-        const textHash = generateTextHash(indexBasedCitation.text);
+        const textHash = generateTextHash(indexBasedCitation.quote);
         const citationKey = `${indexBasedCitation.index}-${textHash}`;
 
         usedCitations.add(citationKey);
@@ -145,7 +145,7 @@ export function buildCitationMap(messages: Message[]): Map<string, Citation> {
   messages.forEach((message) => {
     if (message.citations && Array.isArray(message.citations)) {
       message.citations.forEach((citation: Citation) => {
-        const textHash = generateTextHash(citation.text);
+        const textHash = generateTextHash(citation.quote);
         citationMap.set(textHash, { ...citation, id: textHash });
       });
     }
@@ -220,7 +220,9 @@ export function applyHighlightToElement(
 }
 
 export function consolidateTextSpans(textSpans: NodeListOf<HTMLElement>): HTMLElement | null {
-  if (textSpans.length <= 1) return null;
+  if (textSpans.length <= 1) {
+    return null;
+  }
 
   const combinedText = Array.from(textSpans)
     .map((span) => span.textContent || "")
@@ -264,12 +266,15 @@ export function highlightCitationInElement(
   const normalizedSnippet = normalizeText(citationSnippet);
 
   if (textSpans.length > 1) {
+
     const combinedText = Array.from(textSpans)
       .map((span) => span.textContent || "")
       .join("");
 
     const consolidatedSpan = consolidateTextSpans(textSpans);
-    if (!consolidatedSpan) return null;
+    if (!consolidatedSpan) {
+      return null;
+    }
 
     const normalizedTextContent = normalizeText(combinedText);
 
@@ -287,7 +292,9 @@ export function highlightCitationInElement(
           removeExistingHighlights();
         }, 5000);
 
-        return () => clearTimeout(timeout);
+        return () => {
+          clearTimeout(timeout);
+        };
       }
     }
   } else if (textSpans.length === 1) {
@@ -307,9 +314,11 @@ export function highlightCitationInElement(
         const timeout = setTimeout(() => {
           if (onComplete) onComplete();
           removeExistingHighlights();
-        }, 5000);
+        }, 7000);
 
-        return () => clearTimeout(timeout);
+        return () => {
+          clearTimeout(timeout);
+        };
       }
     }
   }

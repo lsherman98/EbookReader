@@ -103,6 +103,7 @@ export type BooksRecord = {
 	chats?: RecordIdString[]
 	cover_image?: string
 	created?: IsoDateString
+	current_chapter?: RecordIdString
 	date?: string
 	description?: string
 	file: string
