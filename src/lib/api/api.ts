@@ -3,6 +3,7 @@ import { BooksResponse, ChatsResponse, Collections } from "../pocketbase-types";
 import { FileUploadObj } from "@/pages/_app/upload.lazy";
 import { getUserId, handleError } from "../utils";
 import { Citation, ExpandChapters, ExpandMessages, UploadFileRequest } from "../types";
+import { Range } from "platejs";
 
 export const getBooks = async (page: number, limit: number) => {
     if (!getUserId()) return
@@ -166,4 +167,44 @@ export const generateAIResponse = async (
 export const getLastReadBook = async () => {
     if (!getUserId()) return
     return await pb.collection(Collections.LastRead).getFirstListItem(`user="${getUserId()}"`);
+}
+
+export const getHighlights = async (bookId?: string, chapterId?: string) => {
+    if (!getUserId()) return
+
+    const filter = `book="${bookId}" && user="${getUserId()}"`;
+    if (chapterId) {
+        return await pb.collection(Collections.Highlights).getFullList({ filter: `${filter} && chapter="${chapterId}"` });
+    }
+    return await pb.collection(Collections.Highlights).getFullList({ filter });
+}
+
+export const addHighlight = async (bookId: string, chapterId: string, text: string, selection: Range, hash: string) => {
+    if (!getUserId()) return
+
+    return await pb.collection(Collections.Highlights).create({
+        book: bookId,
+        chapter: chapterId,
+        text,
+        selection: JSON.stringify(selection),
+        user: getUserId(),
+        hash,
+    });
+}
+
+export const deleteHighlight = async (highlightId?: string, hash?: string) => {
+    if (!getUserId()) return
+
+    if (!highlightId && !hash) {
+        throw new Error("Either highlightId or hash must be provided");
+    }
+
+    if (highlightId) {
+        return await pb.collection(Collections.Highlights).delete(highlightId);
+    }
+
+    const highlight = await pb.collection(Collections.Highlights).getFirstListItem(`hash="${hash}"`);
+    if (!highlight) return
+    return await pb.collection(Collections.Highlights).delete(highlight.id);
+
 }

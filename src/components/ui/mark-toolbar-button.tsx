@@ -17,11 +17,11 @@ export function MarkToolbarButton({
   const state = useMarkToolbarButtonState({ clear, nodeType });
   const { props: buttonProps } = useMarkToolbarButton(state);
 
-  const handleToolBarButtonClick: React.MouseEventHandler<HTMLButtonElement> = () => {
+  const handleToolBarButtonClick = () => {
     if (nodeType === "highlight") {
       window.dispatchEvent(new CustomEvent("highlight-clicked"));
     }
   };
 
-  return <ToolbarButton {...props} {...buttonProps} onClick={handleToolBarButtonClick} />;
+  return <ToolbarButton {...props} {...buttonProps} onMouseUp={handleToolBarButtonClick} />;
 }

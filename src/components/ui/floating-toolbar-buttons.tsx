@@ -1,8 +1,12 @@
-import { Highlighter } from "lucide-react";
+import { Highlighter, Trash } from "lucide-react";
 import { KEYS } from "platejs";
 import { MarkToolbarButton } from "./mark-toolbar-button";
+import { useEditorRef } from "platejs/react";
 
 export function FloatingToolbarButtons() {
+  const editor = useEditorRef();
+  const isHighlighted = editor.api.hasMark("highlight");
+
   return (
     <>
       {/* <ToolbarGroup>
@@ -41,9 +45,7 @@ export function FloatingToolbarButtons() {
       </ToolbarGroup> */}
 
       {/* <ToolbarGroup> */}
-      <MarkToolbarButton nodeType={KEYS.highlight} >
-        <Highlighter />
-      </MarkToolbarButton>
+      <MarkToolbarButton nodeType={KEYS.highlight}>{isHighlighted ? <Trash /> : <Highlighter />}</MarkToolbarButton>
       {/* <CommentToolbarButton /> */}
       {/* <SuggestionToolbarButton /> */}
 

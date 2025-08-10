@@ -14,6 +14,7 @@ export enum Collections {
 	Books = "books",
 	Chapters = "chapters",
 	Chats = "chats",
+	Highlights = "highlights",
 	LastRead = "last_read",
 	Messages = "messages",
 	Users = "users",
@@ -137,6 +138,18 @@ export type ChatsRecord = {
 	user: RecordIdString
 }
 
+export type HighlightsRecord<Tselection = unknown> = {
+	book?: RecordIdString
+	chapter?: RecordIdString
+	created?: IsoDateString
+	hash: string
+	id: string
+	selection?: null | Tselection
+	text?: string
+	updated?: IsoDateString
+	user?: RecordIdString
+}
+
 export type LastReadRecord = {
 	book?: RecordIdString
 	chapter?: RecordIdString
@@ -197,6 +210,7 @@ export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> &
 export type BooksResponse<Texpand = unknown> = Required<BooksRecord> & BaseSystemFields<Texpand>
 export type ChaptersResponse<Texpand = unknown> = Required<ChaptersRecord> & BaseSystemFields<Texpand>
 export type ChatsResponse<Texpand = unknown> = Required<ChatsRecord> & BaseSystemFields<Texpand>
+export type HighlightsResponse<Tselection = unknown, Texpand = unknown> = Required<HighlightsRecord<Tselection>> & BaseSystemFields<Texpand>
 export type LastReadResponse<Texpand = unknown> = Required<LastReadRecord> & BaseSystemFields<Texpand>
 export type MessagesResponse<Tcitations = unknown, Texpand = unknown> = Required<MessagesRecord<Tcitations>> & BaseSystemFields<Texpand>
 export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>
@@ -213,6 +227,7 @@ export type CollectionRecords = {
 	books: BooksRecord
 	chapters: ChaptersRecord
 	chats: ChatsRecord
+	highlights: HighlightsRecord
 	last_read: LastReadRecord
 	messages: MessagesRecord
 	users: UsersRecord
@@ -228,6 +243,7 @@ export type CollectionResponses = {
 	books: BooksResponse
 	chapters: ChaptersResponse
 	chats: ChatsResponse
+	highlights: HighlightsResponse
 	last_read: LastReadResponse
 	messages: MessagesResponse
 	users: UsersResponse
@@ -246,6 +262,7 @@ export type TypedPocketBase = PocketBase & {
 	collection(idOrName: 'books'): RecordService<BooksResponse>
 	collection(idOrName: 'chapters'): RecordService<ChaptersResponse>
 	collection(idOrName: 'chats'): RecordService<ChatsResponse>
+	collection(idOrName: 'highlights'): RecordService<HighlightsResponse>
 	collection(idOrName: 'last_read'): RecordService<LastReadResponse>
 	collection(idOrName: 'messages'): RecordService<MessagesResponse>
 	collection(idOrName: 'users'): RecordService<UsersResponse>

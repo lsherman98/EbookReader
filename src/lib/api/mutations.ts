@@ -1,8 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { addChat, addMessage, deleteBook, deleteChat, downloadBook, generateAIResponse, updateBook, updateChapter, updateChat, uploadBook } from "./api";
+import { addChat, addHighlight, addMessage, deleteBook, deleteChat, deleteHighlight, downloadBook, generateAIResponse, updateBook, updateChapter, updateChat, uploadBook } from "./api";
 import { handleError } from "../utils";
 import { FileUploadObj } from "@/pages/_app/upload.lazy";
 import { Citation } from "../types";
+import { Range } from "platejs";
 
 export function useUploadBook() {
     const queryClient = useQueryClient();
@@ -121,5 +122,29 @@ export function useGenerateAIResponse() {
     return useMutation({
         mutationFn: ({ bookId, chatId, chapterId }: { bookId: string, chatId: string, chapterId?: string }) => generateAIResponse(bookId, chatId, chapterId),
         onError: handleError,
+    })
+}
+
+export function useAddHighlight() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ bookId, chapterId, text, selection, hash }: { bookId: string, chapterId: string, text: string, selection: Range, hash: string }) => addHighlight(bookId, chapterId, text, selection, hash),
+        onError: handleError,
+        onSuccess: async (data) => {
+            await queryClient.invalidateQueries({ queryKey: ['highlights', { bookId: data?.book, chapterId: data?.chapter }] });
+        }
+    })
+}
+
+export function useDeleteHighlight() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({highlightId, hash}: {highlightId?: string, hash?: string}) => deleteHighlight(highlightId, hash),
+        onError: handleError,
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['highlights'] });
+        }
     })
 }

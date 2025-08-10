@@ -1,7 +1,3 @@
-"use client";
-
-import * as React from "react";
-
 import {
   type FloatingToolbarState,
   flip,
@@ -16,6 +12,7 @@ import { useEditorId, useEventEditorValue, usePluginOption } from "platejs/react
 import { cn } from "@/lib/utils";
 
 import { Toolbar } from "./toolbar";
+import React from "react";
 
 export function FloatingToolbar({
   children,

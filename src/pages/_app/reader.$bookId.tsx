@@ -3,7 +3,7 @@ import { useGetBookById, useGetChapterById, useGetLastReadBook } from "@/lib/api
 import { Plate, PlateController, usePlateEditor } from "platejs/react";
 import { Editor, EditorContainer } from "@/components/ui/editor";
 import { BasicBlocksKit } from "@/components/editor/plugins/basic-blocks-kit";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ChaptersRecord } from "@/lib/pocketbase-types";
 import { Button } from "@/components/ui/button";
@@ -13,10 +13,19 @@ import { BasicMarksKit } from "@/components/editor/plugins/basic-marks-kit";
 import { FloatingToolbarKit } from "@/components/editor/plugins/floating-toolbar-kit";
 import { DisableTextInput } from "@/components/editor/plugins/disable-text-input";
 import { useCitationStore } from "@/lib/stores/citation-store";
-import { createStaticEditor, Node, Range, serializeHtml, Value } from "platejs";
+import { createStaticEditor, Descendant, Node, PointApi, Range, serializeHtml, Value } from "platejs";
 import { removeExistingHighlights, highlightCitationInElement } from "@/lib/utils";
 import { BaseEditorKit } from "@/components/editor/plugins/editor-base-kit";
-import { useUpdateChapter } from "@/lib/api/mutations";
+import { useAddHighlight, useDeleteHighlight, useUpdateChapter } from "@/lib/api/mutations";
+
+async function createHighlightHash(bookId: string, chapterId: string, selection: Range, text: string) {
+  const dataToHash = `${bookId}-${chapterId}-${selection.anchor.path}-${selection.focus.path}-${text}`;
+  const encoder = new TextEncoder();
+  const data = encoder.encode(dataToHash);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 export const Route = createFileRoute("/_app/reader/$bookId")({
   component: Index,
@@ -109,10 +118,12 @@ function Index() {
 
 function PlateEditor({ chapter }: { chapter?: ChaptersRecord }) {
   const [htmlString, setHtmlString] = useState<string>("");
-  const [currentSelection, setCurrentSelection] = useState<Range | null>(null);
+  const currentSelection = useRef<Range | null>(null);
 
   const { currentCitation, setCurrentCitation } = useCitationStore();
   const updateChapterMutation = useUpdateChapter();
+  const addHighlightMutation = useAddHighlight();
+  const deleteHighlightMutation = useDeleteHighlight();
 
   const editor = usePlateEditor({
     plugins: [...BasicBlocksKit, ...BasicMarksKit, DisableTextInput, ...FloatingToolbarKit],
@@ -138,20 +149,88 @@ function PlateEditor({ chapter }: { chapter?: ChaptersRecord }) {
     [chapter, staticEditor, updateChapterMutation],
   );
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleEditorClick = (e: any) => {
+    const el = e.target;
+    let text = e.target.innerText;
+    const isHighlight = el.parentElement.classList.contains("slate-highlight");
+
+    if (!isHighlight) return;
+
+    const parent: HTMLElement = el.parentElement.parentElement.parentElement.parentElement;
+    const textContent = parent?.nextSibling?.childNodes[0].textContent;
+    text += textContent;
+
+    const marks: Descendant[] = [];
+    editor.children.forEach((n) => {
+      n.children.forEach((c) => {
+        if (c.highlight && text.includes(c.text)) {
+          marks.push(c);
+        }
+      });
+    });
+
+    if (marks.length === 1) {
+      editor.tf.select(marks[0]);
+    } else {
+      const first = marks[0];
+      const firstPath = editor.api.findPath(first);
+      const firstPoint = PointApi.get(firstPath);
+
+      const last = marks[marks.length - 1];
+      let lastPath = editor.api.findPath(last);
+      lastPath = [lastPath![0], lastPath![1] + 1];
+      const lastPoint = PointApi.get(lastPath);
+
+      editor.tf.select({ anchor: firstPoint!, focus: lastPoint! });
+    }
+  };
+
+  const handleHighlightClicked = useCallback(async () => {
+    if (!editor || !currentSelection.current || !chapter) return;
+    const hasMark = editor.api.hasMark("highlight");
+    const selection = currentSelection.current;
+    const text = editor.api.string(currentSelection.current);
+
+    if (hasMark) {
+      const hash = await createHighlightHash(chapter.book, chapter.id, selection, text);
+      deleteHighlightMutation.mutate({
+        hash,
+      });
+    } else {
+      const newSelection = {
+        anchor: {
+          path: [selection.anchor.path[0], selection.anchor.path[1] + 1],
+          offset: selection.anchor.offset,
+        },
+        focus: {
+          path: [selection.focus.path[0], selection.focus.path[1] + 1],
+          offset: selection.focus.offset,
+        },
+      };
+
+      const hash = await createHighlightHash(chapter.book, chapter.id, newSelection, text);
+
+      addHighlightMutation.mutate({
+        bookId: chapter.book,
+        chapterId: chapter.id,
+        text,
+        selection: newSelection,
+        hash,
+      });
+    }
+  }, [addHighlightMutation, chapter, deleteHighlightMutation, editor]);
+
   useEffect(() => {
-    const handleHighlightClicked = () => {
-      console.log("Highlight clicked event received in PlateEditor");
-      console.log("Current selection:", currentSelection);
-    };
     window.addEventListener("highlight-clicked", handleHighlightClicked);
     return () => {
       window.removeEventListener("highlight-clicked", handleHighlightClicked);
     };
-  }, [currentSelection]);
+  }, [handleHighlightClicked]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSelectionChange = useCallback((event: any) => {
-    setCurrentSelection(event.range as Range);
+    currentSelection.current = event.selection as Range;
   }, []);
 
   useEffect(() => {
@@ -159,7 +238,7 @@ function PlateEditor({ chapter }: { chapter?: ChaptersRecord }) {
     const value = editor.api.html.deserialize({ element: htmlString });
     editor.tf.setValue(value as Value);
     staticEditor.tf.setValue(value as Value);
-  }, [editor, htmlString, staticEditor.tf]);
+  }, [editor, staticEditor, htmlString]);
 
   useEffect(() => {
     if (!chapter) return;
@@ -176,7 +255,6 @@ function PlateEditor({ chapter }: { chapter?: ChaptersRecord }) {
       const elementId = node?.id;
       const element = document.querySelector(`[data-block-id="${elementId}"]`);
       if (!element) {
-        console.log("Element not found for citation:", currentCitation.index, elementId);
         return;
       }
 
@@ -192,7 +270,7 @@ function PlateEditor({ chapter }: { chapter?: ChaptersRecord }) {
   return (
     <Plate editor={editor} onValueChange={handleValueChange} onSelectionChange={handleSelectionChange}>
       <EditorContainer className="h-full w-full max-h-[calc(100vh-50px)] overflow-hidden caret-transparent">
-        <Editor />
+        <Editor onClick={handleEditorClick} />
       </EditorContainer>
     </Plate>
   );

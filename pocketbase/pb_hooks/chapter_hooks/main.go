@@ -66,7 +66,7 @@ func Init(app *pocketbase.PocketBase) error {
 
 		lastRead, err := e.App.FindFirstRecordByData("last_read", "user", user)
 		if err != nil {
-			return err
+			return e.Next()
 		}
 
 		if lastRead != nil {
