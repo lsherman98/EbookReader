@@ -1,6 +1,6 @@
 import type { PropsWithChildren } from "react";
 
-import { AppSidebar } from "./Sidebar";
+import { AppSidebar } from "../sidebar/Sidebar";
 import { SidebarInset, SidebarProvider } from "../ui/sidebar";
 import { useLocation } from "@tanstack/react-router";
 import { Toaster } from "../ui/toaster";

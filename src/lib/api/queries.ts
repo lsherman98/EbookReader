@@ -17,11 +17,12 @@ export function useGetBookById(bookId: string) {
     });
 }
 
-export function useGetChapterById(chapterId: string) {
+export function useGetChapterById(chapterId?: string) {
     return useQuery({
         queryKey: ['chapter', chapterId],
         queryFn: () => getChapterById(chapterId),
-        placeholderData: keepPreviousData
+        placeholderData: keepPreviousData,
+        enabled: !!chapterId,
     });
 }
 

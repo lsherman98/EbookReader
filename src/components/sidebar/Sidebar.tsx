@@ -1,9 +1,9 @@
 import * as React from "react";
 
 import { Sidebar } from "@/components/ui/sidebar";
-import MainNavigation from "./MainNavigation";
+import MainNavigation from "../layout/MainNavigation";
 
-import { ChatSidebar } from "../ChatSidebar";
+import { MainSidebar } from "./MainSidebar";
 import { useLocation } from "@tanstack/react-router";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -12,7 +12,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" className="overflow-hidden [&>[data-sidebar=sidebar]]:flex-row" {...props}>
       <MainNavigation />
-      <ChatSidebar hidden={!location.pathname.startsWith("/reader")} />
+      <MainSidebar hidden={!location.pathname.startsWith("/reader")} />
     </Sidebar>
   );
 }

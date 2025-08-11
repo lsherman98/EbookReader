@@ -1,4 +1,4 @@
-import { ChaptersResponse, MessagesResponse } from "./pocketbase-types";
+import { BooksResponse, ChaptersResponse, MessagesResponse } from "./pocketbase-types";
 
 export interface Citation {
     quote: string;
@@ -20,6 +20,11 @@ export type ExpandMessages = {
 
 export type ExpandChapters = {
     chapters: ChaptersResponse[]
+}
+
+export type ExpandHighlights = {
+    book: BooksResponse
+    chapter: ChaptersResponse
 }
 
 export type UploadFileRequest = {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Chat } from "./ui/chat";
-import { Message } from "./ui/chat-message";
+import { Chat } from "../ui/chat";
+import { Message } from "../ui/chat-message";
 import { useGetMessagesByChatId } from "@/lib/api/queries";
 import { useAddMessage, useGenerateAIResponse } from "@/lib/api/mutations";
 import {
@@ -15,7 +15,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useCitationStore } from "@/lib/stores/citation-store";
 import { AIChatResponse, Citation } from "@/lib/types";
 
-export function ChatSideBarContent({
+export function SidebarChatContent({
   selectedBookId,
   selectedChapterId,
   selectedChatId,

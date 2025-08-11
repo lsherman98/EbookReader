@@ -4,6 +4,7 @@ import { handleError } from "../utils";
 import { FileUploadObj } from "@/pages/_app/upload.lazy";
 import { Citation } from "../types";
 import { Range } from "platejs";
+import { useCurrentChapterStore } from "../stores/current-chapter-store";
 
 export function useUploadBook() {
     const queryClient = useQueryClient();
@@ -139,12 +140,14 @@ export function useAddHighlight() {
 
 export function useDeleteHighlight() {
     const queryClient = useQueryClient();
+    const { currentChapterId } = useCurrentChapterStore();
 
     return useMutation({
-        mutationFn: ({highlightId, hash}: {highlightId?: string, hash?: string}) => deleteHighlight(highlightId, hash),
+        mutationFn: ({ highlightId, hash }: { highlightId?: string, hash?: string }) => deleteHighlight(highlightId, hash),
         onError: handleError,
         onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['chapter', currentChapterId] });
             await queryClient.invalidateQueries({ queryKey: ['highlights'] });
         }
-    })
+    }) 
 }

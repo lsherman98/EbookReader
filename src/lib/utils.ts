@@ -39,6 +39,15 @@ export function formatDate(date: string): string {
   });
 }
 
+export const formatHighlightDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+};
+
 export function getUserId(msg: string = 'User is not logged in'): string | null {
   const user = pb.authStore.record;
   if (!user?.id) {

@@ -1,8 +1,8 @@
 import { pb } from "../pocketbase";
-import { BooksResponse, ChatsResponse, Collections } from "../pocketbase-types";
+import { BooksResponse, ChatsResponse, Collections, HighlightsResponse } from "../pocketbase-types";
 import { FileUploadObj } from "@/pages/_app/upload.lazy";
 import { getUserId, handleError } from "../utils";
-import { Citation, ExpandChapters, ExpandMessages, UploadFileRequest } from "../types";
+import { Citation, ExpandChapters, ExpandHighlights, ExpandMessages, UploadFileRequest } from "../types";
 import { Range } from "platejs";
 
 export const getBooks = async (page: number, limit: number) => {
@@ -75,8 +75,8 @@ export const deleteBook = async (bookId: string) => {
     return await pb.collection(Collections.Books).delete(bookId);
 }
 
-export const getChapterById = async (chapterId: string) => {
-    if (!getUserId()) return
+export const getChapterById = async (chapterId?: string) => {
+    if (!getUserId() || !chapterId) return
     return await pb.collection(Collections.Chapters).getOne(chapterId);
 }
 
@@ -174,9 +174,9 @@ export const getHighlights = async (bookId?: string, chapterId?: string) => {
 
     const filter = `book="${bookId}" && user="${getUserId()}"`;
     if (chapterId) {
-        return await pb.collection(Collections.Highlights).getFullList({ filter: `${filter} && chapter="${chapterId}"` });
+        return await pb.collection(Collections.Highlights).getFullList<HighlightsResponse<ExpandHighlights>>({ filter: `${filter} && chapter="${chapterId}"`, expand: "book,chapter" });
     }
-    return await pb.collection(Collections.Highlights).getFullList({ filter });
+    return await pb.collection(Collections.Highlights).getFullList<HighlightsResponse<ExpandHighlights>>({ filter, expand: "book,chapter" });
 }
 
 export const addHighlight = async (bookId: string, chapterId: string, text: string, selection: Range, hash: string) => {

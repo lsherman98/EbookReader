@@ -9,6 +9,7 @@ import (
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/book_hooks"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/chapter_hooks"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/chat"
+	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/highlight_hooks"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/message_hooks"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/vector_search"
 	"github.com/mattn/go-sqlite3"
@@ -71,6 +72,10 @@ func main() {
 	}
 
 	if err := chapter_hooks.Init(app); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := highlight_hooks.Init(app); err != nil {
 		log.Fatal(err)
 	}
 
