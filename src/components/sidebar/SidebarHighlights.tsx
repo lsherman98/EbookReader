@@ -10,7 +10,7 @@ import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Card, CardContent } from "../ui/card";
 import { Badge } from "../ui/badge";
-import { HighlightsRecord, HighlightsResponse } from "@/lib/pocketbase-types";
+import { HighlightsRecord } from "@/lib/pocketbase-types";
 import { useSelectedHighlightStore } from "@/lib/stores/selected-highlight-store";
 import { formatHighlightDate } from "@/lib/utils";
 import { ExpandHighlights } from "@/lib/types";

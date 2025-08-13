@@ -41,45 +41,95 @@ func removeMarkTagWithText(htmlContent, targetText string) (string, error) {
 		return "", err
 	}
 
-	var traverse func(*html.Node) bool
-	traverse = func(n *html.Node) bool {
+	var markTags []*html.Node
+	var collectMarkTags func(*html.Node)
+	collectMarkTags = func(n *html.Node) {
 		if n.Type == html.ElementNode && n.Data == "mark" {
-			// Get the text content of this mark tag
-			var textContent strings.Builder
-			var extractText func(*html.Node)
-			extractText = func(node *html.Node) {
-				if node.Type == html.TextNode {
-					textContent.WriteString(node.Data)
-				}
-				for c := node.FirstChild; c != nil; c = c.NextSibling {
-					extractText(c)
-				}
-			}
-			extractText(n)
-
-			// If the text matches, replace the mark tag with its text content
-			if strings.TrimSpace(textContent.String()) == strings.TrimSpace(targetText) {
-				// Replace the mark node with its text content
-				textNode := &html.Node{
-					Type: html.TextNode,
-					Data: textContent.String(),
-				}
-				n.Parent.InsertBefore(textNode, n)
-				n.Parent.RemoveChild(n)
-				return true // Found and removed, stop traversing
-			}
+			markTags = append(markTags, n)
 		}
-
-		// Continue traversing children
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			if traverse(c) {
-				return true // Found in child, stop traversing
+			collectMarkTags(c)
+		}
+	}
+	collectMarkTags(doc)
+
+	extractText := func(node *html.Node) string {
+		var textContent strings.Builder
+		var traverse func(*html.Node)
+		traverse = func(n *html.Node) {
+			if n.Type == html.TextNode {
+				textContent.WriteString(n.Data)
+			}
+			for c := n.FirstChild; c != nil; c = c.NextSibling {
+				traverse(c)
 			}
 		}
-		return false
+		traverse(node)
+		return textContent.String()
 	}
 
-	traverse(doc)
+	targetTextNormalized := strings.TrimSpace(strings.ReplaceAll(targetText, "\n", " "))
+	targetTextNormalized = strings.ReplaceAll(targetTextNormalized, "\r", "")
+
+	var marksToRemove []*html.Node
+
+	for _, markTag := range markTags {
+		markText := strings.TrimSpace(extractText(markTag))
+		markTextNormalized := strings.ReplaceAll(markText, "\n", " ")
+		markTextNormalized = strings.ReplaceAll(markTextNormalized, "\r", "")
+
+		if strings.Contains(targetTextNormalized, markTextNormalized) && markTextNormalized != "" {
+			marksToRemove = append(marksToRemove, markTag)
+		}
+	}
+
+	if len(marksToRemove) == 0 {
+		for i := 0; i < len(markTags); i++ {
+			var combinedText strings.Builder
+			var sequence []*html.Node
+
+			for j := i; j < len(markTags); j++ {
+				markText := strings.TrimSpace(extractText(markTags[j]))
+				if markText != "" {
+					if combinedText.Len() > 0 {
+						combinedText.WriteString(" ")
+					}
+					combinedText.WriteString(markText)
+					sequence = append(sequence, markTags[j])
+
+					combinedNormalized := strings.ReplaceAll(combinedText.String(), "\n", " ")
+					combinedNormalized = strings.ReplaceAll(combinedNormalized, "\r", "")
+
+					if strings.Contains(combinedNormalized, targetTextNormalized) ||
+						strings.Contains(targetTextNormalized, combinedNormalized) {
+						marksToRemove = append(marksToRemove, sequence...)
+						break
+					}
+				}
+			}
+			if len(marksToRemove) > 0 {
+				break
+			}
+		}
+	}
+
+	for _, markTag := range marksToRemove {
+		textContent := extractText(markTag)
+		if textContent != "" {
+			textNode := &html.Node{
+				Type: html.TextNode,
+				Data: textContent,
+			}
+			if markTag.Parent != nil {
+				markTag.Parent.InsertBefore(textNode, markTag)
+				markTag.Parent.RemoveChild(markTag)
+			}
+		} else {
+			if markTag.Parent != nil {
+				markTag.Parent.RemoveChild(markTag)
+			}
+		}
+	}
 
 	var buf strings.Builder
 	html.Render(&buf, doc)

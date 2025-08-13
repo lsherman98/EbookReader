@@ -4,6 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { ChatList } from "./ChatList";
 import { Input } from "../ui/input";
 import { SidebarGroup, SidebarGroupContent } from "../ui/sidebar";
+import { Switch } from "../ui/switch";
 import { useAddChat, useUpdateChat } from "@/lib/api/mutations";
 import { SidebarChatContent } from "./SidebarChatContent";
 import { useCallback, useEffect, useState } from "react";
@@ -18,7 +19,7 @@ export function SidebarChat({ bookId }: { bookId: string }) {
   const [selectedChat, setSelectedChat] = useState<ChatsRecord>();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [chatTitle, setChatTitle] = useState(selectedChat?.title || "");
-  const [chatWithChapter] = useState(false);
+  const [chatWithChapter, setChatWithChapter] = useState(false);
 
   const handleTitleChange = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +50,7 @@ export function SidebarChat({ bookId }: { bookId: string }) {
 
   return (
     <>
-      <div className="flex items-center justify-between p-4 border-b h-[50px]">
+      <div className="flex items-center justify-between p-4 border-b h-[42px]">
         <Popover>
           <PopoverTrigger asChild>
             <Button variant={"ghost"} size={"icon"} disabled={!bookId}>
@@ -71,7 +72,7 @@ export function SidebarChat({ bookId }: { bookId: string }) {
             />
           </PopoverContent>
         </Popover>
-        <div className="flex-1 flex items-center justify-center relative group">
+        <div className="flex-1 flex items-center justify-center relative group h-full">
           {isEditingTitle ? (
             <form onSubmit={handleTitleChange} className="w-full max-w-xs">
               <Input
@@ -93,6 +94,14 @@ export function SidebarChat({ bookId }: { bookId: string }) {
         <Button variant={"ghost"} size={"icon"} onClick={addChat} disabled={!bookId}>
           <SquarePen />
         </Button>
+      </div>
+      <div className="flex items-center justify-between px-4 py-2 border-b">
+        <span className="text-xs font-medium text-muted-foreground">Context</span>
+        <div className="flex items-center space-x-2">
+          <span className={`text-xs ${!chatWithChapter ? "font-medium" : "text-muted-foreground"}`}>Book</span>
+          <Switch checked={chatWithChapter} onCheckedChange={setChatWithChapter} disabled={!bookId} />
+          <span className={`text-xs ${chatWithChapter ? "font-medium" : "text-muted-foreground"}`}>Chapter</span>
+        </div>
       </div>
       <SidebarGroup className="px-0 h-full">
         <SidebarGroupContent className="h-full">

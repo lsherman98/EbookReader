@@ -13,7 +13,7 @@ import { BasicMarksKit } from "@/components/editor/plugins/basic-marks-kit";
 import { FloatingToolbarKit } from "@/components/editor/plugins/floating-toolbar-kit";
 import { DisableTextInput } from "@/components/editor/plugins/disable-text-input";
 import { useCitationStore } from "@/lib/stores/citation-store";
-import { createStaticEditor, Descendant, Node, PointApi, Range, serializeHtml, TElement, Value } from "platejs";
+import { createStaticEditor, Descendant, Node, PointApi, Range, serializeHtml, Value } from "platejs";
 import { removeExistingHighlights, highlightCitationInElement } from "@/lib/utils";
 import { BaseEditorKit } from "@/components/editor/plugins/editor-base-kit";
 import { useAddHighlight, useDeleteHighlight, useUpdateChapter } from "@/lib/api/mutations";
@@ -51,11 +51,6 @@ function Index() {
   const { data: book } = useGetBookById(bookId && bookId !== "undefined" ? bookId : lastReadBook?.book || "");
   const { data: chapter } = useGetChapterById(currentChapterId);
 
-  const handleChapterClick = (chapterId: string) => {
-    setCurrentChapterId(chapterId);
-    navigateTo(bookId, chapterId, false);
-  };
-
   const navigateTo = useCallback(
     (bookId: string, chapterId: string | undefined, replace: boolean) => {
       navigate({
@@ -66,6 +61,14 @@ function Index() {
       });
     },
     [navigate],
+  );
+
+  const handleChapterClick = useCallback(
+    (chapterId: string) => {
+      setCurrentChapterId(chapterId);
+      navigateTo(bookId, chapterId, false);
+    },
+    [setCurrentChapterId, navigateTo, bookId],
   );
 
   useEffect(() => {
@@ -86,13 +89,13 @@ function Index() {
     if (!search.chapter) {
       navigateTo(bookId, chapterId, true);
     }
-  }, [bookId, lastReadBook, book, search.chapter, navigateTo]);
+  }, [bookId, lastReadBook, book, search.chapter, navigateTo, setCurrentChapterId]);
 
   useEffect(() => {
     if (selectedHighlight && selectedHighlight.chapter && selectedHighlight.chapter !== currentChapterId) {
       handleChapterClick(selectedHighlight.chapter);
     }
-  }, [selectedHighlight]);
+  }, [currentChapterId, handleChapterClick, selectedHighlight]);
 
   return (
     <div className="h-full w-full flex">
@@ -161,7 +164,7 @@ function PlateEditor({ chapter }: { chapter?: ChaptersRecord }) {
         element.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }
-  }, [selectedHighlight, chapter, setSelectedHighlight, htmlString]);
+  }, [selectedHighlight, chapter, setSelectedHighlight, htmlString, editor.children]);
 
   const handleValueChange = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -228,16 +231,19 @@ function PlateEditor({ chapter }: { chapter?: ChaptersRecord }) {
         hash,
       });
     } else {
-      const newSelection = {
-        anchor: {
-          path: [selection.anchor.path[0], selection.anchor.path[1] + 1],
-          offset: selection.anchor.offset,
-        },
-        focus: {
-          path: [selection.focus.path[0], selection.focus.path[1] + 1],
-          offset: selection.focus.offset,
-        },
-      };
+      let newSelection = selection;
+      if (selection.anchor.offset !== 0) {
+        newSelection = {
+          anchor: {
+            path: [selection.anchor.path[0], selection.anchor.path[1] + 1],
+            offset: selection.anchor.offset,
+          },
+          focus: {
+            path: [selection.focus.path[0], selection.focus.path[1] + 1],
+            offset: selection.focus.offset,
+          },
+        };
+      }
 
       const hash = await createHighlightHash(chapter.book, chapter.id, newSelection, text);
 
