@@ -1,8 +1,8 @@
 import { createLazyFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { Book, BookImage, CloudAlert, Download, MoreHorizontal, Trash } from "lucide-react";
+import { Book, BookImage, CloudAlert, Download, MoreHorizontal, Search, Trash } from "lucide-react";
 import { BooksResponse } from "@/lib/pocketbase-types";
-import { useGetBooks } from "@/lib/api/queries";
+import { useGetBooks, useSearchBooks } from "@/lib/api/queries";
 import { useDeleteBook, useDownloadBook } from "@/lib/api/mutations";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
@@ -22,6 +22,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 
 export const Route = createLazyFileRoute("/_app/library")({
   component: LibraryPage,
@@ -29,9 +30,12 @@ export const Route = createLazyFileRoute("/_app/library")({
 
 function LibraryPage() {
   const [currentPage, setCurrentPage] = useState(1);
-  const limit = 10;
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const limit = 50;
 
   const { data: booksData } = useGetBooks(currentPage, limit);
+  const { data: searchResults } = useSearchBooks(searchQuery);
   const deleteBookMutation = useDeleteBook();
   const downloadBookMutation = useDownloadBook();
   const navigate = useNavigate();
@@ -111,6 +115,162 @@ function LibraryPage() {
     return pageNumbers;
   };
 
+  if (searchResults?.length && searchResults?.length > 0) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex-shrink-0 border-b">
+          <div className="p-2 flex items-center justify-center">
+            <div className="relative w-96">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search books..."
+                className="w-full pl-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-36 text-center">Cover</TableHead>
+                <TableHead className="w-1/4">Title</TableHead>
+                <TableHead className="w-1/6">Author</TableHead>
+                <TableHead className="w-1/6">Uploaded</TableHead>
+                <TableHead className="w-48 text-center">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+          </Table>
+        </div>
+        <div className="flex-grow overflow-y-auto">
+          <Table>
+            <TableBody>
+              {searchResults?.map((book: BooksResponse) => (
+                <TableRow key={book.id}>
+                  <TableCell className="w-36 text-center">
+                    {book.cover_image ? (
+                      <img
+                        src={createCoverImageUrl(book)}
+                        alt={book.title}
+                        className="w-24 h-32 object-cover mx-auto"
+                      />
+                    ) : (
+                      <div className="w-24 h-32 border flex flex-col items-center justify-center p-2 mx-auto">
+                        <BookImage className="h-12 w-12 text-muted-foreground" />
+                        <div className="mt-2" />
+                        <span className="text-sm text-muted-foreground">No Cover</span>
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell className="w-1/4 align-middle font-bold">{book.title}</TableCell>
+                  <TableCell className="w-1/6 align-middle">{book.author}</TableCell>
+                  <TableCell className="w-1/6 align-middle">{formatDate(book.created)}</TableCell>
+                  <TableCell className="w-48">
+                    <div className="flex justify-center">
+                      <div className="relative">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Actions</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                navigate({
+                                  to: `/reader/${book.id}`,
+                                  search: { chapter: book.current_chapter || book.chapters?.[0] },
+                                });
+                              }}
+                            >
+                              <Book className="mr-2 h-4 w-4" />
+                              <span>Read</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleDownloadBook(book.id)}>
+                              <Download className="mr-2 h-4 w-4" />
+                              <span>Download</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteBook(book.id)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash className="mr-2 h-4 w-4" />
+                              <span>Delete</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="flex-shrink-0 border-t">
+          <Table>
+            <TableFooter>
+              <TableRow>
+                <TableCell colSpan={5}>
+                  <div className="flex justify-between items-center gap-4">
+                    <div className="text-sm text-muted-foreground whitespace-nowrap">
+                      Showing {searchResults?.length || 0} of {booksData?.totalItems || 0}
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Link to="/upload">
+                        <Button variant={"outline"}>Upload More Files</Button>
+                      </Link>
+                      <Pagination>
+                        <PaginationContent>
+                          <PaginationItem>
+                            <PaginationPrevious
+                              onClick={() => handlePageChange(currentPage - 1)}
+                              className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            />
+                          </PaginationItem>
+                          {getPageNumbers().map((page, index) =>
+                            page === "..." ? (
+                              <PaginationItem key={`ellipsis-${index}`}>
+                                <PaginationEllipsis />
+                              </PaginationItem>
+                            ) : (
+                              <PaginationItem key={`page-${page}`}>
+                                <PaginationLink
+                                  onClick={() => handlePageChange(page as number)}
+                                  isActive={currentPage === page}
+                                  className="cursor-pointer"
+                                >
+                                  {page}
+                                </PaginationLink>
+                              </PaginationItem>
+                            ),
+                          )}
+                          <PaginationItem>
+                            <PaginationNext
+                              onClick={() => handlePageChange(currentPage + 1)}
+                              className={
+                                currentPage === totalPages || totalPages === 0
+                                  ? "pointer-events-none opacity-50"
+                                  : "cursor-pointer"
+                              }
+                            />
+                          </PaginationItem>
+                        </PaginationContent>
+                      </Pagination>
+                    </div>
+                  </div>
+                </TableCell>
+              </TableRow>
+            </TableFooter>
+          </Table>
+        </div>
+      </div>
+    );
+  }
+
   if (booksData?.totalItems === 0) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -130,6 +290,17 @@ function LibraryPage() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex-shrink-0 border-b">
+        <div className="p-2 flex items-center justify-center">
+          <div className="relative w-96">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search books..."
+              className="w-full pl-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
         <Table>
           <TableHeader>
             <TableRow>

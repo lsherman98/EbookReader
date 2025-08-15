@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { getBookById, getBooks, getChapterById, getChaptersByBookId, getChats, getHighlights, getLastReadBook, getMessagesByChatId } from "./api";
+import { getBookById, getBooks, getChapterById, getChaptersByBookId, getChats, getHighlights, getLastReadBook, getMessagesByChatId, searchBooks } from "./api";
 
 export function useGetBooks(page: number = 1, limit: number = 25) {
     return useQuery({
@@ -68,5 +68,13 @@ export function useGetHighlights(bookId?: string, chapterId?: string) {
         queryKey: ['highlights', { bookId, chapterId }],
         queryFn: () => getHighlights(bookId, chapterId),
         enabled: !!bookId && bookId !== 'undefined',
+    });
+}
+
+export function useSearchBooks(query: string) {
+    return useQuery({
+        queryKey: ['searchBooks', query],
+        queryFn: () => searchBooks(query),
+        enabled: !!query,
     });
 }

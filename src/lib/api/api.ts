@@ -168,6 +168,12 @@ export const generateAIResponse = async (
     });
 }
 
+export const searchBooks = async (query: string) => {
+    if (!getUserId()) return
+
+    return await pb.send(`/api/collections/books/records/full-text-search?search=${query}`, { method: 'GET' });
+}
+
 export const getLastReadBook = async () => {
     if (!getUserId()) return
     return await pb.collection(Collections.LastRead).getFirstListItem(`user="${getUserId()}"`);

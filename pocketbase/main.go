@@ -9,6 +9,7 @@ import (
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/book_hooks"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/chapter_hooks"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/chat"
+	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/full_text_search"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/highlight_hooks"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/message_hooks"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/vector_search"
@@ -52,14 +53,17 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	err := vector_search.Init(app, vector_search.VectorCollection{
+	if err := vector_search.Init(app, vector_search.VectorCollection{
 		Name: "vectors",
-	})
-	if err != nil {
+	}); err != nil {
 		log.Fatal(err)
 	}
 
 	if err := chat.Init(app); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := full_text_search.Init(app, "books"); err != nil {
 		log.Fatal(err)
 	}
 
