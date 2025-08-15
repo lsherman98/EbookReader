@@ -12,11 +12,10 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { Route as rootRouteImport } from './pages/__root'
 import { Route as AppRouteImport } from './pages/_app'
-import { Route as AppReaderBookIdRouteImport } from './pages/_app/reader.$bookId'
+import { Route as AppReaderChar123BookIdChar125RouteImport } from './pages/_app/reader.{-$bookId}'
 
 const SigninLazyRouteImport = createFileRoute('/signin')()
 const AppUploadLazyRouteImport = createFileRoute('/_app/upload')()
-const AppSettingsLazyRouteImport = createFileRoute('/_app/settings')()
 const AppLibraryLazyRouteImport = createFileRoute('/_app/library')()
 
 const SigninLazyRoute = SigninLazyRouteImport.update({
@@ -33,63 +32,50 @@ const AppUploadLazyRoute = AppUploadLazyRouteImport.update({
   path: '/upload',
   getParentRoute: () => AppRoute,
 } as any).lazy(() => import('./pages/_app/upload.lazy').then((d) => d.Route))
-const AppSettingsLazyRoute = AppSettingsLazyRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AppRoute,
-} as any).lazy(() => import('./pages/_app/settings.lazy').then((d) => d.Route))
 const AppLibraryLazyRoute = AppLibraryLazyRouteImport.update({
   id: '/library',
   path: '/library',
   getParentRoute: () => AppRoute,
 } as any).lazy(() => import('./pages/_app/library.lazy').then((d) => d.Route))
-const AppReaderBookIdRoute = AppReaderBookIdRouteImport.update({
-  id: '/reader/$bookId',
-  path: '/reader/$bookId',
-  getParentRoute: () => AppRoute,
-} as any)
+const AppReaderChar123BookIdChar125Route =
+  AppReaderChar123BookIdChar125RouteImport.update({
+    id: '/reader/{-$bookId}',
+    path: '/reader/{-$bookId}',
+    getParentRoute: () => AppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/signin': typeof SigninLazyRoute
   '/library': typeof AppLibraryLazyRoute
-  '/settings': typeof AppSettingsLazyRoute
   '/upload': typeof AppUploadLazyRoute
-  '/reader/$bookId': typeof AppReaderBookIdRoute
+  '/reader/{-$bookId}': typeof AppReaderChar123BookIdChar125Route
 }
 export interface FileRoutesByTo {
   '/signin': typeof SigninLazyRoute
   '/library': typeof AppLibraryLazyRoute
-  '/settings': typeof AppSettingsLazyRoute
   '/upload': typeof AppUploadLazyRoute
-  '/reader/$bookId': typeof AppReaderBookIdRoute
+  '/reader/{-$bookId}': typeof AppReaderChar123BookIdChar125Route
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/signin': typeof SigninLazyRoute
   '/_app/library': typeof AppLibraryLazyRoute
-  '/_app/settings': typeof AppSettingsLazyRoute
   '/_app/upload': typeof AppUploadLazyRoute
-  '/_app/reader/$bookId': typeof AppReaderBookIdRoute
+  '/_app/reader/{-$bookId}': typeof AppReaderChar123BookIdChar125Route
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/signin'
-    | '/library'
-    | '/settings'
-    | '/upload'
-    | '/reader/$bookId'
+  fullPaths: '/signin' | '/library' | '/upload' | '/reader/{-$bookId}'
   fileRoutesByTo: FileRoutesByTo
-  to: '/signin' | '/library' | '/settings' | '/upload' | '/reader/$bookId'
+  to: '/signin' | '/library' | '/upload' | '/reader/{-$bookId}'
   id:
     | '__root__'
     | '/_app'
     | '/signin'
     | '/_app/library'
-    | '/_app/settings'
     | '/_app/upload'
-    | '/_app/reader/$bookId'
+    | '/_app/reader/{-$bookId}'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -120,13 +106,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppUploadLazyRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/settings': {
-      id: '/_app/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AppSettingsLazyRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/library': {
       id: '/_app/library'
       path: '/library'
@@ -134,11 +113,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLibraryLazyRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/reader/$bookId': {
-      id: '/_app/reader/$bookId'
-      path: '/reader/$bookId'
-      fullPath: '/reader/$bookId'
-      preLoaderRoute: typeof AppReaderBookIdRouteImport
+    '/_app/reader/{-$bookId}': {
+      id: '/_app/reader/{-$bookId}'
+      path: '/reader/{-$bookId}'
+      fullPath: '/reader/{-$bookId}'
+      preLoaderRoute: typeof AppReaderChar123BookIdChar125RouteImport
       parentRoute: typeof AppRoute
     }
   }
@@ -146,16 +125,14 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppLibraryLazyRoute: typeof AppLibraryLazyRoute
-  AppSettingsLazyRoute: typeof AppSettingsLazyRoute
   AppUploadLazyRoute: typeof AppUploadLazyRoute
-  AppReaderBookIdRoute: typeof AppReaderBookIdRoute
+  AppReaderChar123BookIdChar125Route: typeof AppReaderChar123BookIdChar125Route
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppLibraryLazyRoute: AppLibraryLazyRoute,
-  AppSettingsLazyRoute: AppSettingsLazyRoute,
   AppUploadLazyRoute: AppUploadLazyRoute,
-  AppReaderBookIdRoute: AppReaderBookIdRoute,
+  AppReaderChar123BookIdChar125Route: AppReaderChar123BookIdChar125Route,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

@@ -9,11 +9,12 @@ export function useGetBooks(page: number = 1, limit: number = 25) {
     });
 }
 
-export function useGetBookById(bookId: string) {
+export function useGetBookById(bookId?: string) {
     return useQuery({
-        queryKey: ['book', bookId],
+        queryKey: ['book'],
         queryFn: () => getBookById(bookId),
-        placeholderData: keepPreviousData
+        placeholderData: keepPreviousData,
+        enabled: !!bookId && bookId !== 'undefined',
     });
 }
 
@@ -56,7 +57,6 @@ export function useGetHighlights(bookId?: string, chapterId?: string) {
     return useQuery({
         queryKey: ['highlights', { bookId, chapterId }],
         queryFn: () => getHighlights(bookId, chapterId),
-        placeholderData: keepPreviousData,
         enabled: !!bookId,
     });
 }

@@ -1,5 +1,4 @@
-import { useGetBooks } from "@/lib/api/queries";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarHeader } from "../ui/sidebar";
 import { Button } from "../ui/button";
 import { Link } from "@tanstack/react-router";
@@ -7,34 +6,28 @@ import { CloudAlert } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { SidebarChat } from "./SidebarChat";
 import { SidebarHighlights } from "./SidebarHighlights";
+import { QueryObserver, useQueryClient } from "@tanstack/react-query";
+import { BooksResponse } from "@/lib/pocketbase-types";
+import { ExpandChapters } from "@/lib/types";
 
 export function MainSidebar({ hidden }: { hidden?: boolean }) {
   const [bookId, setBookId] = useState<string>();
+  const queryClient = useQueryClient();
 
-  const { data: bookData, isPending: isBooksPending } = useGetBooks();
+  const observer = new QueryObserver(queryClient, {
+    queryKey: ["book"],
+    enabled: false,
+  });
 
-  useEffect(() => {
-    if (!isBooksPending && bookData?.items.length) {
-      setBookId(bookData.items[0].id);
+  observer.subscribe((result) => {
+    if (result.isError) return;
+    if (result.isSuccess) {
+      const data = result.data as BooksResponse<ExpandChapters>;
+      setBookId(data.id);
     } else {
       setBookId(undefined);
     }
-  }, [bookData, isBooksPending]);
-
-  if (isBooksPending) {
-    return (
-      <Sidebar collapsible="none" className={`${hidden ? "hidden" : ""} flex-1 md:flex ml-14`}>
-        <SidebarHeader className="gap-3.5 border-b p-4 h-[50px] justify-between flex-row w-full items-center">
-          Loading...
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarGroup className="px-0 h-full">
-            <SidebarGroupContent className="h-full">Loading...</SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
-      </Sidebar>
-    );
-  }
+  });
 
   if (!bookId) {
     return (
@@ -59,8 +52,8 @@ export function MainSidebar({ hidden }: { hidden?: boolean }) {
 
   return (
     <Sidebar collapsible="none" className={`${hidden ? "hidden" : ""} flex-1 md:flex ml-14`}>
-      <Tabs defaultValue="highlights" className="w-full h-full max-h-[94vh]">
-        <SidebarHeader className="gap-3.5 border-b p-4 h-[48px] justify-center flex-row w-full items-center">
+      <Tabs defaultValue="chat" className="w-full h-full max-h-[94vh]">
+        <SidebarHeader className="gap-3.5 border-b p-4 h-[50px] justify-center flex-row w-full items-center">
           <TabsList>
             <TabsTrigger value="chat">Chat</TabsTrigger>
             <TabsTrigger value="highlights">Highlights</TabsTrigger>

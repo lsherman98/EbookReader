@@ -5,9 +5,8 @@ import { useState } from "react";
 import { SidebarGroup } from "../ui/sidebar";
 import { Switch } from "../ui/switch";
 import { Button } from "../ui/button";
-import { Trash2, Search, BookOpen, FileText, Calendar } from "lucide-react";
+import { Trash2, BookOpen, FileText, Calendar } from "lucide-react";
 import { Label } from "../ui/label";
-import { Input } from "../ui/input";
 import { Card, CardContent } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { HighlightsRecord } from "@/lib/pocketbase-types";
@@ -17,7 +16,6 @@ import { ExpandHighlights } from "@/lib/types";
 
 export function SidebarHighlights({ bookId }: { bookId: string }) {
   const [showAllHighlights, setShowAllHighlights] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const { setSelectedHighlight } = useSelectedHighlightStore();
 
   const { currentChapterId } = useCurrentChapterStore();
@@ -40,7 +38,6 @@ export function SidebarHighlights({ bookId }: { bookId: string }) {
               {highlights.length}
             </Badge>
           </div>
-
           <div className="flex items-center gap-3">
             <div className="flex items-center space-x-2">
               <Label htmlFor="show-all" className="text-sm text-sidebar-foreground whitespace-nowrap">
@@ -48,31 +45,14 @@ export function SidebarHighlights({ bookId }: { bookId: string }) {
               </Label>
               <Switch id="show-all" checked={showAllHighlights} onCheckedChange={setShowAllHighlights} />
             </div>
-
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search highlights..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-9"
-              />
-            </div>
           </div>
         </div>
       </div>
-
       <SidebarGroup className="px-0 flex-1 overflow-hidden">
         <div className="p-2 space-y-2 overflow-auto">
           {highlights.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <FileText className="h-12 w-12 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                {searchQuery ? "No highlights match your search" : "No highlights yet"}
-              </p>
-              {!searchQuery && (
-                <p className="text-xs text-muted-foreground mt-1">Select text in the reader to create highlights</p>
-              )}
             </div>
           ) : (
             highlights.map((highlight) => {

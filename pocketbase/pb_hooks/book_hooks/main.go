@@ -13,19 +13,16 @@ func Init(app *pocketbase.PocketBase) error {
 	app.OnRecordAfterCreateSuccess("books").BindFunc(func(e *core.RecordEvent) error {
 		lastReadCollection, err := app.FindCollectionByNameOrId("last_read")
 		if err != nil {
-			e.App.Logger().Error("Error finding last read collection:", "error", err.Error())
 			return err
 		}
 
 		chatsCollection, err := app.FindCollectionByNameOrId("chats")
 		if err != nil {
-			e.App.Logger().Error("Error finding chats collection:", "error", err.Error())
 			return err
 		}
 
 		chaptersCollection, err := app.FindCollectionByNameOrId("chapters")
 		if err != nil {
-			e.App.Logger().Error("Error finding chapters collection:", "error", err.Error())
 			return err
 		}
 
@@ -94,20 +91,17 @@ func Init(app *pocketbase.PocketBase) error {
 
 		if setLastRead {
 			if err := e.App.Save(lastRead); err != nil {
-				e.App.Logger().Error("Error saving last read record:", "error", err.Error())
 				return err
 			}
 		}
 
 		if err := e.App.Save(chatRecord); err != nil {
-			e.App.Logger().Error("Error saving chat record:", "error", err.Error())
 			return err
 		}
 
 		var chapterIds []string
 		for _, record := range chapters {
 			if err := e.App.Save(record); err != nil {
-				e.App.Logger().Error("Error saving chapter record:", "error", err.Error())
 				return err
 			}
 			chapterIds = append(chapterIds, record.Id)
@@ -115,7 +109,6 @@ func Init(app *pocketbase.PocketBase) error {
 
 		setBookFields(book, parsedBook, chapterIds)
 		if err := e.App.Save(book); err != nil {
-			e.App.Logger().Error("Error saving book record:", "error", err.Error())
 			return err
 		}
 
@@ -131,18 +124,27 @@ func Init(app *pocketbase.PocketBase) error {
 		book := e.Record.Id
 
 		lastReadRecord, err := e.App.FindFirstRecordByData("last_read", "user", user)
-		if err != nil {
+		if lastReadRecord == nil || err != nil {
+			err = createLastReadRecord(e.App, user, book)
+			if err != nil {
+				return err
+			}
+
 			return e.Next()
 		}
 
-		if lastReadRecord != nil && lastReadRecord.GetString("book") != book {
+		currentBookId := lastReadRecord.GetString("book")
+
+		if currentBookId != book {
 			bookRecord, err := e.App.FindRecordById("books", book)
 			if err != nil {
 				return err
 			}
 
+			currentChapter := bookRecord.GetString("current_chapter")
+
 			lastReadRecord.Set("book", book)
-			lastReadRecord.Set("chapter", bookRecord.GetString("current_chapter"))
+			lastReadRecord.Set("chapter", currentChapter)
 
 			err = e.App.Save(lastReadRecord)
 			if err != nil {
@@ -186,4 +188,30 @@ func setChatFields(chatRecord *core.Record, userId, bookId, title string) {
 	chatRecord.Set("user", userId)
 	chatRecord.Set("book", bookId)
 	chatRecord.Set("title", title)
+}
+
+func createLastReadRecord(app core.App, userId, bookId string) error {
+	bookRecord, err := app.FindRecordById("books", bookId)
+	if err != nil {
+		return err
+	}
+
+	lastReadCollection, err := app.FindCollectionByNameOrId("last_read")
+	if err != nil {
+		return err
+	}
+
+	currentChapter := bookRecord.GetString("current_chapter")
+
+	lastReadRecord := core.NewRecord(lastReadCollection)
+	lastReadRecord.Set("user", userId)
+	lastReadRecord.Set("book", bookId)
+	lastReadRecord.Set("chapter", currentChapter)
+
+	err = app.Save(lastReadRecord)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

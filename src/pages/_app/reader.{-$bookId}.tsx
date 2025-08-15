@@ -29,7 +29,7 @@ async function createHighlightHash(bookId: string, chapterId: string, selection:
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export const Route = createFileRoute("/_app/reader/$bookId")({
+export const Route = createFileRoute("/_app/reader/{-$bookId}")({
   component: Index,
   validateSearch: (search: Record<string, unknown>) => {
     return {
@@ -39,7 +39,7 @@ export const Route = createFileRoute("/_app/reader/$bookId")({
 });
 
 function Index() {
-  const bookId = Route.useParams().bookId;
+  const { bookId } = Route.useParams();
   const search = Route.useSearch();
   const navigate = useNavigate();
 
@@ -47,14 +47,14 @@ function Index() {
   const { selectedHighlight } = useSelectedHighlightStore();
   const [chapters, setChapters] = useState<ChaptersRecord[]>([]);
 
-  const { data: lastReadBook } = useGetLastReadBook();
-  const { data: book } = useGetBookById(bookId && bookId !== "undefined" ? bookId : lastReadBook?.book || "");
+  const { data: book } = useGetBookById(bookId);
   const { data: chapter } = useGetChapterById(currentChapterId);
+  const { data: lastReadBook } = useGetLastReadBook();
 
   const navigateTo = useCallback(
     (bookId: string, chapterId: string | undefined, replace: boolean) => {
       navigate({
-        to: "/reader/$bookId",
+        to: "/reader/{-$bookId}",
         params: { bookId },
         search: { chapter: chapterId },
         replace: replace,
@@ -66,10 +66,17 @@ function Index() {
   const handleChapterClick = useCallback(
     (chapterId: string) => {
       setCurrentChapterId(chapterId);
+      if (!bookId) return;
       navigateTo(bookId, chapterId, false);
     },
     [setCurrentChapterId, navigateTo, bookId],
   );
+
+  useEffect(() => {
+    if ((!bookId && lastReadBook?.book) || (bookId === "undefined" && lastReadBook?.book)) {
+      navigateTo(lastReadBook.book, lastReadBook.chapter, true);
+    }
+  }, [bookId, lastReadBook, navigateTo]);
 
   useEffect(() => {
     if (!book) return;
@@ -77,19 +84,19 @@ function Index() {
   }, [book]);
 
   useEffect(() => {
-    if ((!bookId || bookId === "undefined") && lastReadBook?.book) {
-      navigateTo(lastReadBook.book, lastReadBook.chapter, false);
+    if (!bookId || !book) return;
+
+    const chapterId = search.chapter || book?.current_chapter || book?.chapters?.[0];
+    if (!chapterId) {
       return;
     }
 
-    const chapterId = search.chapter || lastReadBook?.chapter || book?.chapters?.[0];
-    if (!chapterId) return;
     setCurrentChapterId(chapterId);
 
     if (!search.chapter) {
       navigateTo(bookId, chapterId, true);
     }
-  }, [bookId, lastReadBook, book, search.chapter, navigateTo, setCurrentChapterId]);
+  }, [bookId, book, search.chapter, navigateTo, setCurrentChapterId]);
 
   useEffect(() => {
     if (selectedHighlight && selectedHighlight.chapter && selectedHighlight.chapter !== currentChapterId) {
@@ -163,6 +170,7 @@ function PlateEditor({ chapter }: { chapter?: ChaptersRecord }) {
       if (element) {
         element.scrollIntoView({ behavior: "smooth", block: "center" });
       }
+      setSelectedHighlight(undefined);
     }
   }, [selectedHighlight, chapter, setSelectedHighlight, htmlString, editor.children]);
 

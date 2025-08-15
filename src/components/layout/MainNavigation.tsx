@@ -1,4 +1,3 @@
-import { GearIcon } from "@radix-ui/react-icons";
 import { MENU_ENTRIES } from "@/config/menu";
 import { cn } from "@/lib/utils";
 import UserMenu from "./UserMenu";
@@ -31,18 +30,6 @@ const MainNavigation: React.FC = () => {
           ))}
         </nav>
         <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-4">
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <Link
-                to="/settings"
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-              >
-                <GearIcon className="h-5 w-5" />
-                <span className="sr-only">Settings</span>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">Settings</TooltipContent>
-          </Tooltip>
           <UserMenu />
         </nav>
       </aside>

@@ -10,8 +10,8 @@ export const getBooks = async (page: number, limit: number) => {
     return await pb.collection(Collections.Books).getList(page, limit);
 }
 
-export const getBookById = async (bookId: string) => {
-    if (!getUserId()) return
+export const getBookById = async (bookId?: string) => {
+    if (!getUserId() || !bookId || bookId === 'undefined') return null
 
     return await pb.collection(Collections.Books).getOne<BooksResponse<ExpandChapters>>(bookId, {
         expand: "chapters",

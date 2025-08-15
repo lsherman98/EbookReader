@@ -3,7 +3,7 @@ import { HighlightsRecord } from "../pocketbase-types";
 
 interface SelectedHighlightStore {
     selectedHighlight: HighlightsRecord | undefined;
-    setSelectedHighlight: (highlight: HighlightsRecord) => void;
+    setSelectedHighlight: (highlight?: HighlightsRecord) => void;
 }
 
 export const useSelectedHighlightStore = create<SelectedHighlightStore>((set) => ({
