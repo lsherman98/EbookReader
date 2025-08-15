@@ -1,33 +1,13 @@
-import { useState } from "react";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarHeader } from "../ui/sidebar";
 import { Button } from "../ui/button";
-import { Link } from "@tanstack/react-router";
+import { Link, useParams } from "@tanstack/react-router";
 import { CloudAlert } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { SidebarChat } from "./SidebarChat";
 import { SidebarHighlights } from "./SidebarHighlights";
-import { QueryObserver, useQueryClient } from "@tanstack/react-query";
-import { BooksResponse } from "@/lib/pocketbase-types";
-import { ExpandChapters } from "@/lib/types";
 
 export function MainSidebar({ hidden }: { hidden?: boolean }) {
-  const [bookId, setBookId] = useState<string>();
-  const queryClient = useQueryClient();
-
-  const observer = new QueryObserver(queryClient, {
-    queryKey: ["book"],
-    enabled: false,
-  });
-
-  observer.subscribe((result) => {
-    if (result.isError) return;
-    if (result.isSuccess) {
-      const data = result.data as BooksResponse<ExpandChapters>;
-      setBookId(data.id);
-    } else {
-      setBookId(undefined);
-    }
-  });
+  const { bookId } = useParams({ strict: false });
 
   if (!bookId) {
     return (

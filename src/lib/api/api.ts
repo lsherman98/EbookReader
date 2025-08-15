@@ -2,7 +2,7 @@ import { pb } from "../pocketbase";
 import { BooksResponse, ChatsResponse, Collections, HighlightsResponse } from "../pocketbase-types";
 import { FileUploadObj } from "@/pages/_app/upload.lazy";
 import { getUserId, handleError } from "../utils";
-import { Citation, ExpandChapters, ExpandHighlights, ExpandMessages, UploadFileRequest } from "../types";
+import { Citation, ExpandHighlights, ExpandMessages, UploadFileRequest } from "../types";
 import { Range } from "platejs";
 
 export const getBooks = async (page: number, limit: number) => {
@@ -13,9 +13,13 @@ export const getBooks = async (page: number, limit: number) => {
 export const getBookById = async (bookId?: string) => {
     if (!getUserId() || !bookId || bookId === 'undefined') return null
 
-    return await pb.collection(Collections.Books).getOne<BooksResponse<ExpandChapters>>(bookId, {
-        expand: "chapters",
-    });
+    return await pb.collection(Collections.Books).getOne<BooksResponse>(bookId);
+}
+
+export const getChaptersByBookId = async (bookId?: string) => {
+    if (!getUserId() || !bookId) return
+
+    return await pb.collection(Collections.Chapters).getFullList({ filter: `book="${bookId}"`, fields: "id,title,order" });
 }
 
 export const downloadBook = async (bookId: string) => {

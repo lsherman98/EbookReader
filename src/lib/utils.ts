@@ -4,6 +4,7 @@ import { pb } from "./pocketbase";
 import { toast } from "@/hooks/use-toast";
 import { Citation } from "./types";
 import { Message } from "@/components/ui/chat-message";
+import { Range } from "platejs";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -333,4 +334,13 @@ export function highlightCitationInElement(
   }
 
   return null;
+}
+
+export async function createHighlightHash(bookId: string, chapterId: string, selection: Range, text: string) {
+  const dataToHash = `${bookId}-${chapterId}-${selection.anchor.path}-${selection.focus.path}-${text}`;
+  const encoder = new TextEncoder();
+  const data = encoder.encode(dataToHash);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }

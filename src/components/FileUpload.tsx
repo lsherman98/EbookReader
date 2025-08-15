@@ -17,7 +17,7 @@ export function FileUpload({
   const allowedMimeTypes = ["application/epub+zip"];
 
   const validateFile = (file: File): { valid: boolean; error?: string } => {
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > 20 * 1024 * 1024) {
       return { valid: false, error: "File size is too large. Max file size is 10MB." };
     }
 

@@ -18,10 +18,6 @@ export type ExpandMessages = {
     messages: MessagesResponse[]
 }
 
-export type ExpandChapters = {
-    chapters: ChaptersResponse[]
-}
-
 export type ExpandHighlights = {
     book: BooksResponse
     chapter: ChaptersResponse

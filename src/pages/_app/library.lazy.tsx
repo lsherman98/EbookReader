@@ -175,7 +175,10 @@ function LibraryPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
                               onClick={() => {
-                                navigate({ to: `/reader/${book.id}` });
+                                navigate({
+                                  to: `/reader/${book.id}`,
+                                  search: { chapter: book.current_chapter || book.chapters?.[0] },
+                                });
                               }}
                             >
                               <Book className="mr-2 h-4 w-4" />
