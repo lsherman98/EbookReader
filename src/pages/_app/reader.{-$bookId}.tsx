@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useGetBookById, useGetChapterById, useGetChaptersByBookId, useGetLastReadBook } from "@/lib/api/queries";
 import { PlateController } from "platejs/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { ChaptersRecord } from "@/lib/pocketbase-types";
 import { Button } from "@/components/ui/button";
 import { SquareMenu } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -24,8 +23,6 @@ function Index() {
   const { bookId } = Route.useParams();
   const { chapter: chapterId } = Route.useSearch();
   const navigate = useNavigate();
-
-  const [chapters, setChapters] = useState<ChaptersRecord[]>([]);
 
   const { data: chaptersData } = useGetChaptersByBookId(bookId);
   const { data: chapter } = useGetChapterById(chapterId);
@@ -62,27 +59,21 @@ function Index() {
       } else {
         refetchLastReadBook();
       }
+      return;
     }
-  }, [bookId, lastReadBook, navigateTo, refetchLastReadBook]);
 
-  useEffect(() => {
-    if (!chaptersData) return;
-    setChapters(chaptersData);
-  }, [chaptersData]);
-
-  useEffect(() => {
     if (chapterId) {
       setCurrentChapterId(chapterId);
-    } else if (bookId && book) {
-      navigateTo(bookId, book?.current_chapter, true);
+    } else if (book?.current_chapter) {
+      navigateTo(bookId, book.current_chapter, true);
     }
-  }, [book, bookId, chapterId, navigateTo, setCurrentChapterId]);
+  }, [bookId, chapterId, lastReadBook, book, navigateTo, refetchLastReadBook, setCurrentChapterId]);
 
   useEffect(() => {
-    if (selectedHighlight && selectedHighlight.chapter && selectedHighlight.chapter !== currentChapterId) {
+    if (selectedHighlight?.chapter && selectedHighlight.chapter !== currentChapterId) {
       handleChapterClick(selectedHighlight.chapter);
     }
-  }, [currentChapterId, handleChapterClick, selectedHighlight]);
+  }, [selectedHighlight, currentChapterId, handleChapterClick]);
 
   useEffect(() => {
     return () => {
@@ -101,7 +92,7 @@ function Index() {
           </PopoverTrigger>
           <PopoverContent align="start">
             <ul className="p-1 flex flex-col gap-2 max-h-96 overflow-y-auto overflow-x-hidden no-scrollbar">
-              {chapters?.map((chapter) => (
+              {chaptersData?.map((chapter) => (
                 <li
                   key={chapter.id}
                   onClick={() => handleChapterClick(chapter.id)}
