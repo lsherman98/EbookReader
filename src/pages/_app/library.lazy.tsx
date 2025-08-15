@@ -128,143 +128,140 @@ function LibraryPage() {
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex flex-col flex-grow overflow-auto">
-        <div className="min-h-0 flex-grow">
-          <Table className="h-full">
-            <TableHeader className="sticky top-0 bg-background z-5">
-              <TableRow>
-                <TableHead className="w-36 text-center">Cover</TableHead>
-                <TableHead className="w-1/4">Title</TableHead>
-                <TableHead className="w-1/6">Author</TableHead>
-                <TableHead className="w-1/6">Uploaded</TableHead>
-                <TableHead className="w-48 text-center">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {booksData?.items.map((book) => (
-                <TableRow key={book.id}>
-                  <TableCell className="w-36 text-center">
-                    {book.cover_image ? (
-                      <img
-                        src={createCoverImageUrl(book)}
-                        alt={book.title}
-                        className="w-24 h-32 object-cover mx-auto"
-                      />
-                    ) : (
-                      <div className="w-24 h-32 border flex flex-col items-center justify-center p-2 mx-auto">
-                        <BookImage className="h-12 w-12 text-muted-foreground" />
-                        <div className="mt-2" />
-                        <span className="text-sm text-muted-foreground">No Cover</span>
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell className="w-1/4 align-middle font-bold">{book.title}</TableCell>
-                  <TableCell className="w-1/6 align-middle">{book.author}</TableCell>
-                  <TableCell className="w-1/6 align-middle">{formatDate(book.created)}</TableCell>
-                  <TableCell className="w-48">
-                    <div className="flex justify-center">
-                      <div className="relative">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Actions</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                navigate({
-                                  to: `/reader/${book.id}`,
-                                  search: { chapter: book.current_chapter || book.chapters?.[0] },
-                                });
-                              }}
-                            >
-                              <Book className="mr-2 h-4 w-4" />
-                              <span>Read</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleDownloadBook(book.id)}>
-                              <Download className="mr-2 h-4 w-4" />
-                              <span>Download</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteBook(book.id)}
-                              className="text-destructive focus:text-destructive"
-                            >
-                              <Trash className="mr-2 h-4 w-4" />
-                              <span>Delete</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+    <div className="flex flex-col h-full">
+      <div className="flex-shrink-0 border-b">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-36 text-center">Cover</TableHead>
+              <TableHead className="w-1/4">Title</TableHead>
+              <TableHead className="w-1/6">Author</TableHead>
+              <TableHead className="w-1/6">Uploaded</TableHead>
+              <TableHead className="w-48 text-center">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+        </Table>
+      </div>
+      <div className="flex-grow overflow-y-auto">
+        <Table>
+          <TableBody>
+            {booksData?.items.map((book) => (
+              <TableRow key={book.id}>
+                <TableCell className="w-36 text-center">
+                  {book.cover_image ? (
+                    <img src={createCoverImageUrl(book)} alt={book.title} className="w-24 h-32 object-cover mx-auto" />
+                  ) : (
+                    <div className="w-24 h-32 border flex flex-col items-center justify-center p-2 mx-auto">
+                      <BookImage className="h-12 w-12 text-muted-foreground" />
+                      <div className="mt-2" />
+                      <span className="text-sm text-muted-foreground">No Cover</span>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-        <div className="mt-auto">
-          <Table>
-            <TableFooter>
-              <TableRow>
-                <TableCell colSpan={7}>
-                  <div className="flex justify-between items-center gap-4">
-                    <div className="text-sm text-muted-foreground whitespace-nowrap">
-                      Showing {booksData?.items.length || 0} of {booksData?.totalItems || 0}
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <Link to="/upload">
-                        <Button variant={"outline"}>Upload More Files</Button>
-                      </Link>
-                      <Pagination>
-                        <PaginationContent>
-                          <PaginationItem>
-                            <PaginationPrevious
-                              onClick={() => handlePageChange(currentPage - 1)}
-                              className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                            />
-                          </PaginationItem>
-                          {getPageNumbers().map((page, index) =>
-                            page === "..." ? (
-                              <PaginationItem key={`ellipsis-${index}`}>
-                                <PaginationEllipsis />
-                              </PaginationItem>
-                            ) : (
-                              <PaginationItem key={`page-${page}`}>
-                                <PaginationLink
-                                  onClick={() => handlePageChange(page as number)}
-                                  isActive={currentPage === page}
-                                  className="cursor-pointer"
-                                >
-                                  {page}
-                                </PaginationLink>
-                              </PaginationItem>
-                            ),
-                          )}
-
-                          <PaginationItem>
-                            <PaginationNext
-                              onClick={() => handlePageChange(currentPage + 1)}
-                              className={
-                                currentPage === totalPages || totalPages === 0
-                                  ? "pointer-events-none opacity-50"
-                                  : "cursor-pointer"
-                              }
-                            />
-                          </PaginationItem>
-                        </PaginationContent>
-                      </Pagination>
+                  )}
+                </TableCell>
+                <TableCell className="w-1/4 align-middle font-bold">{book.title}</TableCell>
+                <TableCell className="w-1/6 align-middle">{book.author}</TableCell>
+                <TableCell className="w-1/6 align-middle">{formatDate(book.created)}</TableCell>
+                <TableCell className="w-48">
+                  <div className="flex justify-center">
+                    <div className="relative">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Actions</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              navigate({
+                                to: `/reader/${book.id}`,
+                                search: { chapter: book.current_chapter || book.chapters?.[0] },
+                              });
+                            }}
+                          >
+                            <Book className="mr-2 h-4 w-4" />
+                            <span>Read</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleDownloadBook(book.id)}>
+                            <Download className="mr-2 h-4 w-4" />
+                            <span>Download</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteBook(book.id)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash className="mr-2 h-4 w-4" />
+                            <span>Delete</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 </TableCell>
               </TableRow>
-            </TableFooter>
-          </Table>
-        </div>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="flex-shrink-0 border-t">
+        <Table>
+          <TableFooter>
+            <TableRow>
+              <TableCell colSpan={5}>
+                <div className="flex justify-between items-center gap-4">
+                  <div className="text-sm text-muted-foreground whitespace-nowrap">
+                    Showing {booksData?.items.length || 0} of {booksData?.totalItems || 0}
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Link to="/upload">
+                      <Button variant={"outline"}>Upload More Files</Button>
+                    </Link>
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                        {getPageNumbers().map((page, index) =>
+                          page === "..." ? (
+                            <PaginationItem key={`ellipsis-${index}`}>
+                              <PaginationEllipsis />
+                            </PaginationItem>
+                          ) : (
+                            <PaginationItem key={`page-${page}`}>
+                              <PaginationLink
+                                onClick={() => handlePageChange(page as number)}
+                                isActive={currentPage === page}
+                                className="cursor-pointer"
+                              >
+                                {page}
+                              </PaginationLink>
+                            </PaginationItem>
+                          ),
+                        )}
+                        <PaginationItem>
+                          <PaginationNext
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            className={
+                              currentPage === totalPages || totalPages === 0
+                                ? "pointer-events-none opacity-50"
+                                : "cursor-pointer"
+                            }
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                </div>
+              </TableCell>
+            </TableRow>
+          </TableFooter>
+        </Table>
       </div>
     </div>
   );
