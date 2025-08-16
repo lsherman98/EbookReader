@@ -84,7 +84,7 @@ func Init(app *pocketbase.PocketBase) error {
 			html := "<!DOCTYPE html>" + content
 
 			chapterRecord := core.NewRecord(chaptersCollection)
-			setChapterFields(chapterRecord, &chapter, html, book.Id)
+			setChapterFields(chapterRecord, &chapter, html, book.Id, user)
 
 			chapters = append(chapters, chapterRecord)
 		}
@@ -170,13 +170,14 @@ func setBookFields(book *core.Record, parsedBook *pamphlet.Book, chapterIds []st
 	book.Set("available", true)
 }
 
-func setChapterFields(chapterRecord *core.Record, chapter *pamphlet.Chapter, html string, bookId string) {
+func setChapterFields(chapterRecord *core.Record, chapter *pamphlet.Chapter, html string, bookId string, userId string) {
 	chapterRecord.Set("book", bookId)
 	chapterRecord.Set("title", chapter.Title)
 	chapterRecord.Set("order", chapter.Order)
 	chapterRecord.Set("href", chapter.Href)
 	chapterRecord.Set("has_toc", chapter.HasToc)
 	chapterRecord.Set("content", html)
+	chapterRecord.Set("user", userId)
 }
 
 func setLastReadFields(lastRead *core.Record, userId, bookId string) {

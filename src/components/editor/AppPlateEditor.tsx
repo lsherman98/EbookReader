@@ -11,18 +11,34 @@ import { DisableTextInput } from "./plugins/disable-text-input";
 import { FloatingToolbarKit } from "./plugins/floating-toolbar-kit";
 import { createStaticEditor, Node, Range, serializeHtml, Value } from "platejs";
 import { BaseEditorKit } from "./plugins/editor-base-kit";
-import { combineHighlightText, createAdjustedSelection, createHighlightHash, findAdjacentHighlights, findHighlightedElementInEditor, findMatchingMarksInEditor, highlightCitationInElement, removeExistingHighlights, scrollElementIntoView, selectMarksInEditor } from "@/lib/utils";
+import {
+  combineHighlightText,
+  createAdjustedSelection,
+  createHighlightHash,
+  findAdjacentHighlights,
+  findHighlightedElementInEditor,
+  findMatchingMarksInEditor,
+  highlightCitationInElement,
+  removeExistingHighlights,
+  scrollElementIntoView,
+  selectMarksInEditor,
+} from "@/lib/utils";
 import { Editor, EditorContainer } from "../ui/editor";
+import { useNavigationHistoryStore } from "@/lib/stores/navigation-history-store";
+import { useNavigate } from "@tanstack/react-router";
+import { GoBackButton } from "../ui/go-back-button";
 
 export function AppPlateEditor({ chapter }: { chapter?: ChaptersRecord }) {
   const [chapterHtmlContent, setChapterHtmlContent] = useState<string>("");
   const currentEditorSelection = useRef<Range | null>(null);
 
-  const { currentCitation, setCurrentCitation } = useCitationStore();
-  const { selectedHighlight, setSelectedHighlight } = useSelectedHighlightStore();
+  const navigate = useNavigate();
   const updateChapterMutation = useUpdateChapter();
   const addHighlightMutation = useAddHighlight();
   const deleteHighlightMutation = useDeleteHighlight();
+  const { canGoBack, previousLocation, setPreviousLocation } = useNavigationHistoryStore();
+  const { currentCitation, setCurrentCitation } = useCitationStore();
+  const { selectedHighlight, setSelectedHighlight } = useSelectedHighlightStore();
 
   const plateEditor = usePlateEditor({
     plugins: [...BasicBlocksKit, ...BasicMarksKit, DisableTextInput, ...FloatingToolbarKit],
@@ -98,6 +114,31 @@ export function AppPlateEditor({ chapter }: { chapter?: ChaptersRecord }) {
     }
   }, [addHighlightMutation, chapter, deleteHighlightMutation, plateEditor]);
 
+  const handleGoBack = useCallback(() => {
+    if (!previousLocation) return;
+
+    setCurrentCitation(undefined);
+    setSelectedHighlight(undefined);
+
+    navigate({
+      to: "/reader/{-$bookId}",
+      params: { bookId: previousLocation.bookId },
+      search: { chapter: previousLocation.chapterId },
+      replace: true,
+    });
+
+    setTimeout(() => {
+      if (previousLocation.elementId) {
+        const element = document.querySelector(`[data-block-id="${previousLocation.elementId}"]`);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }
+    }, 500);
+
+    setPreviousLocation(undefined);
+  }, [previousLocation, setCurrentCitation, setSelectedHighlight, navigate, setPreviousLocation]);
+
   useEffect(() => {
     window.addEventListener("highlight-clicked", handleHighlightButtonClick);
     return () => {
@@ -145,6 +186,11 @@ export function AppPlateEditor({ chapter }: { chapter?: ChaptersRecord }) {
       <EditorContainer className="h-full w-full max-h-[calc(100vh-50px)] overflow-hidden caret-transparent">
         <Editor onClick={handleHighlightClick} />
       </EditorContainer>
+      {canGoBack() ? (
+        <div className="fixed bottom-6 left-2/3 transform -translate-x-1/3 z-50">
+          <GoBackButton onClick={handleGoBack} />
+        </div>
+      ) : null}
     </Plate>
   );
 }

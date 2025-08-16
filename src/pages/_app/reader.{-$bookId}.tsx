@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { SquareMenu } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useSelectedHighlightStore } from "@/lib/stores/selected-highlight-store";
-import { PlateEditor } from "@/components/editor/AppPlateEditor";
+import { AppPlateEditor } from "@/components/editor/AppPlateEditor";
 import { useCurrentChapterStore } from "@/lib/stores/current-chapter-store";
 
 export const Route = createFileRoute("/_app/reader/{-$bookId}")({
@@ -82,8 +82,8 @@ function Index() {
   }, [setCurrentChapterId]);
 
   return (
-    <div className="h-full w-full flex">
-      <div className="p-2">
+    <div className="h-full w-full flex relative">
+      <div className="p-2 flex flex-col gap-2">
         <Popover>
           <PopoverTrigger asChild>
             <Button size="icon" variant="ghost" className="">
@@ -106,7 +106,7 @@ function Index() {
         </Popover>
       </div>
       <PlateController>
-        <PlateEditor chapter={chapter} />
+        <AppPlateEditor chapter={chapter} />
       </PlateController>
     </div>
   );

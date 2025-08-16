@@ -31,19 +31,19 @@ export function MainSidebar({ hidden }: { hidden?: boolean }) {
   }
 
   return (
-    <Sidebar collapsible="none" className={`${hidden ? "hidden" : ""} flex-1 md:flex ml-14`}>
-      <Tabs defaultValue="chat" className="w-full h-full max-h-[94vh]">
-        <SidebarHeader className="gap-3.5 border-b p-4 h-[50px] justify-center flex-row w-full items-center">
+    <Sidebar collapsible="none" className={`${hidden ? "hidden" : ""} w-full md:flex ml-14`}>
+      <Tabs defaultValue="chat" className="h-full">
+        <SidebarHeader className="gap-3.5 border-b p-4 h-[50px] justify-center items-center">
           <TabsList>
             <TabsTrigger value="chat">Chat</TabsTrigger>
             <TabsTrigger value="highlights">Highlights</TabsTrigger>
           </TabsList>
         </SidebarHeader>
-        <SidebarContent className="h-full overflow-hidden pb-14">
-          <TabsContent value="chat" className="h-full mt-0">
+        <SidebarContent className="h-[calc(100%-50px)]">
+          <TabsContent value="chat" className="mt-0 h-full">
             <SidebarChat bookId={bookId} />
           </TabsContent>
-          <TabsContent value="highlights" className="h-full">
+          <TabsContent value="highlights" className="mt-0 h-full">
             <SidebarHighlights bookId={bookId} />
           </TabsContent>
         </SidebarContent>

@@ -9,6 +9,7 @@ import (
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/book_hooks"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/chapter_hooks"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/chat"
+	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/cron"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/full_text_search"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/highlight_hooks"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/message_hooks"
@@ -80,6 +81,10 @@ func main() {
 	}
 
 	if err := highlight_hooks.Init(app); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := cron.Init(app); err != nil {
 		log.Fatal(err)
 	}
 

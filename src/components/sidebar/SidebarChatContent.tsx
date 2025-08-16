@@ -10,9 +10,12 @@ import {
   processMessagesWithCitations,
   buildCitationMap,
   createMessageObj,
+  getElementAtViewportCenter,
 } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 import { useCitationStore } from "@/lib/stores/citation-store";
+import { useNavigationHistoryStore } from "@/lib/stores/navigation-history-store";
+import { useCurrentChapterStore } from "@/lib/stores/current-chapter-store";
 import { AIChatResponse, Citation } from "@/lib/types";
 
 export function SidebarChatContent({
@@ -30,6 +33,8 @@ export function SidebarChatContent({
 
   const navigate = useNavigate();
   const { setCurrentCitation } = useCitationStore();
+  const { setPreviousLocation } = useNavigationHistoryStore();
+  const { currentChapterId } = useCurrentChapterStore();
   const { data, isPending } = useGetMessagesByChatId(selectedChatId);
 
   const addMessageMutation = useAddMessage();
@@ -57,12 +62,18 @@ export function SidebarChatContent({
   const goToCitation = (textHash: string) => {
     const citation = citationMap.get(textHash);
     if (citation) {
-      setCurrentCitation(undefined);
-      setTimeout(() => {
-        setCurrentCitation(citation);
-      }, 0);
+      if (currentChapterId) {
+        setPreviousLocation({
+          bookId: selectedBookId,
+          chapterId: currentChapterId,
+          elementId: getElementAtViewportCenter(),
+        });
+      }
+
+      setCurrentCitation(citation);
+
       navigate({
-        to: "/reader/$bookId",
+        to: "/reader/{-$bookId}",
         params: { bookId: selectedBookId },
         search: { chapter: citation.chapter },
       });

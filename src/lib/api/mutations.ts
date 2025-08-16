@@ -132,7 +132,7 @@ export function useAddHighlight() {
         mutationFn: ({ bookId, chapterId, text, selection, hash }: { bookId: string, chapterId: string, text: string, selection: Range, hash: string }) => addHighlight(bookId, chapterId, text, selection, hash),
         onError: handleError,
         onSuccess: async (data) => {
-            await queryClient.invalidateQueries({ queryKey: ['highlights', data?.book, data?.chapter] });
+            await queryClient.invalidateQueries({ queryKey: ['highlights', data?.book] });
         }
     })
 }

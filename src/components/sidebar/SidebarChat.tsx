@@ -49,7 +49,7 @@ export function SidebarChat({ bookId }: { bookId: string }) {
   }, [selectedChat]);
 
   return (
-    <>
+    <div className="h-full">
       <div className="flex items-center justify-between p-4 border-b h-[42px]">
         <Popover>
           <PopoverTrigger asChild>
@@ -103,15 +103,17 @@ export function SidebarChat({ bookId }: { bookId: string }) {
           <span className={`text-xs ${chatWithChapter ? "font-medium" : "text-muted-foreground"}`}>Chapter</span>
         </div>
       </div>
-      <SidebarGroup className="px-0 h-full">
-        <SidebarGroupContent className="h-full">
-          <SidebarChatContent
-            selectedChatId={selectedChat?.id}
-            selectedBookId={bookId}
-            selectedChapterId={chatWithChapter ? selectedChat?.id : undefined}
-          />
-        </SidebarGroupContent>
-      </SidebarGroup>
-    </>
+      <div className="h-[calc(100%-79px)]">
+        <SidebarGroup className="px-0 h-full">
+          <SidebarGroupContent className="h-full">
+            <SidebarChatContent
+              selectedChatId={selectedChat?.id}
+              selectedBookId={bookId}
+              selectedChapterId={chatWithChapter ? selectedChat?.id : undefined}
+            />
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </div>
+    </div>
   );
 }

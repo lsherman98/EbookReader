@@ -19,7 +19,7 @@ export const getBookById = async (bookId?: string) => {
 export const getChaptersByBookId = async (bookId?: string) => {
     if (!getUserId() || !bookId) return
 
-    return await pb.collection(Collections.Chapters).getFullList({ filter: `book="${bookId}"`, fields: "id,title,order" });
+    return await pb.collection(Collections.Chapters).getFullList({ filter: `user="${getUserId()}" && book="${bookId}"`, fields: "id,title,order" });
 }
 
 export const downloadBook = async (bookId: string) => {
