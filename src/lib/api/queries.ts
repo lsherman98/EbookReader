@@ -65,7 +65,7 @@ export function useGetLastReadBook() {
 
 export function useGetHighlights(bookId?: string, chapterId?: string) {
     return useQuery({
-        queryKey: ['highlights', bookId],
+        queryKey: ['highlights', bookId, chapterId],
         queryFn: () => getHighlights(bookId, chapterId),
         enabled: !!bookId && bookId !== 'undefined',
     });

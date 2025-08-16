@@ -49,14 +49,16 @@ export function AppPlateEditor({ chapter }: { chapter?: ChaptersRecord }) {
   });
 
   useEffect(() => {
-    if (selectedHighlight && chapter && selectedHighlight.chapter === chapter.id && selectedHighlight.text) {
-      const highlightedElement = findHighlightedElementInEditor(plateEditor.children, selectedHighlight.text);
+    setTimeout(() => {
+      if (selectedHighlight && chapter && selectedHighlight.chapter === chapter.id && selectedHighlight.text) {
+        const highlightedElement = findHighlightedElementInEditor(plateEditor.children, selectedHighlight.text);
 
-      if (highlightedElement?.id) {
-        scrollElementIntoView(highlightedElement.id as string);
+        if (highlightedElement?.id) {
+          scrollElementIntoView(highlightedElement.id as string);
+        }
+        setSelectedHighlight(undefined);
       }
-      setSelectedHighlight(undefined);
-    }
+    }, 200);
   }, [selectedHighlight, chapter, setSelectedHighlight, chapterHtmlContent, plateEditor.children]);
 
   const handleEditorValueChange = useCallback(
