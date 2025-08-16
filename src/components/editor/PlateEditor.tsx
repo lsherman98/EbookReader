@@ -77,8 +77,44 @@ export function PlateEditor({ chapter }: { chapter?: ChaptersRecord }) {
     if (!isHighlight) return;
 
     const parent: HTMLElement = el.parentElement.parentElement.parentElement.parentElement;
-    const textContent = parent?.nextSibling?.childNodes[0].textContent;
-    text += textContent;
+
+    let prevHighlight: Element | null = null;
+    let currentElement = parent.previousSibling as Element;
+    while (currentElement) {
+      const highlight = currentElement.querySelector?.(".slate-highlight");
+      if (highlight) {
+        const belongsToPrevHighlight = currentElement.textContent.trim().endsWith(highlight.textContent?.trim());
+        if (!belongsToPrevHighlight) break;
+        prevHighlight = highlight;
+        break;
+      } else if (currentElement.textContent?.trim()) {
+        break;
+      }
+      currentElement = currentElement.previousSibling as Element;
+    }
+
+    let nextHighlight: Element | null = null;
+    currentElement = parent.nextSibling as Element;
+    while (currentElement) {
+      const highlight = currentElement.querySelector?.(".slate-highlight");
+      if (highlight) {
+        const belongsToPrevHighlight = currentElement.textContent.trim().startsWith(highlight.textContent?.trim());
+        if (!belongsToPrevHighlight) break;
+        nextHighlight = highlight;
+        break;
+      } else if (currentElement.textContent?.trim()) {
+        break;
+      }
+      currentElement = currentElement.nextSibling as Element;
+    }
+
+    if (nextHighlight) {
+      text += nextHighlight.textContent;
+    }
+
+    if (prevHighlight) {
+      text = prevHighlight.textContent + text;
+    }
 
     const marks: Descendant[] = [];
     editor.children.forEach((n) => {
@@ -172,7 +208,6 @@ export function PlateEditor({ chapter }: { chapter?: ChaptersRecord }) {
 
     const timer = setTimeout(() => {
       const node: Node = editor.children[parseInt(currentCitation.index)];
-      // editor.tf.select(node);
 
       const elementId = node?.id;
       const element = document.querySelector(`[data-block-id="${elementId}"]`);

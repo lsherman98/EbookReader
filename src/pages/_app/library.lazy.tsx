@@ -28,20 +28,14 @@ export const Route = createLazyFileRoute("/_app/library")({
   component: LibraryPage,
 });
 
-function LibraryPage() {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState("");
+interface BookRowProps {
+  book: BooksResponse;
+  onDelete: (bookId: string) => void;
+  onDownload: (bookId: string) => void;
+  onRead: (book: BooksResponse) => void;
+}
 
-  const limit = 50;
-
-  const { data: booksData } = useGetBooks(currentPage, limit);
-  const { data: searchResults } = useSearchBooks(searchQuery);
-  const deleteBookMutation = useDeleteBook();
-  const downloadBookMutation = useDownloadBook();
-  const navigate = useNavigate();
-
-  const totalPages = booksData ? Math.ceil(booksData.totalItems / limit) : 0;
-
+function BookRow({ book, onDelete, onDownload, onRead }: BookRowProps) {
   const createCoverImageUrl = (file: BooksResponse) => {
     return `${import.meta.env.VITE_BASE_URL}/api/files/${file.collectionId}/${file.id}/${file.cover_image}`;
   };
@@ -57,12 +51,247 @@ function LibraryPage() {
     }).format(date);
   };
 
+  return (
+    <TableRow key={book.id}>
+      <TableCell className="w-36 text-center">
+        {book.cover_image ? (
+          <img src={createCoverImageUrl(book)} alt={book.title} className="w-24 h-32 object-cover mx-auto" />
+        ) : (
+          <div className="w-24 h-32 border flex flex-col items-center justify-center p-2 mx-auto">
+            <BookImage className="h-12 w-12 text-muted-foreground" />
+            <div className="mt-2" />
+            <span className="text-sm text-muted-foreground">No Cover</span>
+          </div>
+        )}
+      </TableCell>
+      <TableCell className="w-1/4 align-middle font-bold">{book.title}</TableCell>
+      <TableCell className="w-1/6 align-middle">{book.author}</TableCell>
+      <TableCell className="w-1/6 align-middle">{formatDate(book.created)}</TableCell>
+      <TableCell className="w-48">
+        <div className="flex justify-center">
+          <div className="relative">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span className="sr-only">Actions</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onRead(book)}>
+                  <Book className="mr-2 h-4 w-4" />
+                  <span>Read</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onDownload(book.id)}>
+                  <Download className="mr-2 h-4 w-4" />
+                  <span>Download</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onDelete(book.id)} className="text-destructive focus:text-destructive">
+                  <Trash className="mr-2 h-4 w-4" />
+                  <span>Delete</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
+
+function BooksTableHeader() {
+  return (
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-36 text-center">Cover</TableHead>
+        <TableHead className="w-1/4">Title</TableHead>
+        <TableHead className="w-1/6">Author</TableHead>
+        <TableHead className="w-1/6">Uploaded</TableHead>
+        <TableHead className="w-48 text-center">Actions</TableHead>
+      </TableRow>
+    </TableHeader>
+  );
+}
+
+interface BooksTableFooterProps {
+  currentCount: number;
+  totalCount: number;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  getPageNumbers: () => (number | string)[];
+}
+
+function BooksTableFooter({
+  currentCount,
+  totalCount,
+  currentPage,
+  totalPages,
+  onPageChange,
+  getPageNumbers,
+}: BooksTableFooterProps) {
+  return (
+    <TableFooter>
+      <TableRow>
+        <TableCell colSpan={5}>
+          <div className="flex justify-between items-center gap-4">
+            <div className="text-sm text-muted-foreground whitespace-nowrap">
+              Showing {currentCount} of {totalCount}
+            </div>
+            <div className="flex items-center gap-4">
+              <Link to="/upload">
+                <Button variant={"outline"}>Upload More Files</Button>
+              </Link>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => onPageChange(currentPage - 1)}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  {getPageNumbers().map((page, index) =>
+                    page === "..." ? (
+                      <PaginationItem key={`ellipsis-${index}`}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={`page-${page}`}>
+                        <PaginationLink
+                          onClick={() => onPageChange(page as number)}
+                          isActive={currentPage === page}
+                          className="cursor-pointer"
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ),
+                  )}
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => onPageChange(currentPage + 1)}
+                      className={
+                        currentPage === totalPages || totalPages === 0
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          </div>
+        </TableCell>
+      </TableRow>
+    </TableFooter>
+  );
+}
+
+interface BooksTableProps {
+  books: BooksResponse[];
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  onPageChange: (page: number) => void;
+  getPageNumbers: () => (number | string)[];
+  onDeleteBook: (bookId: string) => void;
+  onDownloadBook: (bookId: string) => void;
+  onReadBook: (book: BooksResponse) => void;
+}
+
+function BooksTable({
+  books,
+  searchQuery,
+  onSearchChange,
+  currentPage,
+  totalPages,
+  totalItems,
+  onPageChange,
+  getPageNumbers,
+  onDeleteBook,
+  onDownloadBook,
+  onReadBook,
+}: BooksTableProps) {
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex-shrink-0 border-b">
+        <div className="p-2 flex items-center justify-center">
+          <div className="relative w-96">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search books..."
+              className="w-full pl-10"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+            />
+          </div>
+        </div>
+        <Table>
+          <BooksTableHeader />
+        </Table>
+      </div>
+      <div className="flex-grow overflow-y-auto">
+        <Table>
+          <TableBody>
+            {books.map((book) => (
+              <BookRow
+                key={book.id}
+                book={book}
+                onDelete={onDeleteBook}
+                onDownload={onDownloadBook}
+                onRead={onReadBook}
+              />
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="flex-shrink-0 border-t">
+        <Table>
+          <BooksTableFooter
+            currentCount={books.length}
+            totalCount={totalItems}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+            getPageNumbers={getPageNumbers}
+          />
+        </Table>
+      </div>
+    </div>
+  );
+}
+
+function LibraryPage() {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const limit = 50;
+
+  const { data: booksData } = useGetBooks(currentPage, limit);
+  const { data: searchResults } = useSearchBooks(searchQuery);
+  const deleteBookMutation = useDeleteBook();
+  const downloadBookMutation = useDownloadBook();
+  const navigate = useNavigate();
+
+  const totalPages = booksData ? Math.ceil(booksData.totalItems / limit) : 0;
+
   const handleDeleteBook = async (bookId: string) => {
     await deleteBookMutation.mutateAsync(bookId);
   };
 
   const handleDownloadBook = async (bookId: string) => {
     await downloadBookMutation.mutateAsync(bookId);
+  };
+
+  const handleReadBook = (book: BooksResponse) => {
+    navigate({
+      to: `/reader/${book.id}`,
+      search: { chapter: book.current_chapter || book.chapters?.[0] },
+    });
   };
 
   const handlePageChange = (page: number) => {
@@ -115,163 +344,10 @@ function LibraryPage() {
     return pageNumbers;
   };
 
-  if (searchResults?.length && searchResults?.length > 0) {
-    return (
-      <div className="flex flex-col h-full">
-        <div className="flex-shrink-0 border-b">
-          <div className="p-2 flex items-center justify-center">
-            <div className="relative w-96">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search books..."
-                className="w-full pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-36 text-center">Cover</TableHead>
-                <TableHead className="w-1/4">Title</TableHead>
-                <TableHead className="w-1/6">Author</TableHead>
-                <TableHead className="w-1/6">Uploaded</TableHead>
-                <TableHead className="w-48 text-center">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-          </Table>
-        </div>
-        <div className="flex-grow overflow-y-auto">
-          <Table>
-            <TableBody>
-              {searchResults?.map((book: BooksResponse) => (
-                <TableRow key={book.id}>
-                  <TableCell className="w-36 text-center">
-                    {book.cover_image ? (
-                      <img
-                        src={createCoverImageUrl(book)}
-                        alt={book.title}
-                        className="w-24 h-32 object-cover mx-auto"
-                      />
-                    ) : (
-                      <div className="w-24 h-32 border flex flex-col items-center justify-center p-2 mx-auto">
-                        <BookImage className="h-12 w-12 text-muted-foreground" />
-                        <div className="mt-2" />
-                        <span className="text-sm text-muted-foreground">No Cover</span>
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell className="w-1/4 align-middle font-bold">{book.title}</TableCell>
-                  <TableCell className="w-1/6 align-middle">{book.author}</TableCell>
-                  <TableCell className="w-1/6 align-middle">{formatDate(book.created)}</TableCell>
-                  <TableCell className="w-48">
-                    <div className="flex justify-center">
-                      <div className="relative">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Actions</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                navigate({
-                                  to: `/reader/${book.id}`,
-                                  search: { chapter: book.current_chapter || book.chapters?.[0] },
-                                });
-                              }}
-                            >
-                              <Book className="mr-2 h-4 w-4" />
-                              <span>Read</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleDownloadBook(book.id)}>
-                              <Download className="mr-2 h-4 w-4" />
-                              <span>Download</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteBook(book.id)}
-                              className="text-destructive focus:text-destructive"
-                            >
-                              <Trash className="mr-2 h-4 w-4" />
-                              <span>Delete</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-        <div className="flex-shrink-0 border-t">
-          <Table>
-            <TableFooter>
-              <TableRow>
-                <TableCell colSpan={5}>
-                  <div className="flex justify-between items-center gap-4">
-                    <div className="text-sm text-muted-foreground whitespace-nowrap">
-                      Showing {searchResults?.length || 0} of {booksData?.totalItems || 0}
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <Link to="/upload">
-                        <Button variant={"outline"}>Upload More Files</Button>
-                      </Link>
-                      <Pagination>
-                        <PaginationContent>
-                          <PaginationItem>
-                            <PaginationPrevious
-                              onClick={() => handlePageChange(currentPage - 1)}
-                              className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                            />
-                          </PaginationItem>
-                          {getPageNumbers().map((page, index) =>
-                            page === "..." ? (
-                              <PaginationItem key={`ellipsis-${index}`}>
-                                <PaginationEllipsis />
-                              </PaginationItem>
-                            ) : (
-                              <PaginationItem key={`page-${page}`}>
-                                <PaginationLink
-                                  onClick={() => handlePageChange(page as number)}
-                                  isActive={currentPage === page}
-                                  className="cursor-pointer"
-                                >
-                                  {page}
-                                </PaginationLink>
-                              </PaginationItem>
-                            ),
-                          )}
-                          <PaginationItem>
-                            <PaginationNext
-                              onClick={() => handlePageChange(currentPage + 1)}
-                              className={
-                                currentPage === totalPages || totalPages === 0
-                                  ? "pointer-events-none opacity-50"
-                                  : "cursor-pointer"
-                              }
-                            />
-                          </PaginationItem>
-                        </PaginationContent>
-                      </Pagination>
-                    </div>
-                  </div>
-                </TableCell>
-              </TableRow>
-            </TableFooter>
-          </Table>
-        </div>
-      </div>
-    );
-  }
+  const displayBooks = searchResults?.length ? searchResults : booksData?.items || [];
+  const totalItemsCount = booksData?.totalItems || 0;
 
-  if (booksData?.totalItems === 0) {
+  if (totalItemsCount === 0) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="flex flex-col items-center justify-center space-y-4">
@@ -288,152 +364,18 @@ function LibraryPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-shrink-0 border-b">
-        <div className="p-2 flex items-center justify-center">
-          <div className="relative w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search books..."
-              className="w-full pl-10"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-36 text-center">Cover</TableHead>
-              <TableHead className="w-1/4">Title</TableHead>
-              <TableHead className="w-1/6">Author</TableHead>
-              <TableHead className="w-1/6">Uploaded</TableHead>
-              <TableHead className="w-48 text-center">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-        </Table>
-      </div>
-      <div className="flex-grow overflow-y-auto">
-        <Table>
-          <TableBody>
-            {booksData?.items.map((book) => (
-              <TableRow key={book.id}>
-                <TableCell className="w-36 text-center">
-                  {book.cover_image ? (
-                    <img src={createCoverImageUrl(book)} alt={book.title} className="w-24 h-32 object-cover mx-auto" />
-                  ) : (
-                    <div className="w-24 h-32 border flex flex-col items-center justify-center p-2 mx-auto">
-                      <BookImage className="h-12 w-12 text-muted-foreground" />
-                      <div className="mt-2" />
-                      <span className="text-sm text-muted-foreground">No Cover</span>
-                    </div>
-                  )}
-                </TableCell>
-                <TableCell className="w-1/4 align-middle font-bold">{book.title}</TableCell>
-                <TableCell className="w-1/6 align-middle">{book.author}</TableCell>
-                <TableCell className="w-1/6 align-middle">{formatDate(book.created)}</TableCell>
-                <TableCell className="w-48">
-                  <div className="flex justify-center">
-                    <div className="relative">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Actions</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              navigate({
-                                to: `/reader/${book.id}`,
-                                search: { chapter: book.current_chapter || book.chapters?.[0] },
-                              });
-                            }}
-                          >
-                            <Book className="mr-2 h-4 w-4" />
-                            <span>Read</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleDownloadBook(book.id)}>
-                            <Download className="mr-2 h-4 w-4" />
-                            <span>Download</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteBook(book.id)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash className="mr-2 h-4 w-4" />
-                            <span>Delete</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-      <div className="flex-shrink-0 border-t">
-        <Table>
-          <TableFooter>
-            <TableRow>
-              <TableCell colSpan={5}>
-                <div className="flex justify-between items-center gap-4">
-                  <div className="text-sm text-muted-foreground whitespace-nowrap">
-                    Showing {booksData?.items.length || 0} of {booksData?.totalItems || 0}
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <Link to="/upload">
-                      <Button variant={"outline"}>Upload More Files</Button>
-                    </Link>
-                    <Pagination>
-                      <PaginationContent>
-                        <PaginationItem>
-                          <PaginationPrevious
-                            onClick={() => handlePageChange(currentPage - 1)}
-                            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                          />
-                        </PaginationItem>
-                        {getPageNumbers().map((page, index) =>
-                          page === "..." ? (
-                            <PaginationItem key={`ellipsis-${index}`}>
-                              <PaginationEllipsis />
-                            </PaginationItem>
-                          ) : (
-                            <PaginationItem key={`page-${page}`}>
-                              <PaginationLink
-                                onClick={() => handlePageChange(page as number)}
-                                isActive={currentPage === page}
-                                className="cursor-pointer"
-                              >
-                                {page}
-                              </PaginationLink>
-                            </PaginationItem>
-                          ),
-                        )}
-                        <PaginationItem>
-                          <PaginationNext
-                            onClick={() => handlePageChange(currentPage + 1)}
-                            className={
-                              currentPage === totalPages || totalPages === 0
-                                ? "pointer-events-none opacity-50"
-                                : "cursor-pointer"
-                            }
-                          />
-                        </PaginationItem>
-                      </PaginationContent>
-                    </Pagination>
-                  </div>
-                </div>
-              </TableCell>
-            </TableRow>
-          </TableFooter>
-        </Table>
-      </div>
-    </div>
+    <BooksTable
+      books={displayBooks}
+      searchQuery={searchQuery}
+      onSearchChange={setSearchQuery}
+      currentPage={currentPage}
+      totalPages={totalPages}
+      totalItems={totalItemsCount}
+      onPageChange={handlePageChange}
+      getPageNumbers={getPageNumbers}
+      onDeleteBook={handleDeleteBook}
+      onDownloadBook={handleDownloadBook}
+      onReadBook={handleReadBook}
+    />
   );
 }

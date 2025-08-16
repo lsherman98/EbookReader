@@ -4,7 +4,6 @@ import { handleError } from "../utils";
 import { FileUploadObj } from "@/pages/_app/upload.lazy";
 import { Citation } from "../types";
 import { Range } from "platejs";
-import { useCurrentChapterStore } from "../stores/current-chapter-store";
 
 export function useUploadBook() {
     const queryClient = useQueryClient();
@@ -37,7 +36,7 @@ export function useUpdateChapter() {
         mutationFn: ({ chapterId, content }: { chapterId: string, content?: string }) => updateChapter(chapterId, content),
         onError: handleError,
         onSuccess: async (data) => {
-            await queryClient.invalidateQueries({ queryKey: ['chapter', data?.id] });
+            await queryClient.invalidateQueries({ queryKey: ['chapters', data?.book] });
         }
     })
 }
@@ -77,8 +76,8 @@ export function useAddMessage() {
     return useMutation({
         mutationFn: ({ chatId, content, role, citations = null }: { chatId: string; content: string; role: "user" | "assistant", citations?: Citation[] | null }) => addMessage(chatId, content, role, citations),
         onError: handleError,
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ['messages'] });
+        onSuccess: async (_, { chatId }) => {
+            await queryClient.invalidateQueries({ queryKey: ['messages', chatId] });
         }
     })
 }
@@ -89,8 +88,8 @@ export function useAddChat() {
     return useMutation({
         mutationFn: (bookId: string) => addChat(bookId),
         onError: handleError,
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ['chats'] });
+        onSuccess: async (_, bookId) => {
+            await queryClient.invalidateQueries({ queryKey: ['chats', bookId] });
         }
     })
 }
@@ -101,8 +100,8 @@ export function useUpdateChat() {
     return useMutation({
         mutationFn: ({ chatId, title }: { chatId: string, title?: string }) => updateChat(chatId, title),
         onError: handleError,
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ['chats'] });
+        onSuccess: async (_, { chatId }) => {
+            await queryClient.invalidateQueries({ queryKey: ['chats', chatId] });
         }
     })
 }
@@ -133,21 +132,20 @@ export function useAddHighlight() {
         mutationFn: ({ bookId, chapterId, text, selection, hash }: { bookId: string, chapterId: string, text: string, selection: Range, hash: string }) => addHighlight(bookId, chapterId, text, selection, hash),
         onError: handleError,
         onSuccess: async (data) => {
-            await queryClient.invalidateQueries({ queryKey: ['highlights', { bookId: data?.book, chapterId: data?.chapter }] });
+            await queryClient.invalidateQueries({ queryKey: ['highlights', data?.book, data?.chapter] });
         }
     })
 }
 
 export function useDeleteHighlight() {
     const queryClient = useQueryClient();
-    const { currentChapterId } = useCurrentChapterStore();
 
     return useMutation({
         mutationFn: ({ highlightId, hash }: { highlightId?: string, hash?: string }) => deleteHighlight(highlightId, hash),
         onError: handleError,
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ['chapter', currentChapterId] });
             await queryClient.invalidateQueries({ queryKey: ['highlights'] });
+            await queryClient.invalidateQueries({ queryKey: ['chapters'] });
         }
-    }) 
+    })
 }

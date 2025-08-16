@@ -11,7 +11,7 @@ export function useGetBooks(page: number = 1, limit: number = 25) {
 
 export function useGetBookById(bookId?: string) {
     return useQuery({
-        queryKey: ['book'],
+        queryKey: ['books', bookId],
         queryFn: () => getBookById(bookId),
         placeholderData: keepPreviousData,
         enabled: !!bookId && bookId !== 'undefined',
@@ -20,7 +20,7 @@ export function useGetBookById(bookId?: string) {
 
 export function useGetChaptersByBookId(bookId?: string) {
     return useQuery({
-        queryKey: ['chapters'],
+        queryKey: ['books', bookId],
         queryFn: () => getChaptersByBookId(bookId),
         placeholderData: keepPreviousData,
         enabled: !!bookId && bookId !== 'undefined',
@@ -29,7 +29,7 @@ export function useGetChaptersByBookId(bookId?: string) {
 
 export function useGetChapterById(chapterId?: string) {
     return useQuery({
-        queryKey: ['chapter', chapterId],
+        queryKey: ['chapters', chapterId],
         queryFn: () => getChapterById(chapterId),
         placeholderData: keepPreviousData,
         enabled: !!chapterId,
@@ -47,7 +47,7 @@ export function useGetMessagesByChatId(chatId?: string) {
 
 export function useGetChats(bookId?: string) {
     return useQuery({
-        queryKey: ['chats'],
+        queryKey: ['chats', bookId],
         queryFn: () => getChats(bookId),
         placeholderData: keepPreviousData,
         enabled: !!bookId && bookId !== 'undefined',
@@ -65,7 +65,7 @@ export function useGetLastReadBook() {
 
 export function useGetHighlights(bookId?: string, chapterId?: string) {
     return useQuery({
-        queryKey: ['highlights', { bookId, chapterId }],
+        queryKey: ['highlights', bookId, chapterId],
         queryFn: () => getHighlights(bookId, chapterId),
         enabled: !!bookId && bookId !== 'undefined',
     });
@@ -73,7 +73,7 @@ export function useGetHighlights(bookId?: string, chapterId?: string) {
 
 export function useSearchBooks(query: string) {
     return useQuery({
-        queryKey: ['searchBooks', query],
+        queryKey: ['search', query],
         queryFn: () => searchBooks(query),
         enabled: !!query,
     });

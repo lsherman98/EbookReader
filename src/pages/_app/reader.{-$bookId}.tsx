@@ -43,7 +43,7 @@ function Index() {
     [navigate],
   );
 
-  const handleChapterClick = useCallback(
+  const goToChapter = useCallback(
     (chapterId: string) => {
       if (!bookId) return;
       setCurrentChapterId(chapterId);
@@ -71,9 +71,9 @@ function Index() {
 
   useEffect(() => {
     if (selectedHighlight?.chapter && selectedHighlight.chapter !== currentChapterId) {
-      handleChapterClick(selectedHighlight.chapter);
+      goToChapter(selectedHighlight.chapter);
     }
-  }, [selectedHighlight, currentChapterId, handleChapterClick]);
+  }, [selectedHighlight, currentChapterId, goToChapter]);
 
   useEffect(() => {
     return () => {
@@ -95,7 +95,7 @@ function Index() {
               {chaptersData?.map((chapter) => (
                 <li
                   key={chapter.id}
-                  onClick={() => handleChapterClick(chapter.id)}
+                  onClick={() => goToChapter(chapter.id)}
                   className={`cursor-pointer p-2 rounded hover:bg-accent ${chapter.id === currentChapterId ? "bg-accent" : ""}`}
                 >
                   {chapter.title}

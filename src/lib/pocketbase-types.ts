@@ -126,6 +126,7 @@ export type ChaptersRecord = {
 	order?: number
 	title?: string
 	updated?: IsoDateString
+	user?: RecordIdString
 }
 
 export type ChatsRecord = {
