@@ -301,7 +301,7 @@ export function highlightCitationInElement(
         const timeout = setTimeout(() => {
           if (onComplete) onComplete();
           removeExistingHighlights();
-        }, 5000);
+        }, 10000);
 
         return () => {
           clearTimeout(timeout);
@@ -325,7 +325,7 @@ export function highlightCitationInElement(
         const timeout = setTimeout(() => {
           if (onComplete) onComplete();
           removeExistingHighlights();
-        }, 5000);
+        }, 10000);
 
         return () => {
           clearTimeout(timeout);

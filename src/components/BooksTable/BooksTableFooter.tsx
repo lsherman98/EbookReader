@@ -1,4 +1,4 @@
-import { AlertTriangle, Crown, Link } from "lucide-react";
+import { AlertTriangle, Crown } from "lucide-react";
 import { TableCell, TableFooter, TableRow } from "../ui/table";
 import { Button } from "../ui/button";
 import {
@@ -10,6 +10,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "../ui/pagination";
+import { Link } from "@tanstack/react-router";
 
 interface BooksTableFooterProps {
   currentCount: number;
