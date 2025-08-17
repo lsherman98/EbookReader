@@ -1,19 +1,37 @@
 import { Dropzone, DropZoneArea, DropzoneTrigger, useDropzone } from "@/components/ui/dropzone";
 import { toast } from "@/hooks/use-toast";
-import { CloudUploadIcon, ImageIcon, Trash, CheckCircle, Loader2, FileClock, CloudAlert } from "lucide-react";
-import { Card, CardDescription, CardFooter, CardTitle } from "./ui/card";
+import {
+  CloudUploadIcon,
+  Trash,
+  CheckCircle,
+  Loader2,
+  FileClock,
+  CloudAlert,
+  AlertTriangle,
+  Crown,
+} from "lucide-react";
+import { CardFooter } from "../ui/card";
 import { FileUploadObj } from "@/pages/_app/upload.lazy";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
+import { Link } from "@tanstack/react-router";
+import { useGetUploadLimitReached } from "@/lib/api/queries";
+import { UploadCard } from "./UploadCard";
+import { UploadCoverImage } from "./UploadCoverImage";
+import { UploadMetadata } from "./UploadMetadata";
 
 export function FileUpload({
   uploads,
   setUploads,
   handleUpload,
+  disabled = false,
 }: {
   uploads: FileUploadObj[];
   setUploads: React.Dispatch<React.SetStateAction<FileUploadObj[]>>;
   handleUpload: () => void;
+  disabled?: boolean;
 }) {
+  const { data: uploadLimitReached } = useGetUploadLimitReached();
+
   const allowedMimeTypes = ["application/epub+zip"];
 
   const validateFile = (file: File): { valid: boolean; error?: string } => {
@@ -37,6 +55,19 @@ export function FileUpload({
 
   const dropzone = useDropzone({
     onDropFile: async (file: File) => {
+      if (disabled) {
+        toast({
+          title: "Upload limit reached",
+          description: "You've reached your upload limit. Please upgrade to continue uploading.",
+          type: "foreground",
+          variant: "destructive",
+        });
+        return {
+          status: "error",
+          error: "Upload limit reached",
+        };
+      }
+
       const { valid, error } = validateFile(file);
 
       if (!valid) {
@@ -195,7 +226,9 @@ export function FileUpload({
               type="file"
               multiple
               accept={allowedMimeTypes.join(",")}
+              disabled={disabled}
               onChange={(e) => {
+                if (disabled) return;
                 const files = e.target.files;
                 if (files) {
                   Array.from(files).forEach((file) => {
@@ -222,9 +255,25 @@ export function FileUpload({
               className="hidden"
               id="file-upload-input"
             />
+            {uploadLimitReached && (
+              <div className="flex items-center gap-4">
+                <div className="text-sm text-muted-foreground flex items-center gap-2 whitespace-nowrap">
+                  <AlertTriangle className="h-4 w-4 text-orange-500" />
+                  Upload limit reached
+                </div>
+                <Link to="/subscription">
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Crown className="h-4 w-4" />
+                    Upgrade
+                  </Button>
+                </Link>
+              </div>
+            )}
             <Button
               variant={"ghost"}
+              disabled={disabled}
               onClick={() => {
+                if (disabled) return;
                 const fileInput = document.getElementById("file-upload-input") as HTMLInputElement;
                 fileInput.click();
               }}
@@ -233,87 +282,14 @@ export function FileUpload({
             </Button>
             <Button
               onClick={handleUpload}
-              className="bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all"
+              disabled={disabled || uploads.filter((u) => u.status === "pending").length === 0}
+              className="bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all disabled:opacity-50"
             >
               Start Upload
             </Button>
           </div>
         </div>
       </Dropzone>
-    </div>
-  );
-}
-
-function UploadCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return (
-    <Card className={`w-full mx-0 relative ${className}`}>
-      <div className="flex items-center w-full">{children}</div>
-    </Card>
-  );
-}
-
-function UploadMetadata({ fileName, fileSize }: { fileName: string; fileSize: number }) {
-  return (
-    <div className="flex-shrink-0 mr-4 w-[25%]">
-      <CardTitle className="text-sm truncate">{fileName}</CardTitle>
-      <CardDescription className="text-xs">{(fileSize / (1024 * 1024)).toFixed(2)} MB</CardDescription>
-    </div>
-  );
-}
-
-function UploadCoverImage({
-  coverPreview,
-  uploadFileName,
-  isEditable = false,
-  onCoverChange,
-}: {
-  coverPreview?: string;
-  uploadFileName?: string;
-  isEditable?: boolean;
-  onCoverChange?: (file: File) => void;
-}) {
-  return (
-    <div className="p-2 border-r flex flex-col items-center justify-center min-w-[100px]">
-      {coverPreview ? (
-        <div className={`relative ${isEditable ? "group" : ""}`}>
-          <img
-            src={coverPreview}
-            alt="Cover Preview"
-            className={`h-24 w-24 object-cover rounded-md ${!isEditable ? "opacity-60" : ""}`}
-          />
-          {isEditable && (
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 rounded-md flex items-center justify-center transition-opacity">
-              <label htmlFor={`cover-${uploadFileName}`} className="cursor-pointer text-white text-xs">
-                Change
-              </label>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div
-          className={`h-24 w-24 border-2 border-dashed rounded-md flex flex-col items-center justify-center ${!isEditable ? "opacity-60" : "hover:bg-muted/50 transition-colors"}`}
-        >
-          <ImageIcon className="h-6 w-6 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground mt-1">Cover</span>
-          {isEditable && (
-            <label htmlFor={`cover-${uploadFileName}`} className="absolute inset-0 cursor-pointer"></label>
-          )}
-        </div>
-      )}
-      {isEditable && uploadFileName && onCoverChange && (
-        <input
-          id={`cover-${uploadFileName}`}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file && onCoverChange) {
-              onCoverChange(file);
-            }
-          }}
-        />
-      )}
     </div>
   );
 }
