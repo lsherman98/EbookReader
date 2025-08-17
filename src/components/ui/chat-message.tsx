@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { ChevronRightIcon } from "@radix-ui/react-icons";
-import { Citation } from "@/lib/api/mutations";
+import { Citation } from "@/lib/types";
 
 const chatBubbleVariants = cva("group/message relative break-words rounded-lg p-3 text-sm sm:max-w-[70%]", {
   variants: {

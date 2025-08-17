@@ -5,7 +5,6 @@ import { omit } from "remeda";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { FilePreview } from "@/components/ui/file-preview";
 import { InterruptPrompt } from "@/components/ui/interrupt-prompt";
 import { useAutosizeTextArea } from "@/hooks/use-autosize-textarea";
 
@@ -38,7 +37,6 @@ export function MessageInput({
   stop,
   isGenerating,
   enableInterrupt = true,
-  transcribeAudio,
   ...props
 }: MessageInputProps) {
   const [isDragging, setIsDragging] = useState(false);
@@ -134,8 +132,9 @@ export function MessageInput({
     onKeyDownProp?.(event);
   };
 
-  const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const [textAreaHeight, setTextAreaHeight] = useState<number>(0);
+  const textAreaRef = useRef<HTMLTextAreaElement>(null!);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_, setTextAreaHeight] = useState<number>(0);
 
   useEffect(() => {
     if (textAreaRef.current) {
@@ -173,32 +172,6 @@ export function MessageInput({
               ? omit(props, ["allowAttachments", "files", "setFiles"])
               : omit(props, ["allowAttachments"]))}
           />
-
-          {props.allowAttachments && (
-            <div className="absolute inset-x-3 bottom-0 z-20 overflow-x-scroll py-3">
-              <div className="flex space-x-3">
-                <AnimatePresence mode="popLayout">
-                  {props.files?.map((file) => {
-                    return (
-                      <FilePreview
-                        key={file.name + String(file.lastModified)}
-                        file={file}
-                        onRemove={() => {
-                          props.setFiles((files) => {
-                            if (!files) return null;
-
-                            const filtered = Array.from(files).filter((f) => f !== file);
-                            if (filtered.length === 0) return null;
-                            return filtered;
-                          });
-                        }}
-                      />
-                    );
-                  })}
-                </AnimatePresence>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
