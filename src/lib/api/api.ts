@@ -218,3 +218,14 @@ export const deleteHighlight = async (highlightId?: string, hash?: string) => {
     return await pb.collection(Collections.Highlights).delete(highlight.id);
 
 }
+
+export const uploadLimitReached = async () => {
+    const user = pb.authStore.record
+    if (!user) return
+
+    const paid = user?.paid
+    if (paid) return false
+
+    const uploadCountRecord = await pb.collection(Collections.UploadCount).getOne(user?.id)
+    return uploadCountRecord?.uploadCount >= 5
+}

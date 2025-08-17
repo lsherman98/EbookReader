@@ -17,6 +17,7 @@ export enum Collections {
 	Highlights = "highlights",
 	LastRead = "last_read",
 	Messages = "messages",
+	UploadCount = "upload_count",
 	Users = "users",
 	Vectors = "vectors",
 }
@@ -176,6 +177,11 @@ export type MessagesRecord<Tcitations = unknown> = {
 	user: RecordIdString
 }
 
+export type UploadCountRecord = {
+	id: string
+	uploadCount?: number
+}
+
 export type UsersRecord = {
 	avatar?: string
 	chats?: RecordIdString[]
@@ -184,6 +190,7 @@ export type UsersRecord = {
 	emailVisibility?: boolean
 	id: string
 	name?: string
+	paid?: boolean
 	password: string
 	tokenKey: string
 	updated?: IsoDateString
@@ -214,6 +221,7 @@ export type ChatsResponse<Texpand = unknown> = Required<ChatsRecord> & BaseSyste
 export type HighlightsResponse<Tselection = unknown, Texpand = unknown> = Required<HighlightsRecord<Tselection>> & BaseSystemFields<Texpand>
 export type LastReadResponse<Texpand = unknown> = Required<LastReadRecord> & BaseSystemFields<Texpand>
 export type MessagesResponse<Tcitations = unknown, Texpand = unknown> = Required<MessagesRecord<Tcitations>> & BaseSystemFields<Texpand>
+export type UploadCountResponse<Texpand = unknown> = Required<UploadCountRecord> & BaseSystemFields<Texpand>
 export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>
 export type VectorsResponse<Texpand = unknown> = Required<VectorsRecord> & BaseSystemFields<Texpand>
 
@@ -231,6 +239,7 @@ export type CollectionRecords = {
 	highlights: HighlightsRecord
 	last_read: LastReadRecord
 	messages: MessagesRecord
+	upload_count: UploadCountRecord
 	users: UsersRecord
 	vectors: VectorsRecord
 }
@@ -247,6 +256,7 @@ export type CollectionResponses = {
 	highlights: HighlightsResponse
 	last_read: LastReadResponse
 	messages: MessagesResponse
+	upload_count: UploadCountResponse
 	users: UsersResponse
 	vectors: VectorsResponse
 }
@@ -266,6 +276,7 @@ export type TypedPocketBase = PocketBase & {
 	collection(idOrName: 'highlights'): RecordService<HighlightsResponse>
 	collection(idOrName: 'last_read'): RecordService<LastReadResponse>
 	collection(idOrName: 'messages'): RecordService<MessagesResponse>
+	collection(idOrName: 'upload_count'): RecordService<UploadCountResponse>
 	collection(idOrName: 'users'): RecordService<UsersResponse>
 	collection(idOrName: 'vectors'): RecordService<VectorsResponse>
 }

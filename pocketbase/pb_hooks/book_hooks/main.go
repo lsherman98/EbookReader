@@ -10,6 +10,29 @@ import (
 )
 
 func Init(app *pocketbase.PocketBase) error {
+	app.OnRecordCreateRequest("books").BindFunc(func(e *core.RecordRequestEvent) error {
+		if e.Auth == nil {
+			return e.ForbiddenError("You must be logged in to upload a book.", nil)
+		}
+
+		user := e.Auth
+		if !user.GetBool("paid") {
+			uploadCountRecord, err := e.App.FindRecordById("upload_count", user.Id)
+			if err != nil {
+				return err
+			}
+
+			if uploadCountRecord != nil {
+				uploadCount := uploadCountRecord.GetInt("uploadCount")
+				if uploadCount >= 5 {
+					return e.ForbiddenError("Upload limit reached. Please upgrade to continue uploading files.", nil)
+				}
+			}
+		}
+
+		return e.Next()
+	})
+
 	app.OnRecordAfterCreateSuccess("books").BindFunc(func(e *core.RecordEvent) error {
 		lastReadCollection, err := app.FindCollectionByNameOrId("last_read")
 		if err != nil {
