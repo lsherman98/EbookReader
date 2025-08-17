@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/book_hooks"
@@ -19,6 +20,7 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 )
 
 func init() {
@@ -44,6 +46,7 @@ func init() {
 }
 
 func main() {
+
 	app := pocketbase.NewWithConfig(pocketbase.Config{
 		DBConnect: func(dbPath string) (*dbx.DB, error) {
 			return dbx.Open("pb_sqlite3", dbPath)
@@ -91,6 +94,11 @@ func main() {
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.GET("/{path...}", apis.Static(os.DirFS("./pb_public"), false))
 		return se.Next()
+	})
+
+	isGoRun := strings.HasPrefix(os.Args[0], os.TempDir())
+	migratecmd.MustRegister(app, app.RootCmd, migratecmd.Config{
+		Automigrate: isGoRun,
 	})
 
 	if err := app.Start(); err != nil {

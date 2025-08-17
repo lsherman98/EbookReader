@@ -19,7 +19,7 @@ export const getBookById = async (bookId?: string) => {
 export const getChaptersByBookId = async (bookId?: string) => {
     if (!getUserId() || !bookId) return
 
-    return await pb.collection(Collections.Chapters).getFullList({ filter: `user="${getUserId()}" && book="${bookId}"`, fields: "id,title,order" });
+    return await pb.collection(Collections.Chapters).getFullList({ filter: `book="${bookId}" && user="${getUserId()}"`, fields: "id,title,order" });
 }
 
 export const downloadBook = async (bookId: string) => {
@@ -219,9 +219,11 @@ export const deleteHighlight = async (highlightId?: string, hash?: string) => {
 
 }
 
-export const uploadLimitReached = async () => {
+export const uploadLimitReached = async (): Promise<boolean> => {
+    await pb.collection("users").authRefresh()
+
     const user = pb.authStore.record
-    if (!user) return
+    if (!user) return false
 
     const paid = user?.paid
     if (paid) return false

@@ -7,50 +7,48 @@ import (
 
 func init() {
 	m.Register(func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("pbc_2605467279")
+		collection, err := app.FindCollectionByNameOrId("pbc_3301151734")
 		if err != nil {
 			return err
 		}
 
 		// update field
 		if err := collection.Fields.AddMarshaledJSONAt(1, []byte(`{
-			"autogeneratePattern": "",
+			"cascadeDelete": true,
+			"collectionId": "pbc_2170393721",
 			"hidden": false,
-			"id": "text4274335913",
-			"max": 0,
-			"min": 0,
-			"name": "content",
-			"pattern": "",
+			"id": "relation3420824369",
+			"maxSelect": 1,
+			"minSelect": 0,
+			"name": "book",
 			"presentable": false,
-			"primaryKey": false,
-			"required": true,
+			"required": false,
 			"system": false,
-			"type": "text"
+			"type": "relation"
 		}`)); err != nil {
 			return err
 		}
 
 		return app.Save(collection)
 	}, func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("pbc_2605467279")
+		collection, err := app.FindCollectionByNameOrId("pbc_3301151734")
 		if err != nil {
 			return err
 		}
 
 		// update field
 		if err := collection.Fields.AddMarshaledJSONAt(1, []byte(`{
-			"autogeneratePattern": "",
+			"cascadeDelete": true,
+			"collectionId": "pbc_2170393721",
 			"hidden": false,
-			"id": "text4274335913",
-			"max": 0,
-			"min": 0,
-			"name": "content",
-			"pattern": "",
+			"id": "relation3420824369",
+			"maxSelect": 1,
+			"minSelect": 0,
+			"name": "book",
 			"presentable": false,
-			"primaryKey": false,
-			"required": false,
+			"required": true,
 			"system": false,
-			"type": "text"
+			"type": "relation"
 		}`)); err != nil {
 			return err
 		}

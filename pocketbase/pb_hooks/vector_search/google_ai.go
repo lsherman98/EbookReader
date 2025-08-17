@@ -30,6 +30,7 @@ func googleAiEmbedContent(client *genai.Client, taskType genai.TaskType, title s
 }
 
 func googleAiEmbeddingModel(client *genai.Client) *genai.EmbeddingModel {
-	em := client.EmbeddingModel("text-embedding-004")
+	var model string = os.Getenv("GOOGLE_EMBEDDING_MODEL")
+	em := client.EmbeddingModel(model)
 	return em
 }

@@ -9,36 +9,28 @@ import (
 
 func init() {
 	m.Register(func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("pbc_3861817060")
+		collection, err := app.FindCollectionByNameOrId("pbc_2605467279")
 		if err != nil {
 			return err
 		}
 
 		// update collection data
 		if err := json.Unmarshal([]byte(`{
-			"createRule": "",
-			"deleteRule": "",
-			"listRule": "",
-			"updateRule": "",
-			"viewRule": ""
+			"createRule": "@request.auth.id != \"\""
 		}`), &collection); err != nil {
 			return err
 		}
 
 		return app.Save(collection)
 	}, func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("pbc_3861817060")
+		collection, err := app.FindCollectionByNameOrId("pbc_2605467279")
 		if err != nil {
 			return err
 		}
 
 		// update collection data
 		if err := json.Unmarshal([]byte(`{
-			"createRule": null,
-			"deleteRule": null,
-			"listRule": null,
-			"updateRule": null,
-			"viewRule": null
+			"createRule": "@request.auth.id != user.id"
 		}`), &collection); err != nil {
 			return err
 		}

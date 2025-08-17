@@ -81,7 +81,12 @@ export function useSearchBooks(query: string) {
 
 export function useGetUploadLimitReached() {
     return useQuery({
-        queryKey: ['uploadLimitReached'],
+        queryKey: [],
         queryFn: () => uploadLimitReached(),
+        enabled: true,
+        placeholderData: false,
+        refetchOnMount: 'always',
+        refetchOnWindowFocus: 'always',
+        refetchOnReconnect: 'always',
     });
 }

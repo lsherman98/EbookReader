@@ -7,48 +7,50 @@ import (
 
 func init() {
 	m.Register(func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("pbc_2605467279")
+		collection, err := app.FindCollectionByNameOrId("pbc_3423747372")
 		if err != nil {
 			return err
 		}
 
 		// update field
 		if err := collection.Fields.AddMarshaledJSONAt(2, []byte(`{
-			"cascadeDelete": false,
-			"collectionId": "pbc_3861817060",
 			"hidden": false,
-			"id": "relation1704850090",
+			"id": "select2462348188",
 			"maxSelect": 1,
-			"minSelect": 0,
-			"name": "chat",
+			"name": "provider",
 			"presentable": false,
-			"required": true,
+			"required": false,
 			"system": false,
-			"type": "relation"
+			"type": "select",
+			"values": [
+				"google",
+				"openai"
+			]
 		}`)); err != nil {
 			return err
 		}
 
 		return app.Save(collection)
 	}, func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("pbc_2605467279")
+		collection, err := app.FindCollectionByNameOrId("pbc_3423747372")
 		if err != nil {
 			return err
 		}
 
 		// update field
 		if err := collection.Fields.AddMarshaledJSONAt(2, []byte(`{
-			"cascadeDelete": false,
-			"collectionId": "pbc_3861817060",
 			"hidden": false,
-			"id": "relation1704850090",
+			"id": "select2462348188",
 			"maxSelect": 1,
-			"minSelect": 0,
-			"name": "chat",
+			"name": "provider",
 			"presentable": false,
 			"required": false,
 			"system": false,
-			"type": "relation"
+			"type": "select",
+			"values": [
+				"openAI",
+				"Google"
+			]
 		}`)); err != nil {
 			return err
 		}

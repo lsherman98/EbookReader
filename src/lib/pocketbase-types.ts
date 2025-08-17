@@ -11,6 +11,7 @@ export enum Collections {
 	Mfas = "_mfas",
 	Otps = "_otps",
 	Superusers = "_superusers",
+	AiUsage = "ai_usage",
 	Books = "books",
 	Chapters = "chapters",
 	Chats = "chats",
@@ -98,6 +99,33 @@ export type SuperusersRecord = {
 	verified?: boolean
 }
 
+export enum AiUsageTaskOptions {
+	"embed" = "embed",
+	"chat" = "chat",
+}
+
+export enum AiUsageProviderOptions {
+	"google" = "google",
+	"openai" = "openai",
+}
+
+export enum AiUsageModelOptions {
+	"gemini-embedding-001" = "gemini-embedding-001",
+	"gpt-4o" = "gpt-4o",
+}
+export type AiUsageRecord = {
+	book?: RecordIdString
+	created?: IsoDateString
+	id: string
+	input_tokens?: number
+	model?: AiUsageModelOptions
+	output_tokens?: number
+	provider?: AiUsageProviderOptions
+	task?: AiUsageTaskOptions
+	updated?: IsoDateString
+	user?: RecordIdString
+}
+
 export type BooksRecord = {
 	author?: string
 	available?: boolean
@@ -106,11 +134,11 @@ export type BooksRecord = {
 	cover_image?: string
 	created?: IsoDateString
 	current_chapter?: RecordIdString
-	date?: string
+	date?: IsoDateString
 	description?: string
 	file: string
 	id: string
-	langauge?: string
+	language?: string
 	subject?: string
 	title?: string
 	updated?: IsoDateString
@@ -119,15 +147,14 @@ export type BooksRecord = {
 
 export type ChaptersRecord = {
 	book: RecordIdString
-	content?: HTMLString
+	content: HTMLString
 	created?: IsoDateString
-	has_toc?: boolean
 	href?: string
 	id: string
 	order?: number
 	title?: string
 	updated?: IsoDateString
-	user?: RecordIdString
+	user: RecordIdString
 }
 
 export type ChatsRecord = {
@@ -135,30 +162,30 @@ export type ChatsRecord = {
 	created?: IsoDateString
 	id: string
 	messages?: RecordIdString[]
-	title: string
+	title?: string
 	updated?: IsoDateString
 	user: RecordIdString
 }
 
 export type HighlightsRecord<Tselection = unknown> = {
-	book?: RecordIdString
-	chapter?: RecordIdString
+	book: RecordIdString
+	chapter: RecordIdString
 	created?: IsoDateString
 	hash: string
 	id: string
-	selection?: null | Tselection
-	text?: string
+	selection: null | Tselection
+	text: string
 	updated?: IsoDateString
-	user?: RecordIdString
+	user: RecordIdString
 }
 
 export type LastReadRecord = {
-	book?: RecordIdString
+	book: RecordIdString
 	chapter?: RecordIdString
 	created?: IsoDateString
 	id: string
 	updated?: IsoDateString
-	user?: RecordIdString
+	user: RecordIdString
 }
 
 export enum MessagesRoleOptions {
@@ -178,13 +205,13 @@ export type MessagesRecord<Tcitations = unknown> = {
 }
 
 export type UploadCountRecord = {
+	email: string
 	id: string
 	uploadCount?: number
 }
 
 export type UsersRecord = {
 	avatar?: string
-	chats?: RecordIdString[]
 	created?: IsoDateString
 	email: string
 	emailVisibility?: boolean
@@ -215,6 +242,7 @@ export type ExternalauthsResponse<Texpand = unknown> = Required<ExternalauthsRec
 export type MfasResponse<Texpand = unknown> = Required<MfasRecord> & BaseSystemFields<Texpand>
 export type OtpsResponse<Texpand = unknown> = Required<OtpsRecord> & BaseSystemFields<Texpand>
 export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> & AuthSystemFields<Texpand>
+export type AiUsageResponse<Texpand = unknown> = Required<AiUsageRecord> & BaseSystemFields<Texpand>
 export type BooksResponse<Texpand = unknown> = Required<BooksRecord> & BaseSystemFields<Texpand>
 export type ChaptersResponse<Texpand = unknown> = Required<ChaptersRecord> & BaseSystemFields<Texpand>
 export type ChatsResponse<Texpand = unknown> = Required<ChatsRecord> & BaseSystemFields<Texpand>
@@ -233,6 +261,7 @@ export type CollectionRecords = {
 	_mfas: MfasRecord
 	_otps: OtpsRecord
 	_superusers: SuperusersRecord
+	ai_usage: AiUsageRecord
 	books: BooksRecord
 	chapters: ChaptersRecord
 	chats: ChatsRecord
@@ -250,6 +279,7 @@ export type CollectionResponses = {
 	_mfas: MfasResponse
 	_otps: OtpsResponse
 	_superusers: SuperusersResponse
+	ai_usage: AiUsageResponse
 	books: BooksResponse
 	chapters: ChaptersResponse
 	chats: ChatsResponse
@@ -270,6 +300,7 @@ export type TypedPocketBase = PocketBase & {
 	collection(idOrName: '_mfas'): RecordService<MfasResponse>
 	collection(idOrName: '_otps'): RecordService<OtpsResponse>
 	collection(idOrName: '_superusers'): RecordService<SuperusersResponse>
+	collection(idOrName: 'ai_usage'): RecordService<AiUsageResponse>
 	collection(idOrName: 'books'): RecordService<BooksResponse>
 	collection(idOrName: 'chapters'): RecordService<ChaptersResponse>
 	collection(idOrName: 'chats'): RecordService<ChatsResponse>

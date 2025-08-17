@@ -7,56 +7,48 @@ import (
 
 func init() {
 	m.Register(func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("pbc_3446931122")
+		collection, err := app.FindCollectionByNameOrId("pbc_2272205672")
 		if err != nil {
 			return err
 		}
 
 		// update field
-		if err := collection.Fields.AddMarshaledJSONAt(5, []byte(`{
+		if err := collection.Fields.AddMarshaledJSONAt(6, []byte(`{
+			"cascadeDelete": true,
+			"collectionId": "_pb_users_auth_",
 			"hidden": false,
-			"id": "select2363381545",
+			"id": "relation2375276105",
 			"maxSelect": 1,
-			"name": "type",
+			"minSelect": 0,
+			"name": "user",
 			"presentable": false,
 			"required": true,
 			"system": false,
-			"type": "select",
-			"values": [
-				"epub",
-				"pdf",
-				"mobi",
-				"txt",
-				"html"
-			]
+			"type": "relation"
 		}`)); err != nil {
 			return err
 		}
 
 		return app.Save(collection)
 	}, func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("pbc_3446931122")
+		collection, err := app.FindCollectionByNameOrId("pbc_2272205672")
 		if err != nil {
 			return err
 		}
 
 		// update field
-		if err := collection.Fields.AddMarshaledJSONAt(5, []byte(`{
-			"hidden": false,
-			"id": "select2363381545",
+		if err := collection.Fields.AddMarshaledJSONAt(6, []byte(`{
+			"cascadeDelete": true,
+			"collectionId": "_pb_users_auth_",
+			"hidden": true,
+			"id": "relation2375276105",
 			"maxSelect": 1,
-			"name": "type",
+			"minSelect": 0,
+			"name": "user",
 			"presentable": false,
-			"required": false,
+			"required": true,
 			"system": false,
-			"type": "select",
-			"values": [
-				"epub",
-				"pdf",
-				"mobi",
-				"txt",
-				"html"
-			]
+			"type": "relation"
 		}`)); err != nil {
 			return err
 		}

@@ -13,7 +13,6 @@ export function useUploadBook() {
         onError: handleError,
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['books'] });
-            await queryClient.invalidateQueries({ queryKey: ['uploadLimitReached'] });
         },
     })
 }

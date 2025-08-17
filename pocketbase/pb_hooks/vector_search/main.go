@@ -3,6 +3,7 @@ package vector_search
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -56,6 +57,7 @@ func Init(app *pocketbase.PocketBase, collections ...VectorCollection) error {
 		}
 		return e.Next()
 	})
+
 	app.OnRecordAfterCreateSuccess().BindFunc(func(e *core.RecordEvent) error {
 		tbl := e.Record.TableName()
 		for _, target := range collections {
@@ -69,6 +71,7 @@ func Init(app *pocketbase.PocketBase, collections ...VectorCollection) error {
 		}
 		return e.Next()
 	})
+
 	app.OnRecordAfterUpdateSuccess().BindFunc(func(e *core.RecordEvent) error {
 		tbl := e.Record.TableName()
 		for _, target := range collections {
@@ -82,6 +85,7 @@ func Init(app *pocketbase.PocketBase, collections ...VectorCollection) error {
 		}
 		return e.Next()
 	})
+
 	app.OnRecordAfterDeleteSuccess().BindFunc(func(e *core.RecordEvent) error {
 		tbl := e.Record.TableName()
 		for _, target := range collections {
@@ -95,6 +99,7 @@ func Init(app *pocketbase.PocketBase, collections ...VectorCollection) error {
 		}
 		return e.Next()
 	})
+
 	app.OnCollectionAfterDeleteSuccess().BindFunc(func(e *core.CollectionEvent) error {
 		for _, target := range collections {
 			if e.Collection.Name == target.Name {
@@ -107,6 +112,7 @@ func Init(app *pocketbase.PocketBase, collections ...VectorCollection) error {
 		}
 		return e.Next()
 	})
+
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		e.Router.GET("/vector-search", func(e *core.RequestEvent) error {
 			title := e.Request.URL.Query().Get("title")
@@ -230,7 +236,6 @@ func Search(app *pocketbase.PocketBase, title, content, book, chapter string, kN
 		app.Logger().Error(fmt.Sprint(err))
 		return nil, err
 	}
-	app.Logger().Info(fmt.Sprint(results))
 
 	items := []map[string]any{}
 	for _, result := range results {
@@ -267,6 +272,54 @@ func modelDelete(app *pocketbase.PocketBase, target string, e *core.RecordEvent)
 	return deleteEmbeddingsForRecord(app, target, e)
 }
 
+func trackAIUsage(app *pocketbase.PocketBase, record *core.Record, title, content string) {
+	totalChars := len(title) + len(content)
+	approxTokens := totalChars / 4
+	if totalChars%4 > 0 {
+		approxTokens++
+	}
+
+	AIUsageCollection, err := app.FindCollectionByNameOrId("ai_usage")
+	if err != nil {
+		app.Logger().Error("Error finding ai_usage collection:", "error", err.Error())
+		return
+	}
+
+	bookId := record.GetString("book")
+	bookRecord, _ := app.FindRecordById("books", bookId)
+	user := bookRecord.GetString("user")
+
+	var model string = os.Getenv("GOOGLE_EMBEDDING_MODEL")
+
+	existingRecord, err := app.FindFirstRecordByFilter("ai_usage",
+		"book = {:book} && user = {:user} && task = 'embed'",
+		dbx.Params{
+			"book": bookId,
+			"user": user,
+		})
+
+	if err == nil && existingRecord != nil {
+		currentTokens := existingRecord.GetInt("input_tokens")
+		existingRecord.Set("input_tokens", currentTokens+approxTokens)
+
+		if err := app.Save(existingRecord); err != nil {
+			app.Logger().Error("Error updating AI usage record:", "error", err.Error())
+		}
+	} else {
+		AIUsageRecord := core.NewRecord(AIUsageCollection)
+		AIUsageRecord.Set("task", "embed")
+		AIUsageRecord.Set("provider", "google")
+		AIUsageRecord.Set("model", model)
+		AIUsageRecord.Set("input_tokens", approxTokens)
+		AIUsageRecord.Set("book", bookId)
+		AIUsageRecord.Set("user", user)
+
+		if err := app.Save(AIUsageRecord); err != nil {
+			app.Logger().Error("Error saving AI usage record:", "error", err.Error())
+		}
+	}
+}
+
 func modelModify(app *pocketbase.PocketBase, target string, client *genai.Client, e *core.RecordEvent) error {
 	record, err := e.App.FindRecordById(e.Record.TableName(), e.Record.Id)
 	if err != nil {
@@ -274,6 +327,8 @@ func modelModify(app *pocketbase.PocketBase, target string, client *genai.Client
 	}
 	title := record.GetString("title")
 	content := record.GetString("content")
+
+	trackAIUsage(app, record, title, content)
 
 	if content != "" {
 		routine.FireAndForget(func() {
@@ -432,7 +487,7 @@ func createCollection(app *pocketbase.PocketBase, target string, extraFields ...
 
 	stmt := "CREATE VIRTUAL TABLE IF NOT EXISTS " + target + "_embeddings using vec0( "
 	stmt += "	id INTEGER PRIMARY KEY AUTOINCREMENT, "
-	stmt += "	embedding float[768] "
+	stmt += "	embedding float[3072] "
 	stmt += ");"
 	_, err = app.DB().NewQuery(stmt).Execute()
 	if err != nil {

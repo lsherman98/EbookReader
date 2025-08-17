@@ -19,7 +19,7 @@ func Init(app *pocketbase.PocketBase) error {
 		if !user.GetBool("paid") {
 			uploadCountRecord, err := e.App.FindRecordById("upload_count", user.Id)
 			if err != nil {
-				return err
+				return e.Next()
 			}
 
 			if uploadCountRecord != nil {
@@ -139,6 +139,10 @@ func Init(app *pocketbase.PocketBase) error {
 	})
 
 	app.OnRecordViewRequest("books").BindFunc(func(e *core.RecordRequestEvent) error {
+		if e.HasSuperuserAuth() {
+			return e.Next()
+		}
+
 		if e.Auth == nil {
 			return e.Next()
 		}
@@ -171,7 +175,7 @@ func Init(app *pocketbase.PocketBase) error {
 
 			err = e.App.Save(lastReadRecord)
 			if err != nil {
-				return err
+				return e.Next()
 			}
 		}
 

@@ -9,36 +9,30 @@ import (
 
 func init() {
 	m.Register(func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("pbc_3861817060")
+		collection, err := app.FindCollectionByNameOrId("pbc_3423747372")
 		if err != nil {
 			return err
 		}
 
 		// update collection data
 		if err := json.Unmarshal([]byte(`{
-			"createRule": "@request.auth.id = user.id",
-			"deleteRule": "@request.auth.id = user.id",
-			"listRule": "@request.auth.id = user.id",
-			"updateRule": "@request.auth.id = user.id",
-			"viewRule": "@request.auth.id = user.id"
+			"indexes": [
+				"CREATE INDEX ` + "`" + `idx_Cm2QpQVDJw` + "`" + ` ON ` + "`" + `ai_usage` + "`" + ` (\n  ` + "`" + `book` + "`" + `,\n  ` + "`" + `user` + "`" + `\n)"
+			]
 		}`), &collection); err != nil {
 			return err
 		}
 
 		return app.Save(collection)
 	}, func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("pbc_3861817060")
+		collection, err := app.FindCollectionByNameOrId("pbc_3423747372")
 		if err != nil {
 			return err
 		}
 
 		// update collection data
 		if err := json.Unmarshal([]byte(`{
-			"createRule": "",
-			"deleteRule": "",
-			"listRule": "",
-			"updateRule": "",
-			"viewRule": ""
+			"indexes": []
 		}`), &collection); err != nil {
 			return err
 		}

@@ -7,23 +7,19 @@ import (
 
 func init() {
 	m.Register(func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("pbc_3446931122")
+		collection, err := app.FindCollectionByNameOrId("pbc_2170393721")
 		if err != nil {
 			return err
 		}
 
 		// update field
-		if err := collection.Fields.AddMarshaledJSONAt(2, []byte(`{
+		if err := collection.Fields.AddMarshaledJSONAt(9, []byte(`{
 			"hidden": false,
 			"id": "file2359244304",
 			"maxSelect": 1,
 			"maxSize": 25000000,
 			"mimeTypes": [
-				"application/epub+zip",
-				"application/pdf",
-				"application/x-mobipocket-ebook",
-				"text/plain",
-				"text/html"
+				"application/epub+zip"
 			],
 			"name": "file",
 			"presentable": false,
@@ -38,22 +34,24 @@ func init() {
 
 		return app.Save(collection)
 	}, func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("pbc_3446931122")
+		collection, err := app.FindCollectionByNameOrId("pbc_2170393721")
 		if err != nil {
 			return err
 		}
 
 		// update field
-		if err := collection.Fields.AddMarshaledJSONAt(2, []byte(`{
+		if err := collection.Fields.AddMarshaledJSONAt(9, []byte(`{
 			"hidden": false,
 			"id": "file2359244304",
 			"maxSelect": 1,
-			"maxSize": 0,
-			"mimeTypes": [],
+			"maxSize": 15000000,
+			"mimeTypes": [
+				"application/epub+zip"
+			],
 			"name": "file",
 			"presentable": false,
-			"protected": false,
-			"required": false,
+			"protected": true,
+			"required": true,
 			"system": false,
 			"thumbs": [],
 			"type": "file"

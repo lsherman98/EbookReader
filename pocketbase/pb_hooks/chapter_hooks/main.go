@@ -61,7 +61,7 @@ func Init(app *pocketbase.PocketBase) error {
 		bookRecord.Set("current_chapter", e.Record.Id)
 		err = app.Save(bookRecord)
 		if err != nil {
-			return err
+			return e.Next()
 		}
 
 		lastRead, err := e.App.FindFirstRecordByData("last_read", "user", user)
@@ -75,7 +75,7 @@ func Init(app *pocketbase.PocketBase) error {
 
 			err = e.App.Save(lastRead)
 			if err != nil {
-				return err
+				return e.Next()
 			}
 		}
 

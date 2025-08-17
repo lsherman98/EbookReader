@@ -7,22 +7,22 @@ import (
 
 func init() {
 	m.Register(func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("pbc_3446931122")
+		collection, err := app.FindCollectionByNameOrId("pbc_3423747372")
 		if err != nil {
 			return err
 		}
 
 		// update field
-		if err := collection.Fields.AddMarshaledJSONAt(3, []byte(`{
+		if err := collection.Fields.AddMarshaledJSONAt(7, []byte(`{
 			"cascadeDelete": true,
-			"collectionId": "_pb_users_auth_",
-			"hidden": true,
-			"id": "relation2375276105",
+			"collectionId": "pbc_2170393721",
+			"hidden": false,
+			"id": "relation3420824369",
 			"maxSelect": 1,
 			"minSelect": 0,
-			"name": "user",
+			"name": "book",
 			"presentable": false,
-			"required": true,
+			"required": false,
 			"system": false,
 			"type": "relation"
 		}`)); err != nil {
@@ -31,20 +31,20 @@ func init() {
 
 		return app.Save(collection)
 	}, func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("pbc_3446931122")
+		collection, err := app.FindCollectionByNameOrId("pbc_3423747372")
 		if err != nil {
 			return err
 		}
 
 		// update field
-		if err := collection.Fields.AddMarshaledJSONAt(3, []byte(`{
+		if err := collection.Fields.AddMarshaledJSONAt(7, []byte(`{
 			"cascadeDelete": false,
-			"collectionId": "_pb_users_auth_",
+			"collectionId": "pbc_2170393721",
 			"hidden": false,
-			"id": "relation2375276105",
+			"id": "relation3420824369",
 			"maxSelect": 1,
 			"minSelect": 0,
-			"name": "user",
+			"name": "book",
 			"presentable": false,
 			"required": false,
 			"system": false,

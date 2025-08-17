@@ -28,32 +28,70 @@ func init() {
 					"type": "text"
 				},
 				{
-					"autogeneratePattern": "",
 					"hidden": false,
-					"id": "text1579384326",
-					"max": 0,
-					"min": 0,
-					"name": "name",
-					"pattern": "",
+					"id": "select1384045349",
+					"maxSelect": 1,
+					"name": "task",
 					"presentable": false,
-					"primaryKey": false,
 					"required": false,
 					"system": false,
-					"type": "text"
+					"type": "select",
+					"values": [
+						"embed",
+						"chat"
+					]
 				},
 				{
 					"hidden": false,
-					"id": "file2359244304",
+					"id": "select2462348188",
 					"maxSelect": 1,
-					"maxSize": 0,
-					"mimeTypes": [],
-					"name": "file",
+					"name": "provider",
 					"presentable": false,
-					"protected": false,
 					"required": false,
 					"system": false,
-					"thumbs": [],
-					"type": "file"
+					"type": "select",
+					"values": [
+						"openAI",
+						"Google"
+					]
+				},
+				{
+					"hidden": false,
+					"id": "select3616895705",
+					"maxSelect": 1,
+					"name": "model",
+					"presentable": false,
+					"required": false,
+					"system": false,
+					"type": "select",
+					"values": [
+						"gemini-embedding-001",
+						"gpt-4o"
+					]
+				},
+				{
+					"hidden": false,
+					"id": "number1726912723",
+					"max": null,
+					"min": null,
+					"name": "input_tokens",
+					"onlyInt": false,
+					"presentable": false,
+					"required": false,
+					"system": false,
+					"type": "number"
+				},
+				{
+					"hidden": false,
+					"id": "number2122787687",
+					"max": null,
+					"min": null,
+					"name": "output_tokens",
+					"onlyInt": false,
+					"presentable": false,
+					"required": false,
+					"system": false,
+					"type": "number"
 				},
 				{
 					"cascadeDelete": false,
@@ -70,12 +108,12 @@ func init() {
 				},
 				{
 					"cascadeDelete": false,
-					"collectionId": "pbc_3861817060",
+					"collectionId": "pbc_2170393721",
 					"hidden": false,
-					"id": "relation761796623",
-					"maxSelect": 999,
+					"id": "relation3420824369",
+					"maxSelect": 1,
 					"minSelect": 0,
-					"name": "chats",
+					"name": "book",
 					"presentable": false,
 					"required": false,
 					"system": false,
@@ -102,10 +140,10 @@ func init() {
 					"type": "autodate"
 				}
 			],
-			"id": "pbc_3446931122",
+			"id": "pbc_3423747372",
 			"indexes": [],
 			"listRule": null,
-			"name": "files",
+			"name": "ai_usage",
 			"system": false,
 			"type": "base",
 			"updateRule": null,
@@ -119,7 +157,7 @@ func init() {
 
 		return app.Save(collection)
 	}, func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("pbc_3446931122")
+		collection, err := app.FindCollectionByNameOrId("pbc_3423747372")
 		if err != nil {
 			return err
 		}
