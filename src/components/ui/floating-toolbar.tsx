@@ -9,7 +9,7 @@ import { useComposedRef } from "@udecode/cn";
 import { KEYS } from "platejs";
 import { useEditorId, useEventEditorValue, usePluginOption } from "platejs/react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/utils";
 
 import { Toolbar } from "./toolbar";
 import React from "react";

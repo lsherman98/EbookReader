@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addChat, addHighlight, addMessage, deleteBook, deleteChat, deleteHighlight, downloadBook, generateAIResponse, updateBook, updateChapter, updateChat, uploadBook } from "./api";
-import { handleError } from "../utils";
+import { handleError } from "../utils/utils";
 import { FileUploadObj } from "@/pages/_app/upload.lazy";
 import { Citation } from "../types";
 import { Range } from "platejs";

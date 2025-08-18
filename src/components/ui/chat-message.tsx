@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { motion } from "framer-motion";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { ChevronRightIcon } from "@radix-ui/react-icons";

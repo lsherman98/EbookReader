@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/utils";
 import { createContext, forwardRef, useCallback, useContext, useId, useMemo, useReducer, useState } from "react";
 import { Accept, FileRejection, useDropzone as rootUseDropzone } from "react-dropzone";
 import { Button, ButtonProps } from "./button";
@@ -109,17 +109,20 @@ const getRootError = (
 ) => {
   const errors = errorCodes.map((error) => {
     switch (error) {
-      case "file-invalid-type":
+      case "file-invalid-type": {
         const acceptedTypes = Object.values(limits.accept ?? {})
           .flat()
           .join(", ");
         return `only ${acceptedTypes} are allowed`;
-      case "file-too-large":
+      }
+      case "file-too-large": {
         const maxMb = limits.maxSize ? (limits.maxSize / (1024 * 1024)).toFixed(2) : "infinite?";
         return `max size is ${maxMb}MB`;
-      case "file-too-small":
+      }
+      case "file-too-small": {
         const roundedMinSize = limits.minSize ? (limits.minSize / (1024 * 1024)).toFixed(2) : "negative?";
         return `min size is ${roundedMinSize}MB`;
+      }
       case "too-many-files":
         return `max ${limits.maxFiles} files`;
     }
@@ -284,8 +287,7 @@ const useDropzone = <TUploadRes, TUploadError = string>(
       const maxNewFiles = validation?.maxFiles === undefined ? Infinity : validation?.maxFiles - fileCount;
 
       if (maxNewFiles < newFiles.length) {
-        if (shiftOnMaxFiles === true) {
-        } else {
+        if (shiftOnMaxFiles !== true) {
           setRootError(getRootError(["too-many-files"], validation ?? {}));
         }
       }
@@ -602,8 +604,7 @@ const DropzoneRetryFile = forwardRef<HTMLButtonElement, DropzoneRetryFileProps>(
 });
 DropzoneRetryFile.displayName = "DropzoneRetryFile";
 
-interface DropzoneTriggerProps extends React.LabelHTMLAttributes<HTMLLabelElement> {
-}
+interface DropzoneTriggerProps extends React.LabelHTMLAttributes<HTMLLabelElement> {}
 
 const DropzoneTrigger = forwardRef<HTMLLabelElement, DropzoneTriggerProps>(({ className, children, ...props }, ref) => {
   const context = useDropzoneContext();

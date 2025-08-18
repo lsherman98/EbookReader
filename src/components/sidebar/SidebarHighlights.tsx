@@ -12,8 +12,9 @@ import { Card, CardContent } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { HighlightsRecord } from "@/lib/pocketbase-types";
 import { useSelectedHighlightStore } from "@/lib/stores/selected-highlight-store";
-import { formatHighlightDate, getElementAtViewportCenter } from "@/lib/utils";
 import { ExpandHighlights } from "@/lib/types";
+import { getElementAtViewportCenter } from "@/lib/utils/history";
+import { formatHighlightDate } from "@/lib/utils/formatting";
 
 export function SidebarHighlights({ bookId }: { bookId: string }) {
   const [showAllHighlights, setShowAllHighlights] = useState(false);

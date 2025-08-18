@@ -9,6 +9,7 @@ import {
 } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
 import { Book, BookImage, Download, MoreHorizontal, Trash } from "lucide-react";
+import { formatBookRowDate } from "@/lib/utils/formatting";
 
 interface BookRowProps {
   book: BooksResponse;
@@ -20,17 +21,6 @@ interface BookRowProps {
 export function BookRow({ book, onDelete, onDownload, onRead }: BookRowProps) {
   const createCoverImageUrl = (file: BooksResponse) => {
     return `${import.meta.env.VITE_BASE_URL}/api/files/${file.collectionId}/${file.id}/${file.cover_image}`;
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
   };
 
   return (
@@ -48,7 +38,7 @@ export function BookRow({ book, onDelete, onDownload, onRead }: BookRowProps) {
       </TableCell>
       <TableCell className="w-1/4 align-middle font-bold">{book.title}</TableCell>
       <TableCell className="w-1/6 align-middle">{book.author}</TableCell>
-      <TableCell className="w-1/6 align-middle">{formatDate(book.created)}</TableCell>
+      <TableCell className="w-1/6 align-middle">{formatBookRowDate(book.created)}</TableCell>
       <TableCell className="w-48">
         <div className="flex justify-center">
           <div className="relative">

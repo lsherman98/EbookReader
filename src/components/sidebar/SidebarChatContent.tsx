@@ -3,20 +3,14 @@ import { Chat } from "../ui/chat";
 import { Message } from "../ui/chat-message";
 import { useGetMessagesByChatId } from "@/lib/api/queries";
 import { useAddMessage, useGenerateAIResponse } from "@/lib/api/mutations";
-import {
-  handleError,
-  generateTextHash,
-  processCitationsForDisplay,
-  processMessagesWithCitations,
-  buildCitationMap,
-  createMessageObj,
-  getElementAtViewportCenter,
-} from "@/lib/utils";
+import { handleError, generateTextHash, createMessageObj } from "@/lib/utils/utils";
 import { useNavigate } from "@tanstack/react-router";
 import { useCitationStore } from "@/lib/stores/citation-store";
 import { useNavigationHistoryStore } from "@/lib/stores/navigation-history-store";
 import { useCurrentChapterStore } from "@/lib/stores/current-chapter-store";
 import { AIChatResponse, Citation } from "@/lib/types";
+import { buildCitationMap, processCitationsForDisplay, processMessagesWithCitations } from "@/lib/utils/citations";
+import { getElementAtViewportCenter } from "@/lib/utils/history";
 
 export function SidebarChatContent({
   selectedBookId,

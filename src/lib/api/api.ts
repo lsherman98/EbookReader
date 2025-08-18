@@ -1,7 +1,7 @@
 import { pb } from "../pocketbase";
 import { BooksResponse, ChatsResponse, Collections, HighlightsResponse } from "../pocketbase-types";
 import { FileUploadObj } from "@/pages/_app/upload.lazy";
-import { getUserId, handleError } from "../utils";
+import { getUserId, handleError } from "../utils/utils";
 import { Citation, ExpandHighlights, ExpandMessages, UploadFileRequest } from "../types";
 import { Range } from "platejs";
 

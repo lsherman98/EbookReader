@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/utils";
 import { Button } from "@/components/ui/button";
 import { ChatsRecord } from "@/lib/pocketbase-types";
 import { Trash2 } from "lucide-react";

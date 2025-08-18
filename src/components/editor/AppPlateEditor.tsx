@@ -11,23 +11,21 @@ import { DisableTextInput } from "./plugins/disable-text-input";
 import { FloatingToolbarKit } from "./plugins/floating-toolbar-kit";
 import { createStaticEditor, Node, Range, serializeHtml, Value } from "platejs";
 import { BaseEditorKit } from "./plugins/editor-base-kit";
-import {
-  calculateTextSimilarity,
-  combineHighlightText,
-  createAdjustedSelection,
-  createHighlightHash,
-  findAdjacentHighlights,
-  findBestMatchingNode,
-  findHighlightedElementInEditor,
-  findMatchingMarksInEditor,
-  highlightCitationInElement,
-  scrollElementIntoView,
-  selectMarksInEditor,
-} from "@/lib/utils";
 import { Editor, EditorContainer } from "../ui/editor";
 import { useNavigationHistoryStore } from "@/lib/stores/navigation-history-store";
 import { useNavigate } from "@tanstack/react-router";
 import { GoBackButton } from "../ui/go-back-button";
+import {
+  combineHighlightText,
+  createAdjustedSelection,
+  createHighlightHash,
+  findAdjacentHighlights,
+  findHighlightedElementInEditor,
+  findMatchingMarksInEditor,
+  selectMarksInEditor,
+} from "@/lib/utils/highlights";
+import { calculateTextSimilarity, scrollElementIntoView } from "@/lib/utils/utils";
+import { findBestMatchingNode, highlightCitationInElement } from "@/lib/utils/citations";
 
 export function AppPlateEditor({ chapter }: { chapter?: ChaptersRecord }) {
   const [chapterHtmlContent, setChapterHtmlContent] = useState<string>("");
@@ -132,10 +130,7 @@ export function AppPlateEditor({ chapter }: { chapter?: ChaptersRecord }) {
 
     setTimeout(() => {
       if (previousLocation.elementId) {
-        const element = document.querySelector(`[data-block-id="${previousLocation.elementId}"]`);
-        if (element) {
-          element.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
+        scrollElementIntoView(previousLocation.elementId);
       }
     }, 500);
 

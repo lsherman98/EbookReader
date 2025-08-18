@@ -1,5 +1,5 @@
 import { MENU_ENTRIES } from "@/config/menu";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/utils";
 import UserMenu from "./UserMenu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { Link, useRouterState } from "@tanstack/react-router";

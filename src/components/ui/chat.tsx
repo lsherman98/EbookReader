@@ -1,7 +1,7 @@
 import { forwardRef, useCallback, useRef, type ReactElement } from "react";
 import { ArrowDown } from "lucide-react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/utils";
 import { Button } from "@/components/ui/button";
 import { type Message } from "@/components/ui/chat-message";
 import { CopyButton } from "@/components/ui/copy-button";
@@ -59,7 +59,12 @@ export function Chat({
     <ChatContainer className={className}>
       {messages.length > 0 ? (
         <ChatMessages messages={messages}>
-          <MessageList messages={messages} isTyping={isTyping} onCitationClick={onCitationClick} messageOptions={messageOptions} />
+          <MessageList
+            messages={messages}
+            isTyping={isTyping}
+            onCitationClick={onCitationClick}
+            messageOptions={messageOptions}
+          />
         </ChatMessages>
       ) : (
         <div className="w-full h-full flex items-center justify-center">placeholder instructions</div>
