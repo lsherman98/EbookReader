@@ -194,7 +194,6 @@ func setBookFields(book *core.Record, parsedBook *pamphlet.Book, chapterIds []st
 	book.Set("subject", parsedBook.Subject)
 	book.Set("chapters+", chapterIds)
 	book.Set("current_chapter", chapterIds[0])
-	book.Set("available", true)
 }
 
 func setChapterFields(chapterRecord *core.Record, chapter *pamphlet.Chapter, html string, bookId string, userId string) {

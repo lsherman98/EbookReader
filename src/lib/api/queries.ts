@@ -11,7 +11,7 @@ export function useGetBooks(page: number = 1, limit: number = 25) {
 
 export function useGetBookById(bookId?: string) {
     return useQuery({
-        queryKey: ['books', bookId],
+        queryKey: ['book', bookId],
         queryFn: () => getBookById(bookId),
         placeholderData: keepPreviousData,
         enabled: !!bookId && bookId !== 'undefined',
@@ -20,7 +20,7 @@ export function useGetBookById(bookId?: string) {
 
 export function useGetChaptersByBookId(bookId?: string) {
     return useQuery({
-        queryKey: ['books', bookId],
+        queryKey: ['chapters', bookId],
         queryFn: () => getChaptersByBookId(bookId),
         placeholderData: keepPreviousData,
         enabled: !!bookId && bookId !== 'undefined',
@@ -29,7 +29,7 @@ export function useGetChaptersByBookId(bookId?: string) {
 
 export function useGetChapterById(chapterId?: string) {
     return useQuery({
-        queryKey: ['chapters', chapterId],
+        queryKey: ['chapter', chapterId],
         queryFn: () => getChapterById(chapterId),
         placeholderData: keepPreviousData,
         enabled: !!chapterId,

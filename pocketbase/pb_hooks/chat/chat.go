@@ -31,6 +31,10 @@ func trackChatAIUsage(app *pocketbase.PocketBase, bookId string, completion *llm
 		return
 	}
 
+	inputCost := float64(promptTokens) * 2.50 / 1000000
+	outputCost := float64(completionTokens) * 10.0 / 1000000
+	totalCost := inputCost + outputCost
+
 	AIUsageCollection, err := app.FindCollectionByNameOrId("ai_usage")
 	if err != nil {
 		app.Logger().Error("Error finding ai_usage collection:", "error", err.Error())
@@ -56,8 +60,15 @@ func trackChatAIUsage(app *pocketbase.PocketBase, bookId string, completion *llm
 	if err == nil && existingRecord != nil {
 		currentInputTokens := existingRecord.GetInt("input_tokens")
 		currentOutputTokens := existingRecord.GetInt("output_tokens")
+		currentInputCost := existingRecord.GetFloat("input_cost")
+		currentOutputCost := existingRecord.GetFloat("output_cost")
+		currentTotalCost := existingRecord.GetFloat("total_cost")
+
 		existingRecord.Set("input_tokens", currentInputTokens+promptTokens)
 		existingRecord.Set("output_tokens", currentOutputTokens+completionTokens)
+		existingRecord.Set("input_cost", currentInputCost+inputCost)
+		existingRecord.Set("output_cost", currentOutputCost+outputCost)
+		existingRecord.Set("total_cost", currentTotalCost+totalCost)
 
 		if err := app.Save(existingRecord); err != nil {
 			app.Logger().Error("Error updating AI usage record:", "error", err.Error())
@@ -69,6 +80,9 @@ func trackChatAIUsage(app *pocketbase.PocketBase, bookId string, completion *llm
 		AIUsageRecord.Set("model", model)
 		AIUsageRecord.Set("input_tokens", promptTokens)
 		AIUsageRecord.Set("output_tokens", completionTokens)
+		AIUsageRecord.Set("input_cost", inputCost)
+		AIUsageRecord.Set("output_cost", outputCost)
+		AIUsageRecord.Set("total_cost", totalCost)
 		AIUsageRecord.Set("book", bookId)
 		AIUsageRecord.Set("user", user)
 
@@ -97,6 +111,11 @@ func Init(app *pocketbase.PocketBase) error {
 				return e.BadRequestError("failed to read chat request data", err)
 			}
 
+			bookRecord, err := e.App.FindRecordById("books", data.BookID)
+			if err != nil {
+				return e.InternalServerError("failed to get book information", err)
+			}
+
 			msgs, err := e.App.FindRecordsByFilter("messages", "chat = {:chatId}", "created", 0, 0, dbx.Params{"chatId": data.ChatID})
 			if err != nil {
 				return e.InternalServerError("failed to get messages for chat", err)
@@ -113,7 +132,7 @@ func Init(app *pocketbase.PocketBase) error {
 				return e.InternalServerError("failed to search vectors", err)
 			}
 
-			prompt := buildPromptWithContext(searchResults)
+			prompt := buildPromptWithContext(searchResults, bookRecord.GetString("title"), bookRecord.GetString("author"))
 			content := make([]llms.MessageContent, 0, len(msgs)+1)
 			content = append(content, llms.TextParts(llms.ChatMessageTypeSystem, prompt))
 
@@ -162,13 +181,17 @@ func Init(app *pocketbase.PocketBase) error {
 	return nil
 }
 
-func buildPromptWithContext(searchResults []map[string]interface{}) string {
+func buildPromptWithContext(searchResults []map[string]interface{}, bookTitle, bookAuthor string) string {
+	var contextBuilder strings.Builder
+
+	contextBuilder.WriteString(fmt.Sprintf("You are an AI assistant helping users understand their book content.\n\nBOOK INFORMATION:\nTitle: %s\nAuthor: %s\n\n", bookTitle, bookAuthor))
+
 	if len(searchResults) == 0 {
-		return ""
+		contextBuilder.WriteString("Use your knowledge of this book to answer the user's question.")
+		return contextBuilder.String()
 	}
 
-	var contextBuilder strings.Builder
-	contextBuilder.WriteString("You are an AI assistant helping users understand their book content. Use the following context to answer the user's question.\n\nIMPORTANT INSTRUCTIONS:\n- Quote extensively and directly from the provided context when answering\n- The user cannot see this context, so you must include relevant quotes in your response\n- When quoting or referencing information, ALWAYS cite it using the index number in square brackets\n- Format citations like this: \"This is a direct quote from the text.\"[75]\n- CRITICAL: Every individual quote, phrase, or piece of information from the context must have its own citation immediately after it, even if multiple quotes come from the same index\n- Example: \"The monster was gigantic in stature\"[69], \"yet uncouth and distorted in its proportions\"[69]. \"His face was of such loathsome yet appalling hideousness\"[69] that it caused fear.\n- Prefer longer, more complete quotes over brief paraphrases\n- MANDATORY: For EVERY quote you use from the context, you MUST include that exact quoted text in the citations array\n- Each citation in the citations array must include the exact text that was quoted, the index number, and the chapter ID\n- Do not add bracket citations [XX] to your answer unless you are actually quoting or referencing specific content from the context\n- Every piece of quoted text must appear in both your answer (with bracket citation) AND in the citations array\n- If you paraphrase instead of quote, do not use bracket citations\n- If the context doesn't contain enough information to fully answer the question, say so clearly\n- Focus on direct quotes with proper citations rather than paraphrasing without citations\n\nCONTEXT:\n\n")
+	contextBuilder.WriteString("Use the following context to answer the user's question.\n\nIMPORTANT INSTRUCTIONS:\n- Quote extensively and directly from the provided context when answering\n- The user cannot see this context, so you must include relevant quotes in your response\n- When quoting or referencing information, ALWAYS cite it using the index number in square brackets\n- Format citations like this: \"This is a direct quote from the text.\"[75]\n- CRITICAL: Every individual quote, phrase, or piece of information from the context must have its own citation immediately after it, even if multiple quotes come from the same index\n- Example: \"The monster was gigantic in stature\"[69], \"yet uncouth and distorted in its proportions\"[69]. \"His face was of such loathsome yet appalling hideousness\"[69] that it caused fear.\n- Prefer longer, more complete quotes over brief paraphrases\n- MANDATORY: For EVERY quote you use from the context, you MUST include that exact quoted text in the citations array\n- Each citation in the citations array must include the exact text that was quoted, the index number, and the chapter ID\n- Do not add bracket citations [XX] to your answer unless you are actually quoting or referencing specific content from the context\n- Every piece of quoted text must appear in both your answer (with bracket citation) AND in the citations array\n- If you paraphrase instead of quote, do not use bracket citations\n- If the context doesn't contain enough information to fully answer the question, say so clearly\n- Focus on direct quotes with proper citations rather than paraphrasing without citations\n\nCONTEXT:\n\n")
 
 	for _, result := range searchResults {
 		if content, ok := result["content"].(string); ok {

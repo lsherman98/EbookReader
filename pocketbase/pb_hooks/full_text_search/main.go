@@ -131,7 +131,7 @@ func createCollectionFts(app *pocketbase.PocketBase, target string) error {
 		app.Logger().Error(fmt.Sprint(err))
 		return err
 	}
-	fields := collectionFields(collection, "id")
+	fields := collectionFields(collection, "id", target)
 	exists, _ := checkIfTableExists(app, target+"_fts")
 
 	if exists {
@@ -274,18 +274,39 @@ func processSearchQuery(query string) string {
 	return strings.Join(processedTerms, " AND ")
 }
 
-func collectionFields(collection *core.Collection, id string) []string {
+func collectionFields(collection *core.Collection, id string, collectionName string) []string {
 	fields := []string{}
 	if id != "" {
 		fields = append(fields, id)
 	}
-	for _, field := range collection.Fields {
-		name := field.GetName()
-		if name == id {
-			continue
+
+	if collectionName == "books" {
+		allowedFields := map[string]bool{
+			"title":       true,
+			"author":      true,
+			"description": true,
+			"subject":     true,
 		}
-		fields = append(fields, name)
+
+		for _, field := range collection.Fields {
+			name := field.GetName()
+			if name == id {
+				continue
+			}
+			if allowedFields[name] {
+				fields = append(fields, name)
+			}
+		}
+	} else {
+		for _, field := range collection.Fields {
+			name := field.GetName()
+			if name == id {
+				continue
+			}
+			fields = append(fields, name)
+		}
 	}
+
 	return fields
 }
 

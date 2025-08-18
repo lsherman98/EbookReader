@@ -24,7 +24,7 @@ function Index() {
   const { chapter: chapterId } = Route.useSearch();
   const navigate = useNavigate();
 
-  const { data: chapter } = useGetChapterById(chapterId);
+  const { data: chapter} = useGetChapterById(chapterId);
   const { data: chaptersData } = useGetChaptersByBookId(bookId);
   const { data: book } = useGetBookById(bookId);
   const { selectedHighlight } = useSelectedHighlightStore();

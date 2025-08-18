@@ -279,6 +279,10 @@ func trackAIUsage(app *pocketbase.PocketBase, record *core.Record, title, conten
 		approxTokens++
 	}
 
+	inputCost := float64(approxTokens) * 0.15 / 1000000
+	outputCost := 0.0
+	totalCost := inputCost
+
 	AIUsageCollection, err := app.FindCollectionByNameOrId("ai_usage")
 	if err != nil {
 		app.Logger().Error("Error finding ai_usage collection:", "error", err.Error())
@@ -300,7 +304,14 @@ func trackAIUsage(app *pocketbase.PocketBase, record *core.Record, title, conten
 
 	if err == nil && existingRecord != nil {
 		currentTokens := existingRecord.GetInt("input_tokens")
+		currentInputCost := existingRecord.GetFloat("input_cost")
+		currentOutputCost := existingRecord.GetFloat("output_cost")
+		currentTotalCost := existingRecord.GetFloat("total_cost")
+
 		existingRecord.Set("input_tokens", currentTokens+approxTokens)
+		existingRecord.Set("input_cost", currentInputCost+inputCost)
+		existingRecord.Set("output_cost", currentOutputCost+outputCost)
+		existingRecord.Set("total_cost", currentTotalCost+totalCost)
 
 		if err := app.Save(existingRecord); err != nil {
 			app.Logger().Error("Error updating AI usage record:", "error", err.Error())
@@ -311,6 +322,10 @@ func trackAIUsage(app *pocketbase.PocketBase, record *core.Record, title, conten
 		AIUsageRecord.Set("provider", "google")
 		AIUsageRecord.Set("model", model)
 		AIUsageRecord.Set("input_tokens", approxTokens)
+		AIUsageRecord.Set("output_tokens", 0)
+		AIUsageRecord.Set("input_cost", inputCost)
+		AIUsageRecord.Set("output_cost", outputCost)
+		AIUsageRecord.Set("total_cost", totalCost)
 		AIUsageRecord.Set("book", bookId)
 		AIUsageRecord.Set("user", user)
 

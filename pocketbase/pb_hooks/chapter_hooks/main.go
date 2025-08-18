@@ -21,19 +21,21 @@ func Init(app *pocketbase.PocketBase) error {
 		title := e.Record.GetString("title")
 		book := e.Record.GetString("book")
 
-		htmlNodes, err := parseHTMLIntoNodes(content)
+		textNodes, err := parseHTMLIntoTextNodes(content)
 		if err != nil {
 			return err
 		}
 
 		routine.FireAndForget(func() {
-			for index, nodeHTML := range htmlNodes {
+			for index, textContent := range textNodes {
 				vector := core.NewRecord(vectorCollection)
 				vector.Set("title", title)
-				vector.Set("content", nodeHTML)
+				vector.Set("content", textContent)
 				vector.Set("chapter", e.Record.Id)
 				vector.Set("book", book)
 				vector.Set("index", index)
+
+				e.App.Logger().Info("Saving vector record", "index", index, "content", textContent)
 
 				if err := e.App.Save(vector); err != nil {
 					e.App.Logger().Error("Error saving vector record:", "error", err.Error())
@@ -85,7 +87,7 @@ func Init(app *pocketbase.PocketBase) error {
 	return nil
 }
 
-func parseHTMLIntoNodes(htmlContent string) ([]string, error) {
+func parseHTMLIntoTextNodes(htmlContent string) ([]string, error) {
 	doc, err := html.Parse(strings.NewReader(htmlContent))
 	if err != nil {
 		log.Printf("Failed to parse HTML: %v", err)
@@ -106,55 +108,49 @@ func parseHTMLIntoNodes(htmlContent string) ([]string, error) {
 	}
 
 	var nodes []string
-	nodeCount := 0
 
-	var traverse func(*html.Node, int)
-	traverse = func(n *html.Node, depth int) {
-		if n.Type == html.ElementNode {
-			if ignoredTags[n.Data] {
-				for c := n.FirstChild; c != nil; c = c.NextSibling {
-					traverse(c, depth+1)
-				}
-				return
-			}
+	var bodyNode *html.Node
+	var findBody func(*html.Node)
+	findBody = func(n *html.Node) {
+		if n.Type == html.ElementNode && n.Data == "body" {
+			bodyNode = n
+			return
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			findBody(c)
+		}
+	}
+	findBody(doc)
 
-			hasElementChildren := false
-			for c := n.FirstChild; c != nil; c = c.NextSibling {
-				if c.Type == html.ElementNode && !ignoredTags[c.Data] {
-					hasElementChildren = true
-					break
-				}
-			}
+	if bodyNode == nil {
+		bodyNode = doc
+	}
 
-			if !hasElementChildren {
-				var buf strings.Builder
-				html.Render(&buf, n)
-				nodeHTML := buf.String()
-				trimmed := strings.TrimSpace(nodeHTML)
-
-				if trimmed != "" {
-					nodes = append(nodes, nodeHTML)
-					nodeCount++
+	for child := bodyNode.FirstChild; child != nil; child = child.NextSibling {
+		if child.Type == html.ElementNode {
+			if !ignoredTags[child.Data] {
+				innerText := getInnerText(child)
+				if strings.TrimSpace(innerText) != "" {
+					nodes = append(nodes, innerText)
 				}
-			} else {
-				for c := n.FirstChild; c != nil; c = c.NextSibling {
-					traverse(c, depth+1)
-				}
-			}
-		} else if n.Type == html.TextNode {
-			text := strings.TrimSpace(n.Data)
-			if text != "" && len(text) > 10 {
-				nodes = append(nodes, text)
-				nodeCount++
-			}
-		} else {
-			for c := n.FirstChild; c != nil; c = c.NextSibling {
-				traverse(c, depth+1)
 			}
 		}
 	}
 
-	traverse(doc, 0)
-
 	return nodes, nil
+}
+
+func getInnerText(n *html.Node) string {
+	var text strings.Builder
+	var extractText func(*html.Node)
+	extractText = func(node *html.Node) {
+		if node.Type == html.TextNode {
+			text.WriteString(node.Data)
+		}
+		for c := node.FirstChild; c != nil; c = c.NextSibling {
+			extractText(c)
+		}
+	}
+	extractText(n)
+	return strings.TrimSpace(text.String())
 }

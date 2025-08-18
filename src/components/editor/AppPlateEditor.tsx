@@ -12,14 +12,15 @@ import { FloatingToolbarKit } from "./plugins/floating-toolbar-kit";
 import { createStaticEditor, Node, Range, serializeHtml, Value } from "platejs";
 import { BaseEditorKit } from "./plugins/editor-base-kit";
 import {
+  calculateTextSimilarity,
   combineHighlightText,
   createAdjustedSelection,
   createHighlightHash,
   findAdjacentHighlights,
+  findBestMatchingNode,
   findHighlightedElementInEditor,
   findMatchingMarksInEditor,
   highlightCitationInElement,
-  removeExistingHighlights,
   scrollElementIntoView,
   selectMarksInEditor,
 } from "@/lib/utils";
@@ -168,17 +169,22 @@ export function AppPlateEditor({ chapter }: { chapter?: ChaptersRecord }) {
     if (!currentCitation || !chapterHtmlContent || !plateEditor) return;
 
     const timer = setTimeout(() => {
-      const citationNode: Node = plateEditor.children[parseInt(currentCitation.index)];
-      const elementId = citationNode?.id;
-      const element = document.querySelector(`[data-block-id="${elementId}"]`);
+      let citationNode: Node = plateEditor.children[parseInt(currentCitation.index)];
+      let element = document.querySelector(`[data-block-id="${citationNode?.id}"]`);
 
+      if (!element || calculateTextSimilarity(currentCitation.quote, element.textContent || "") < 0.4) {
+        const matchingNode = findBestMatchingNode(plateEditor.children, currentCitation.quote);
+        if (matchingNode) {
+          citationNode = matchingNode;
+        }
+      }
+
+      element = document.querySelector(`[data-block-id="${citationNode.id}"]`);
       if (!element) return;
 
-      removeExistingHighlights();
       const cleanup = highlightCitationInElement(element, currentCitation.quote, () => setCurrentCitation(undefined));
-
       return cleanup;
-    }, 100);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [currentCitation, plateEditor.children, setCurrentCitation, chapterHtmlContent, plateEditor]);

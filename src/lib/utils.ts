@@ -61,12 +61,13 @@ export function getUserId(msg: string = 'User is not logged in'): string | null 
 
 export const normalizeText = (text: string, forCitation: boolean = false): string => {
   if (!text) return '';
-  let normalized = text.toLowerCase().replace(/\s+/g, " ")
+  let normalized = text.toLowerCase().replace(/\s+/g, " ").replace(/["'“”‘’]/g, "");
+
 
   if (forCitation) {
     normalized = normalized.replace(/[^\w\s]/g, "");
   } else {
-    normalized = normalized.replace(/;/g, ".")
+    normalized = normalized.replace(/[;,]/g, ".")
   }
 
   return normalized.trim()
@@ -116,28 +117,19 @@ export function processCitationsForDisplay(content: string, citations: Citation[
   let processedContent = content;
   const usedCitations = new Set<string>();
 
-  processedContent = processedContent.replace(/"([^"]+)"(\s*\[(\d+)\])?/g, (_, quote, __, citationIndex) => {
-    const citation = findBestCitation(quote, citations);
+  processedContent = processedContent.replace(/"([^"]+)"\s*\[(\d+)\]/g, (_, quote, citationIndex) => {
+    const potentialMatches = citations.filter((c) => c.index === citationIndex);
+    const bestMatch = findBestCitation(quote, potentialMatches);
 
-    if (citation) {
-      const textHash = generateTextHash(citation.quote);
-      const citationKey = `${citation.index}-${textHash}`;
+    if (bestMatch) {
+      const textHash = generateTextHash(bestMatch.quote);
+      const citationKey = `${bestMatch.index}-${textHash}`;
 
-      usedCitations.add(citationKey);
+      if (!usedCitations.has(citationKey)) {
+        usedCitations.add(citationKey);
+      }
       const displayNum = Array.from(usedCitations).indexOf(citationKey) + 1;
       return `"${quote}"[${displayNum}-${textHash}]()`;
-    }
-
-    if (citationIndex) {
-      const indexBasedCitation = citations.find((c) => c.index === citationIndex);
-      if (indexBasedCitation) {
-        const textHash = generateTextHash(indexBasedCitation.quote);
-        const citationKey = `${indexBasedCitation.index}-${textHash}`;
-
-        usedCitations.add(citationKey);
-        const displayNum = Array.from(usedCitations).indexOf(citationKey) + 1;
-        return `"${quote}"[${displayNum}-${textHash}]()`;
-      }
     }
 
     return `"${quote}"`;
@@ -274,7 +266,7 @@ export function highlightCitationInElement(
   onComplete?: () => void
 ): (() => void) | null {
   const textSpans = element.querySelectorAll('[data-slate-node="text"]') as NodeListOf<HTMLElement>;
-  const normalizedSnippet = normalizeText(citationSnippet);
+  const normalizedSnippet = normalizeText(citationSnippet, true);
 
   if (textSpans.length > 1) {
 
@@ -310,9 +302,8 @@ export function highlightCitationInElement(
     }
   } else if (textSpans.length === 1) {
     const textSpan = textSpans[0].querySelector('[data-slate-string="true"]') as HTMLElement;
-    const normalizedTextContent = normalizeText(textSpan?.textContent || "");
-
-    if (textSpan && normalizedTextContent.includes(normalizedSnippet)) {
+    const normalizedTextContent = normalizeText(textSpan?.textContent || "", true);
+    if (textSpan && calculateTextSimilarity(normalizedSnippet, normalizedTextContent) > 0.5) {
       const textContent = textSpan.textContent;
       const startIndex = normalizedTextContent.indexOf(normalizedSnippet);
 
@@ -482,4 +473,51 @@ export const createAdjustedSelection = (originalSelection: Range): Range => {
     };
   }
   return originalSelection;
+};
+
+export const calculateTextSimilarity = (snippet: string, text: string): number => {
+  const normalizedSnippet = normalizeText(snippet);
+  const normalizedText = normalizeText(text);
+
+  if (normalizedSnippet === normalizedText) return 1.0;
+  if (normalizedText.includes(normalizedSnippet)) return 1.0;
+
+  if (normalizedText.includes(normalizedSnippet) || normalizedSnippet.includes(normalizedText)) {
+    const shorter = normalizedSnippet.length < normalizedText.length ? normalizedSnippet : normalizedText;
+    const longer = normalizedSnippet.length >= normalizedText.length ? normalizedSnippet : normalizedText;
+    return shorter.length / longer.length;
+  }
+
+  const words1 = normalizedSnippet.split(" ").filter((w) => w.length > 2);
+  const words2 = normalizedText.split(" ").filter((w) => w.length > 2);
+
+  if (words1.length === 0 || words2.length === 0) return 0;
+
+  const matchingWords = words1.filter((word) => words2.includes(word));
+  const wordSimilarity = matchingWords.length / Math.max(words1.length, words2.length);
+
+  return wordSimilarity > 0.3 ? wordSimilarity * 0.8 : wordSimilarity * 0.4;
+};
+
+export const findBestMatchingNode = (children: Node[], quote: string, threshold: number = 0.4): Node | null => {
+  let bestMatch: { node: Node; score: number } | null = null;
+
+  for (let i = 0; i < children.length; i++) {
+    const childNode = children[i];
+    const element = document.querySelector(`[data-block-id="${childNode.id}"]`);
+
+    if (element?.textContent) {
+      const similarity = calculateTextSimilarity(quote, element.textContent);
+      if (similarity === 1.0) {
+        bestMatch = { node: childNode, score: similarity };
+        break
+      }
+
+      if (similarity >= threshold && (!bestMatch || similarity > bestMatch.score)) {
+        bestMatch = { node: childNode, score: similarity };
+      }
+    }
+  }
+
+  return bestMatch?.node || null;
 };

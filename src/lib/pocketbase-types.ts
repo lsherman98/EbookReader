@@ -117,18 +117,20 @@ export type AiUsageRecord = {
 	book?: RecordIdString
 	created?: IsoDateString
 	id: string
+	input_cost?: number
 	input_tokens?: number
 	model?: AiUsageModelOptions
+	output_cost?: number
 	output_tokens?: number
 	provider?: AiUsageProviderOptions
 	task?: AiUsageTaskOptions
+	total_cost?: number
 	updated?: IsoDateString
 	user?: RecordIdString
 }
 
 export type BooksRecord = {
 	author?: string
-	available?: boolean
 	chapters?: RecordIdString[]
 	chats?: RecordIdString[]
 	cover_image?: string
@@ -162,13 +164,13 @@ export type ChatsRecord = {
 	created?: IsoDateString
 	id: string
 	messages?: RecordIdString[]
-	title?: string
+	title: string
 	updated?: IsoDateString
 	user: RecordIdString
 }
 
 export type HighlightsRecord<Tselection = unknown> = {
-	book: RecordIdString
+	book?: RecordIdString
 	chapter: RecordIdString
 	created?: IsoDateString
 	hash: string
@@ -180,12 +182,12 @@ export type HighlightsRecord<Tselection = unknown> = {
 }
 
 export type LastReadRecord = {
-	book: RecordIdString
+	book?: RecordIdString
 	chapter?: RecordIdString
 	created?: IsoDateString
 	id: string
 	updated?: IsoDateString
-	user: RecordIdString
+	user?: RecordIdString
 }
 
 export enum MessagesRoleOptions {

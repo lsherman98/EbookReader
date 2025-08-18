@@ -36,7 +36,7 @@ export function useUpdateChapter() {
         mutationFn: ({ chapterId, content }: { chapterId: string, content?: string }) => updateChapter(chapterId, content),
         onError: handleError,
         onSuccess: async (data) => {
-            await queryClient.invalidateQueries({ queryKey: ['chapters', data?.book] });
+            await queryClient.invalidateQueries({ queryKey: ['chapter', data?.id] });
         }
     })
 }

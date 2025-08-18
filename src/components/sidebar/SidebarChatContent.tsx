@@ -20,12 +20,12 @@ import { AIChatResponse, Citation } from "@/lib/types";
 
 export function SidebarChatContent({
   selectedBookId,
-  selectedChapterId,
   selectedChatId,
+  chatWithChapter,
 }: {
   selectedBookId: string;
-  selectedChapterId: string | undefined;
   selectedChatId: string | undefined;
+  chatWithChapter: boolean;
 }) {
   const [input, setInput] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -118,7 +118,7 @@ export function SidebarChatContent({
     const AIResponse = await generateAIResponseMutation.mutateAsync({
       chatId: selectedChatId,
       bookId: selectedBookId,
-      chapterId: selectedChapterId,
+      chapterId: chatWithChapter ? currentChapterId : undefined,
     });
 
     if (generateAIResponseMutation.isError || !AIResponse) {

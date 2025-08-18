@@ -109,7 +109,7 @@ export function SidebarChat({ bookId }: { bookId: string }) {
             <SidebarChatContent
               selectedChatId={selectedChat?.id}
               selectedBookId={bookId}
-              selectedChapterId={chatWithChapter ? selectedChat?.id : undefined}
+              chatWithChapter={chatWithChapter}
             />
           </SidebarGroupContent>
         </SidebarGroup>
