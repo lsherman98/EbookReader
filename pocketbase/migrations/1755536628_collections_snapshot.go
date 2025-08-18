@@ -876,7 +876,7 @@ func init() {
 					{
 						"cascadeDelete": true,
 						"collectionId": "_pb_users_auth_",
-						"hidden": true,
+						"hidden": false,
 						"id": "relation2375276105",
 						"maxSelect": 1,
 						"minSelect": 0,
@@ -972,7 +972,7 @@ func init() {
 						"pattern": "",
 						"presentable": false,
 						"primaryKey": false,
-						"required": false,
+						"required": true,
 						"system": false,
 						"type": "text"
 					},
@@ -1052,15 +1052,6 @@ func init() {
 						"required": false,
 						"system": false,
 						"type": "text"
-					},
-					{
-						"hidden": false,
-						"id": "bool2777654405",
-						"name": "available",
-						"presentable": false,
-						"required": false,
-						"system": false,
-						"type": "bool"
 					},
 					{
 						"cascadeDelete": false,
@@ -1144,7 +1135,7 @@ func init() {
 						"hidden": false,
 						"id": "file2359244304",
 						"maxSelect": 1,
-						"maxSize": 15000000,
+						"maxSize": 25000000,
 						"mimeTypes": [
 							"application/epub+zip"
 						],
@@ -1244,7 +1235,7 @@ func init() {
 				"viewRule": "@request.auth.id = user.id"
 			},
 			{
-				"createRule": "@request.auth.id != user.id",
+				"createRule": "@request.auth.id != \"\"",
 				"deleteRule": "@request.auth.id = user.id",
 				"fields": [
 					{
@@ -1393,7 +1384,7 @@ func init() {
 						"minSelect": 0,
 						"name": "book",
 						"presentable": false,
-						"required": true,
+						"required": false,
 						"system": false,
 						"type": "relation"
 					},
@@ -1513,7 +1504,7 @@ func init() {
 						"type": "text"
 					},
 					{
-						"cascadeDelete": true,
+						"cascadeDelete": false,
 						"collectionId": "pbc_2170393721",
 						"hidden": false,
 						"id": "relation3420824369",
@@ -1521,7 +1512,7 @@ func init() {
 						"minSelect": 0,
 						"name": "book",
 						"presentable": false,
-						"required": true,
+						"required": false,
 						"system": false,
 						"type": "relation"
 					},
@@ -1547,7 +1538,7 @@ func init() {
 						"minSelect": 0,
 						"name": "user",
 						"presentable": false,
-						"required": true,
+						"required": false,
 						"system": false,
 						"type": "relation"
 					},
@@ -1604,7 +1595,7 @@ func init() {
 					{
 						"exceptDomains": null,
 						"hidden": false,
-						"id": "_clone_LJWB",
+						"id": "_clone_mQ1f",
 						"name": "email",
 						"onlyDomains": null,
 						"presentable": false,
@@ -1614,10 +1605,10 @@ func init() {
 					},
 					{
 						"hidden": false,
-						"id": "number2894334333",
+						"id": "number2646187012",
 						"max": null,
 						"min": null,
-						"name": "upload_count",
+						"name": "uploadCount",
 						"onlyInt": false,
 						"presentable": false,
 						"required": false,
@@ -1632,7 +1623,7 @@ func init() {
 				"system": false,
 				"type": "view",
 				"updateRule": null,
-				"viewQuery": "SELECT users.id, users.email, COUNT(books.id) as upload_count\nFROM users\nLEFT JOIN books ON users.id = books.user\nGROUP BY users.id\nORDER BY upload_count DESC;",
+				"viewQuery": "SELECT users.id, users.email, COUNT(books.id) as uploadCount\nFROM users\nLEFT JOIN books ON users.id = books.user\nGROUP BY users.id\nORDER BY uploadCount DESC;",
 				"viewRule": "@request.auth.id = id"
 			},
 			{
@@ -1758,6 +1749,184 @@ func init() {
 				],
 				"listRule": null,
 				"name": "vectors",
+				"system": false,
+				"type": "base",
+				"updateRule": null,
+				"viewRule": null
+			},
+			{
+				"createRule": null,
+				"deleteRule": null,
+				"fields": [
+					{
+						"autogeneratePattern": "[a-z0-9]{15}",
+						"hidden": false,
+						"id": "text3208210256",
+						"max": 15,
+						"min": 15,
+						"name": "id",
+						"pattern": "^[a-z0-9]+$",
+						"presentable": false,
+						"primaryKey": true,
+						"required": true,
+						"system": true,
+						"type": "text"
+					},
+					{
+						"hidden": false,
+						"id": "select1384045349",
+						"maxSelect": 1,
+						"name": "task",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "select",
+						"values": [
+							"embed",
+							"chat"
+						]
+					},
+					{
+						"hidden": false,
+						"id": "select2462348188",
+						"maxSelect": 1,
+						"name": "provider",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "select",
+						"values": [
+							"google",
+							"openai"
+						]
+					},
+					{
+						"hidden": false,
+						"id": "select3616895705",
+						"maxSelect": 1,
+						"name": "model",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "select",
+						"values": [
+							"gemini-embedding-001",
+							"gpt-4o"
+						]
+					},
+					{
+						"hidden": false,
+						"id": "number1726912723",
+						"max": null,
+						"min": null,
+						"name": "input_tokens",
+						"onlyInt": false,
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "number"
+					},
+					{
+						"hidden": false,
+						"id": "number2122787687",
+						"max": null,
+						"min": null,
+						"name": "output_tokens",
+						"onlyInt": false,
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "number"
+					},
+					{
+						"cascadeDelete": false,
+						"collectionId": "_pb_users_auth_",
+						"hidden": false,
+						"id": "relation2375276105",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "user",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "relation"
+					},
+					{
+						"cascadeDelete": false,
+						"collectionId": "pbc_2170393721",
+						"hidden": false,
+						"id": "relation3420824369",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "book",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "relation"
+					},
+					{
+						"hidden": false,
+						"id": "number1531654091",
+						"max": null,
+						"min": null,
+						"name": "input_cost",
+						"onlyInt": false,
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "number"
+					},
+					{
+						"hidden": false,
+						"id": "number337001766",
+						"max": null,
+						"min": null,
+						"name": "output_cost",
+						"onlyInt": false,
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "number"
+					},
+					{
+						"hidden": false,
+						"id": "number1715341057",
+						"max": null,
+						"min": null,
+						"name": "total_cost",
+						"onlyInt": false,
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "number"
+					},
+					{
+						"hidden": false,
+						"id": "autodate2990389176",
+						"name": "created",
+						"onCreate": true,
+						"onUpdate": false,
+						"presentable": false,
+						"system": false,
+						"type": "autodate"
+					},
+					{
+						"hidden": false,
+						"id": "autodate3332085495",
+						"name": "updated",
+						"onCreate": true,
+						"onUpdate": true,
+						"presentable": false,
+						"system": false,
+						"type": "autodate"
+					}
+				],
+				"id": "pbc_3423747372",
+				"indexes": [
+					"CREATE INDEX ` + "`" + `idx_Cm2QpQVDJw` + "`" + ` ON ` + "`" + `ai_usage` + "`" + ` (\n  ` + "`" + `book` + "`" + `,\n  ` + "`" + `user` + "`" + `\n)"
+				],
+				"listRule": null,
+				"name": "ai_usage",
 				"system": false,
 				"type": "base",
 				"updateRule": null,
