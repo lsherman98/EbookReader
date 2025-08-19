@@ -77,18 +77,28 @@ export function AppPlateEditor({ chapter }: { chapter?: ChaptersRecord }) {
 
   const handleHighlightClick = (event: any) => {
     const clickedElement = event.target;
-    const highlightText = event.target.innerText;
     const isHighlightClicked = clickedElement.parentElement.classList.contains("slate-highlight");
 
     if (!isHighlightClicked) return;
 
-    const parentElement: HTMLElement = clickedElement.parentElement.parentElement.parentElement.parentElement;
-    const { previousHighlight, nextHighlight } = findAdjacentHighlights(parentElement);
+    const highlightText = event.target.innerText;
+    const parentBlockElement: HTMLElement | null = clickedElement.closest("[data-slate-node='element']");
 
-    const combinedText = combineHighlightText(highlightText, previousHighlight, nextHighlight);
-    const matchingMarks = findMatchingMarksInEditor(plateEditor.children, combinedText);
+    if (!parentBlockElement) return;
 
-    selectMarksInEditor(plateEditor, matchingMarks);
+    const blockTextContent = parentBlockElement.textContent || "";
+    const isAtStart = blockTextContent.startsWith(highlightText);
+    const isAtEnd = blockTextContent.endsWith(highlightText);
+
+    if (isAtStart || isAtEnd) {
+      const { previousHighlight, nextHighlight } = findAdjacentHighlights(parentBlockElement);
+      const combinedText = combineHighlightText(highlightText, previousHighlight, nextHighlight);
+      const matchingMarks = findMatchingMarksInEditor(plateEditor.children, combinedText);
+      selectMarksInEditor(plateEditor, matchingMarks);
+    } else {
+      const matchingMarks = findMatchingMarksInEditor(plateEditor.children, highlightText);
+      selectMarksInEditor(plateEditor, matchingMarks);
+    }
   };
 
   const handleHighlightButtonClick = useCallback(async () => {

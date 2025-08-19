@@ -31,8 +31,8 @@ export function MainSidebar({ hidden }: { hidden?: boolean }) {
   }
 
   return (
-    <Sidebar collapsible="none" className={`${hidden ? "hidden" : ""} w-full md:flex ml-14`}>
-      <Tabs defaultValue="chat" className="h-full">
+    <Sidebar collapsible="none" className={`${hidden ? "hidden" : ""} md:flex ml-14 w-full overflow-auto`}>
+      <Tabs defaultValue="chat" className="h-full w-full">
         <SidebarHeader className="gap-3.5 border-b p-4 h-[50px] justify-center items-center">
           <TabsList>
             <TabsTrigger value="chat">Chat</TabsTrigger>

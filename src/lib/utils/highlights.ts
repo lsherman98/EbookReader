@@ -20,11 +20,12 @@ export const findAdjacentHighlights = (parentElement: HTMLElement) => {
 
     let currentElement = parentElement.previousSibling as Element;
     while (currentElement) {
-        const highlight = currentElement.querySelector?.(".slate-highlight");
-        if (highlight) {
-            const belongsToPreviousHighlight = currentElement.textContent?.trim().endsWith(highlight.textContent?.trim());
+        const highlights = currentElement.querySelectorAll?.(".slate-highlight");
+        if (highlights && highlights.length > 0) {
+            const lastHighlight = highlights[highlights.length - 1];
+            const belongsToPreviousHighlight = currentElement.textContent?.trim().endsWith(lastHighlight.textContent?.trim());
             if (!belongsToPreviousHighlight) break;
-            previousHighlight = highlight;
+            previousHighlight = lastHighlight;
             break;
         } else if (currentElement.textContent?.trim()) {
             break;

@@ -1,7 +1,7 @@
 import { Message } from "@/components/ui/chat-message";
 import { Citation } from "../types";
-import { Node } from "platejs";
 import { calculateTextSimilarity, generateTextHash, normalizeText } from "./utils";
+import { Node as PlateNode } from "platejs";
 
 export function findBestCitation(quote: string, citations: Citation[]): Citation | null {
     const normalizedQuote = normalizeText(quote, true);
@@ -168,6 +168,7 @@ export function highlightCitationInElement(
     onComplete?: () => void
 ): (() => void) | null {
     const textSpans = element.querySelectorAll('[data-slate-node="text"]') as NodeListOf<HTMLElement>;
+    const existingHighlights = element.querySelectorAll(".slate-highlight");
     const normalizedSnippet = normalizeText(citationSnippet, true);
 
     if (textSpans.length > 1) {
@@ -180,7 +181,7 @@ export function highlightCitationInElement(
             return null;
         }
 
-        const normalizedTextContent = normalizeText(combinedText);
+        const normalizedTextContent = normalizeText(combinedText, true);
         if (normalizedTextContent.includes(normalizedSnippet)) {
             const startIndex = normalizedTextContent.indexOf(normalizedSnippet);
 
@@ -188,12 +189,36 @@ export function highlightCitationInElement(
                 const highlightText = combinedText.substring(startIndex, startIndex + citationSnippet.length) || citationSnippet;
                 applyHighlightToElement(consolidatedSpan, combinedText, highlightText, startIndex);
 
+                existingHighlights.forEach((highlight) => {
+                    const highlightStartIndex = consolidatedSpan.innerHTML.indexOf(highlight.textContent);
+                    const highlightEndIndex = highlightStartIndex + highlight.textContent.length;
+
+                    if (highlightStartIndex !== -1) {
+                        const mark = document.createElement("mark");
+                        mark.className = "slate-highlight bg-highlight/30 text-inherit";
+                        mark.textContent = consolidatedSpan.innerHTML.substring(highlightStartIndex, highlightEndIndex);
+
+                        const beforeText = consolidatedSpan.innerHTML.substring(0, highlightStartIndex);
+                        const afterText = consolidatedSpan.innerHTML.substring(highlightEndIndex);
+
+                        consolidatedSpan.innerHTML = "";
+
+                        if (beforeText) {
+                            consolidatedSpan.innerHTML += beforeText;
+                        }
+                        consolidatedSpan.appendChild(mark);
+                        if (afterText) {
+                            consolidatedSpan.innerHTML += afterText;
+                        }
+                    }
+                });
+
                 element.scrollIntoView({ behavior: "smooth", block: "center" });
 
                 const timeout = setTimeout(() => {
                     if (onComplete) onComplete();
                     removeExistingHighlights();
-                }, 10000);
+                }, 7000);
 
                 return () => {
                     clearTimeout(timeout);
@@ -217,7 +242,7 @@ export function highlightCitationInElement(
                 const timeout = setTimeout(() => {
                     if (onComplete) onComplete();
                     removeExistingHighlights();
-                }, 10000);
+                }, 7000);
 
                 return () => {
                     clearTimeout(timeout);
@@ -229,8 +254,8 @@ export function highlightCitationInElement(
     return null;
 }
 
-export const findBestMatchingNode = (children: Node[], quote: string, threshold: number = 0.4): Node | null => {
-    let bestMatch: { node: Node; score: number } | null = null;
+export const findBestMatchingNode = (children: PlateNode[], quote: string, threshold: number = 0.4): PlateNode | null => {
+    let bestMatch: { node: PlateNode; score: number } | null = null;
 
     for (let i = 0; i < children.length; i++) {
         const childNode = children[i];

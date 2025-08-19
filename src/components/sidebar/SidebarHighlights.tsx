@@ -75,7 +75,7 @@ export function SidebarHighlights({ bookId }: { bookId: string }) {
                     <div className="space-y-3">
                       <div className="space-y-1">
                         <p
-                          className="text-sm leading-relaxed overflow-hidden"
+                          className="text-sm leading-relaxed overflow-hidden break-words"
                           style={{
                             display: "-webkit-box",
                             WebkitLineClamp: 4,
