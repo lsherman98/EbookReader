@@ -14,6 +14,8 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { pb } from "@/lib/pocketbase";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useDeleteAccount } from "@/lib/api/mutations";
+import { Trash } from "lucide-react";
 
 const PocketBaseMenu = () => (
   <>
@@ -38,6 +40,8 @@ const PocketBaseMenu = () => (
 
 export default function UserMenu() {
   const user = pb.authStore.model;
+
+  const deleteAccountMutation = useDeleteAccount();
 
   if (!user) {
     return (
@@ -84,6 +88,17 @@ export default function UserMenu() {
             <DropdownMenuSeparator />
           </>
         )}
+        <DropdownMenuItem
+          className="text-rose-600 focus:bg-rose-50 focus:text-rose-700"
+          onClick={() => {
+            if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+              deleteAccountMutation.mutate();
+            }
+          }}
+        >
+          <Trash className="w-5 h-5 mr-4" />
+          Delete Account
+        </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {
             pb.authStore.clear();

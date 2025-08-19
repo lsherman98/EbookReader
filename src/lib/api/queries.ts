@@ -9,48 +9,20 @@ export function useGetBooks(page: number = 1, limit: number = 25) {
     });
 }
 
-export function useGetBookById(bookId?: string) {
+export function useGetBookById(id?: string) {
     return useQuery({
-        queryKey: ['book', bookId],
-        queryFn: () => getBookById(bookId),
+        queryKey: ['book', id],
+        queryFn: () => getBookById(id),
         placeholderData: keepPreviousData,
-        enabled: !!bookId && bookId !== 'undefined',
+        enabled: !!id && id !== 'undefined',
     });
 }
 
-export function useGetChaptersByBookId(bookId?: string) {
+export function useSearchBooks(query: string) {
     return useQuery({
-        queryKey: ['chapters', bookId],
-        queryFn: () => getChaptersByBookId(bookId),
-        placeholderData: keepPreviousData,
-        enabled: !!bookId && bookId !== 'undefined',
-    });
-}
-
-export function useGetChapterById(chapterId?: string) {
-    return useQuery({
-        queryKey: ['chapter', chapterId],
-        queryFn: () => getChapterById(chapterId),
-        placeholderData: keepPreviousData,
-        enabled: !!chapterId,
-    });
-}
-
-export function useGetMessagesByChatId(chatId?: string) {
-    return useQuery({
-        queryKey: ['messages', chatId],
-        queryFn: () => getMessagesByChatId(chatId),
-        placeholderData: keepPreviousData,
-        enabled: !!chatId,
-    });
-}
-
-export function useGetChats(bookId?: string) {
-    return useQuery({
-        queryKey: ['chats', bookId],
-        queryFn: () => getChats(bookId),
-        placeholderData: keepPreviousData,
-        enabled: !!bookId && bookId !== 'undefined',
+        queryKey: ['search', query],
+        queryFn: () => searchBooks(query),
+        enabled: !!query,
     });
 }
 
@@ -63,19 +35,47 @@ export function useGetLastReadBook() {
     });
 }
 
+export function useGetChaptersByBookId(id?: string) {
+    return useQuery({
+        queryKey: ['chapters', id],
+        queryFn: () => getChaptersByBookId(id),
+        placeholderData: keepPreviousData,
+        enabled: !!id && id !== 'undefined',
+    });
+}
+
+export function useGetChapterById(id?: string) {
+    return useQuery({
+        queryKey: ['chapter', id],
+        queryFn: () => getChapterById(id),
+        placeholderData: keepPreviousData,
+        enabled: !!id,
+    });
+}
+
+export function useGetChats(id?: string) {
+    return useQuery({
+        queryKey: ['chats', id],
+        queryFn: () => getChats(id),
+        placeholderData: keepPreviousData,
+        enabled: !!id && id !== 'undefined',
+    });
+}
+
+export function useGetMessagesByChatId(id?: string) {
+    return useQuery({
+        queryKey: ['messages', id],
+        queryFn: () => getMessagesByChatId(id),
+        placeholderData: keepPreviousData,
+        enabled: !!id,
+    });
+}
+
 export function useGetHighlights(bookId?: string, chapterId?: string) {
     return useQuery({
         queryKey: ['highlights', bookId, chapterId],
         queryFn: () => getHighlights(bookId, chapterId),
         enabled: !!bookId && bookId !== 'undefined',
-    });
-}
-
-export function useSearchBooks(query: string) {
-    return useQuery({
-        queryKey: ['search', query],
-        queryFn: () => searchBooks(query),
-        enabled: !!query,
     });
 }
 

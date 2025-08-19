@@ -7,9 +7,10 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
+	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/ai_chat"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/book_hooks"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/chapter_hooks"
-	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/chat"
+	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/chats"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/cron"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/full_text_search"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/highlight_hooks"
@@ -63,7 +64,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := chat.Init(app); err != nil {
+	if err := ai_chat.Init(app); err != nil {
 		log.Fatal(err)
 	}
 
@@ -88,6 +89,10 @@ func main() {
 	}
 
 	if err := cron.Init(app); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := chats.Init(app); err != nil {
 		log.Fatal(err)
 	}
 

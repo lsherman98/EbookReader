@@ -7,14 +7,13 @@ import { useEffect } from "react";
 
 interface ChatListProps {
   isCollapsed: boolean;
-  bookId: string;
   chats: ChatsRecord[];
   onClick?: () => void;
   selectedChatId?: string;
   setSelectedChat: (chat: ChatsRecord) => void;
 }
 
-export function ChatList({ chats, selectedChatId, setSelectedChat, isCollapsed, bookId }: ChatListProps) {
+export function ChatList({ chats, selectedChatId, setSelectedChat, isCollapsed }: ChatListProps) {
   const deleteChatMutation = useDeleteChat();
 
   const formatDate = (dateString: string) => {
@@ -63,7 +62,7 @@ export function ChatList({ chats, selectedChatId, setSelectedChat, isCollapsed, 
                 className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/item:opacity-80 transition-opacity hover:bg-transparent"
                 onClick={(e) => {
                   e.stopPropagation();
-                  deleteChatMutation.mutate({ chatId: chat.id, bookId });
+                  deleteChatMutation.mutate({ chatId: chat.id });
                 }}
                 aria-label="Delete chat"
               >

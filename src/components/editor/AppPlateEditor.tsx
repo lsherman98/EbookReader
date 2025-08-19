@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useAddHighlight, useDeleteHighlight, useUpdateChapter } from "@/lib/api/mutations";
+import { useAddHighlight, useDeleteHighlightByHash, useUpdateChapter } from "@/lib/api/mutations";
 import { ChaptersRecord } from "@/lib/pocketbase-types";
 import { useCitationStore } from "@/lib/stores/citation-store";
 import { useSelectedHighlightStore } from "@/lib/stores/selected-highlight-store";
@@ -34,7 +34,7 @@ export function AppPlateEditor({ chapter }: { chapter?: ChaptersRecord }) {
   const navigate = useNavigate();
   const updateChapterMutation = useUpdateChapter();
   const addHighlightMutation = useAddHighlight();
-  const deleteHighlightMutation = useDeleteHighlight();
+  const deleteHighlightByHashMutation = useDeleteHighlightByHash();
   const { canGoBack, previousLocation, setPreviousLocation } = useNavigationHistoryStore();
   const { currentCitation, setCurrentCitation } = useCitationStore();
   const { selectedHighlight, setSelectedHighlight } = useSelectedHighlightStore();
@@ -100,7 +100,7 @@ export function AppPlateEditor({ chapter }: { chapter?: ChaptersRecord }) {
 
     if (hasHighlightMark) {
       const highlightHash = await createHighlightHash(chapter.book, chapter.id, selection, selectedText);
-      deleteHighlightMutation.mutate({ hash: highlightHash });
+      deleteHighlightByHashMutation.mutate(highlightHash);
     } else {
       const adjustedSelection = createAdjustedSelection(selection);
       const highlightHash = await createHighlightHash(chapter.book, chapter.id, adjustedSelection, selectedText);
@@ -113,7 +113,7 @@ export function AppPlateEditor({ chapter }: { chapter?: ChaptersRecord }) {
         hash: highlightHash,
       });
     }
-  }, [addHighlightMutation, chapter, deleteHighlightMutation, plateEditor]);
+  }, [addHighlightMutation, chapter, deleteHighlightByHashMutation, plateEditor]);
 
   const handleGoBack = useCallback(() => {
     if (!previousLocation) return;

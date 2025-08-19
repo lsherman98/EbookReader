@@ -1,9 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { addChat, addHighlight, addMessage, deleteBook, deleteChat, deleteHighlight, downloadBook, generateAIResponse, updateBook, updateChapter, updateChat, uploadBook } from "./api";
+import { addChat, addHighlight, addMessage, deleteAccount, deleteBook, deleteChat, deleteHighlight, deleteHighlightByHash, downloadBook, generateAIResponse, updateBook, updateChapter, updateChat, uploadBook } from "./api";
 import { handleError } from "../utils/utils";
 import { FileUploadObj } from "@/pages/_app/upload.lazy";
 import { Citation } from "../types";
 import { Range } from "platejs";
+import { pb } from "../pocketbase";
 
 export function useUploadBook() {
     const queryClient = useQueryClient();
@@ -25,18 +26,6 @@ export function useUpdateBook() {
         onError: handleError,
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['books'] });
-        }
-    })
-}
-
-export function useUpdateChapter() {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: ({ chapterId, content }: { chapterId: string, content?: string }) => updateChapter(chapterId, content),
-        onError: handleError,
-        onSuccess: async (data) => {
-            await queryClient.invalidateQueries({ queryKey: ['chapter', data?.id] });
         }
     })
 }
@@ -70,14 +59,14 @@ export function useDownloadBook() {
     })
 }
 
-export function useAddMessage() {
+export function useUpdateChapter() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ chatId, content, role, citations = null }: { chatId: string; content: string; role: "user" | "assistant", citations?: Citation[] | null }) => addMessage(chatId, content, role, citations),
+        mutationFn: ({ chapterId, content }: { chapterId: string, content?: string }) => updateChapter(chapterId, content),
         onError: handleError,
-        onSuccess: async (_, { chatId }) => {
-            await queryClient.invalidateQueries({ queryKey: ['messages', chatId] });
+        onSuccess: async (data) => {
+            await queryClient.invalidateQueries({ queryKey: ['chapter', data?.id] });
         }
     })
 }
@@ -110,10 +99,22 @@ export function useDeleteChat() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ chatId, bookId }: { chatId: string, bookId: string }) => deleteChat(chatId, bookId),
+        mutationFn: ({ chatId }: { chatId: string }) => deleteChat(chatId),
         onError: handleError,
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['chats'] });
+        }
+    })
+}
+
+export function useAddMessage() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ chatId, content, role, citations = null }: { chatId: string; content: string; role: "user" | "assistant", citations?: Citation[] | null }) => addMessage(chatId, content, role, citations),
+        onError: handleError,
+        onSuccess: async (_, { chatId }) => {
+            await queryClient.invalidateQueries({ queryKey: ['messages', chatId] });
         }
     })
 }
@@ -141,11 +142,35 @@ export function useDeleteHighlight() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ highlightId, hash }: { highlightId?: string, hash?: string }) => deleteHighlight(highlightId, hash),
+        mutationFn: (id: string) => deleteHighlight(id),
         onError: handleError,
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['highlights'] });
             await queryClient.invalidateQueries({ queryKey: ['chapters'] });
+        }
+    })
+}
+
+export function useDeleteHighlightByHash() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (hash: string) => deleteHighlightByHash(hash),
+        onError: handleError,
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['highlights'] });
+            await queryClient.invalidateQueries({ queryKey: ['chapters'] });
+        }
+    })
+}
+
+export function useDeleteAccount() {
+    return useMutation({
+        mutationFn: () => deleteAccount(),
+        onError: handleError,
+        onSuccess: () => {
+            pb.authStore.clear();
+            location.reload();
         }
     })
 }

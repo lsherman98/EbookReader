@@ -110,7 +110,7 @@ export function SidebarHighlights({ bookId }: { bookId: string }) {
                             }`}
                             onClick={(e) => {
                               e.stopPropagation();
-                              deleteHighlightMutation.mutate({ highlightId: highlight.id });
+                              deleteHighlightMutation.mutate(highlight.id);
                             }}
                           >
                             <Trash2 className="h-3 w-3" />

@@ -1,58 +1,56 @@
 import { pb } from "../pocketbase";
 import { BooksResponse, ChatsResponse, Collections, HighlightsResponse } from "../pocketbase-types";
 import { FileUploadObj } from "@/pages/_app/upload.lazy";
-import { getUserId, handleError } from "../utils/utils";
+import { getUserId } from "../utils/utils";
 import { Citation, ExpandHighlights, ExpandMessages, UploadFileRequest } from "../types";
 import { Range } from "platejs";
 
-export const getBooks = async (page: number, limit: number) => {
-    if (!getUserId()) return
-    return await pb.collection(Collections.Books).getList(page, limit);
-}
-
-export const getBookById = async (bookId?: string) => {
-    if (!getUserId() || !bookId || bookId === 'undefined') return null
-
-    return await pb.collection(Collections.Books).getOne<BooksResponse>(bookId);
-}
-
-export const getChaptersByBookId = async (bookId?: string) => {
-    if (!getUserId() || !bookId) return
-
-    return await pb.collection(Collections.Chapters).getFullList({ filter: `book="${bookId}" && user="${getUserId()}"`, fields: "id,title,order" });
-}
-
-export const downloadBook = async (bookId: string) => {
+export const downloadBook = async (id: string) => {
     if (!getUserId()) return
 
     const fileToken = await pb.files.getToken();
-    const record = await pb.collection(Collections.Books).getOne(bookId);
+    const record = await pb.collection(Collections.Books).getOne(id);
     const filename = record.file;
     return pb.files.getURL(record, filename, { 'download': true, 'token': fileToken });
 }
 
 export const uploadBook = async (upload: FileUploadObj) => {
-    const userId = getUserId();
-    if (!userId) {
-        return
-    }
+    if (!getUserId()) return
 
     const data: UploadFileRequest = {
-        user: userId,
+        user: getUserId()!,
         file: new File([upload.file], upload.file.name, { type: upload.file.type }),
     }
 
     if (upload.cover) {
         data.cover_image = new File([upload.cover], upload.cover.name, { type: upload.cover.type });
     }
+
     return await pb.collection(Collections.Books).create(data, { requestKey: upload.file.name });
 }
 
-export const updateBook = async (bookId: string, title?: string, coverImage?: File, author?: string) => {
-    const userId = getUserId();
-    if (!userId) {
-        return
-    }
+export const getBooks = async (page: number, limit: number) => {
+    if (!getUserId()) return
+    return await pb.collection(Collections.Books).getList(page, limit);
+}
+
+export const getBookById = async (id?: string) => {
+    if (!getUserId() || !id || id === 'undefined') return null
+    return await pb.collection(Collections.Books).getOne<BooksResponse>(id);
+}
+
+export const searchBooks = async (query: string) => {
+    if (!getUserId()) return
+    return await pb.send(`/api/collections/books/records/full-text-search?search=${query}`, { method: 'GET' });
+}
+
+export const getLastReadBook = async () => {
+    if (!getUserId()) return
+    return await pb.collection(Collections.LastRead).getFirstListItem(`user="${getUserId()}"`);
+}
+
+export const updateBook = async (id: string, title?: string, coverImage?: File, author?: string) => {
+    if (!getUserId()) return
 
     const data: {
         title?: string,
@@ -60,96 +58,65 @@ export const updateBook = async (bookId: string, title?: string, coverImage?: Fi
         author?: string,
     } = {}
 
-    if (title) {
-        data['title'] = title;
-    }
-    if (coverImage) {
-        data['cover_image'] = coverImage;
-    }
-    if (author) {
-        data['author'] = author;
-    }
+    if (title) data['title'] = title;
+    if (coverImage) data['cover_image'] = coverImage;
+    if (author) data['author'] = author;
 
-    return await pb.collection(Collections.Books).update(bookId, data);
+    return await pb.collection(Collections.Books).update(id, data);
 }
 
-export const deleteBook = async (bookId: string) => {
+export const deleteBook = async (id: string) => {
     if (!getUserId()) return
-
-    return await pb.collection(Collections.Books).delete(bookId);
+    return await pb.collection(Collections.Books).delete(id);
 }
 
-export const getChapterById = async (chapterId?: string) => {
-    if (!getUserId() || !chapterId) return
-    return await pb.collection(Collections.Chapters).getOne(chapterId);
+export const getChaptersByBookId = async (id?: string) => {
+    if (!getUserId() || !id) return
+    return await pb.collection(Collections.Chapters).getFullList({ filter: `book="${id}" && user="${getUserId()}"`, fields: "id,title,order" });
 }
 
-export const updateChapter = async (chapterId: string, content?: string) => {
+export const getChapterById = async (id?: string) => {
+    if (!getUserId() || !id) return
+    return await pb.collection(Collections.Chapters).getOne(id);
+}
+
+export const updateChapter = async (id: string, content?: string) => {
     if (!getUserId()) return
-
-    return await pb.collection(Collections.Chapters).update(chapterId, { content });
+    return await pb.collection(Collections.Chapters).update(id, { content });
 }
 
-export const getMessagesByChatId = async (chatId?: string) => {
-    if (!getUserId() || !chatId) return
-
-    return await pb.collection(Collections.Chats).getOne<ChatsResponse<ExpandMessages>>(chatId, { expand: "messages" });
+export const getChats = async (id?: string) => {
+    if (!getUserId() || !id) return
+    return await pb.collection(Collections.Chats).getFullList({ filter: `book="${id}" && user="${getUserId()}"`, sort: '-updated' });
 }
 
-export const addMessage = async (chatId: string, content: string, role: "user" | "assistant", citations: Citation[] | null) => {
-    const userId = getUserId();
-    if (!userId) {
-        return
-    }
-
-    return await pb.collection(Collections.Messages).create({ chat: chatId, content, role, user: userId, citations });
+export const addChat = async (id: string) => {
+    if (!getUserId()) return
+    return await pb.collection(Collections.Chats).create({ title: "New Chat", book: id, user: getUserId() });
 }
 
-export const getChats = async (bookId?: string) => {
-    const userId = getUserId();
-    if (!userId || !bookId) {
-        return
-    }
-
-    return await pb.collection(Collections.Chats).getFullList({ filter: `book="${bookId}" && user="${userId}"`, sort: '-updated' });
-}
-
-export const addChat = async (bookId: string) => {
-    const userId = getUserId();
-    if (!userId) {
-        return
-    }
-
-    return await pb.collection(Collections.Chats).create({ title: "New Chat", book: bookId, user: userId });
-}
-
-export const updateChat = async (chatId: string, title?: string) => {
+export const updateChat = async (id: string, title?: string) => {
     if (!getUserId()) return
 
     const chat: { title?: string, archived?: boolean } = {}
-    if (title) {
-        chat['title'] = title;
-    }
+    if (title) chat['title'] = title;
 
-    return await pb.collection(Collections.Chats).update(chatId, chat);
+    return await pb.collection(Collections.Chats).update(id, chat);
 }
 
-export const deleteChat = async (chatId: string, bookId: string) => {
-    const userId = getUserId();
-    if (!userId) {
-        return
-    }
+export const deleteChat = async (id: string) => {
+    if (!getUserId()) return
+    return await pb.collection(Collections.Chats).delete(id);
+}
 
-    const chatCount = (await pb.collection(Collections.Chats).getList(1, 1, {
-        filter: `book="${bookId}" && user="${userId}"`,
-    })).totalItems;
+export const getMessagesByChatId = async (id?: string) => {
+    if (!getUserId() || !id) return
+    return await pb.collection(Collections.Chats).getOne<ChatsResponse<ExpandMessages>>(id, { expand: "messages" });
+}
 
-    if (chatCount === 1) {
-        handleError(new Error("You cannot delete the last chat"));
-        return
-    }
-
-    return await pb.collection(Collections.Chats).delete(chatId);
+export const addMessage = async (id: string, content: string, role: "user" | "assistant", citations: Citation[] | null) => {
+    if (!getUserId()) return
+    return await pb.collection(Collections.Messages).create({ chat: id, content, role, user: getUserId(), citations });
 }
 
 export const generateAIResponse = async (
@@ -168,25 +135,16 @@ export const generateAIResponse = async (
     });
 }
 
-export const searchBooks = async (query: string) => {
-    if (!getUserId()) return
-
-    return await pb.send(`/api/collections/books/records/full-text-search?search=${query}`, { method: 'GET' });
-}
-
-export const getLastReadBook = async () => {
-    if (!getUserId()) return
-    return await pb.collection(Collections.LastRead).getFirstListItem(`user="${getUserId()}"`);
-}
-
 export const getHighlights = async (bookId?: string, chapterId?: string) => {
-    if (!getUserId()) return
+    if (!getUserId()) return;
 
-    const filter = `book="${bookId}" && user="${getUserId()}"`;
-    if (chapterId) {
-        return await pb.collection(Collections.Highlights).getFullList<HighlightsResponse<ExpandHighlights>>({ filter: `${filter} && chapter="${chapterId}"`, expand: "book,chapter" });
-    }
-    return await pb.collection(Collections.Highlights).getFullList<HighlightsResponse<ExpandHighlights>>({ filter, expand: "book,chapter" });
+    let filter = `book="${bookId}" && user="${getUserId()}"`;
+    if (chapterId) filter += ` && chapter="${chapterId}"`;
+
+    return await pb.collection(Collections.Highlights).getFullList<HighlightsResponse<ExpandHighlights>>({
+        filter,
+        expand: "book,chapter"
+    });
 }
 
 export const addHighlight = async (bookId: string, chapterId: string, text: string, selection: Range, hash: string) => {
@@ -202,32 +160,31 @@ export const addHighlight = async (bookId: string, chapterId: string, text: stri
     });
 }
 
-export const deleteHighlight = async (highlightId?: string, hash?: string) => {
+export const deleteHighlight = async (id: string) => {
     if (!getUserId()) return
-
-    if (!highlightId && !hash) {
-        throw new Error("Either highlightId or hash must be provided");
-    }
-
-    if (highlightId) {
-        return await pb.collection(Collections.Highlights).delete(highlightId);
-    }
-
-    const highlight = await pb.collection(Collections.Highlights).getFirstListItem(`hash="${hash}"`);
-    if (!highlight) return
-    return await pb.collection(Collections.Highlights).delete(highlight.id);
-
+    return await pb.collection(Collections.Highlights).delete(id);
 }
 
-export const uploadLimitReached = async (): Promise<boolean> => {
+export const deleteHighlightByHash = async (hash: string) => {
+    if (!getUserId()) return
+    const highlight = await pb.collection(Collections.Highlights).getFirstListItem(`hash="${hash}"`);
+    return await pb.collection(Collections.Highlights).delete(highlight.id);
+}
+
+export const uploadLimitReached = async () => {
     await pb.collection("users").authRefresh()
 
     const user = pb.authStore.record
-    if (!user) return false
-
     const paid = user?.paid
-    if (paid) return false
+    if (!user || paid) return false
 
-    const uploadCountRecord = await pb.collection(Collections.UploadCount).getOne(user?.id)
-    return uploadCountRecord?.uploadCount >= 5
+    const uploadCountRecord = await pb.collection(Collections.UploadCount).getOne(user.id)
+    return uploadCountRecord.uploadCount >= 5
+}
+
+export const deleteAccount = async () => {
+    const userId = getUserId();
+    if (!userId) return;
+
+    return await pb.collection(Collections.Users).update(userId, { 'deleted': true });
 }

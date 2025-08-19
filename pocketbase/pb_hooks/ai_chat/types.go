@@ -1,4 +1,4 @@
-package chat
+package ai_chat
 
 type ChatRequest struct {
 	BookID    string `json:"bookId,omitempty"`

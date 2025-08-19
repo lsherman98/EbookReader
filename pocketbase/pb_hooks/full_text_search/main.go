@@ -286,6 +286,7 @@ func collectionFields(collection *core.Collection, id string, collectionName str
 			"author":      true,
 			"description": true,
 			"subject":     true,
+			"created":     true,
 		}
 
 		for _, field := range collection.Fields {

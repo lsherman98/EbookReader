@@ -68,7 +68,6 @@ export function SidebarChat({ bookId }: { bookId: string }) {
               selectedChatId={selectedChat?.id}
               setSelectedChat={setSelectedChat}
               isCollapsed={false}
-              bookId={bookId}
             />
           </PopoverContent>
         </Popover>

@@ -1,4 +1,4 @@
-package chat
+package ai_chat
 
 import (
 	"context"
