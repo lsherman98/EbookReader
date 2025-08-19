@@ -18,6 +18,8 @@ export enum Collections {
 	Highlights = "highlights",
 	LastRead = "last_read",
 	Messages = "messages",
+	SpendByUser = "spend_by_user",
+	TotalSpend = "total_spend",
 	UploadCount = "upload_count",
 	Users = "users",
 	Vectors = "vectors",
@@ -206,6 +208,19 @@ export type MessagesRecord<Tcitations = unknown> = {
 	user: RecordIdString
 }
 
+export type SpendByUserRecord<Ttotal_spend = unknown> = {
+	email: string
+	id: string
+	total_spend?: null | Ttotal_spend
+}
+
+export type TotalSpendRecord<Tgoogle_total = unknown, Tgrand_total = unknown, Topenai_total = unknown> = {
+	google_total?: null | Tgoogle_total
+	grand_total?: null | Tgrand_total
+	id: string
+	openai_total?: null | Topenai_total
+}
+
 export type UploadCountRecord = {
 	email: string
 	id: string
@@ -251,6 +266,8 @@ export type ChatsResponse<Texpand = unknown> = Required<ChatsRecord> & BaseSyste
 export type HighlightsResponse<Tselection = unknown, Texpand = unknown> = Required<HighlightsRecord<Tselection>> & BaseSystemFields<Texpand>
 export type LastReadResponse<Texpand = unknown> = Required<LastReadRecord> & BaseSystemFields<Texpand>
 export type MessagesResponse<Tcitations = unknown, Texpand = unknown> = Required<MessagesRecord<Tcitations>> & BaseSystemFields<Texpand>
+export type SpendByUserResponse<Ttotal_spend = unknown, Texpand = unknown> = Required<SpendByUserRecord<Ttotal_spend>> & BaseSystemFields<Texpand>
+export type TotalSpendResponse<Tgoogle_total = unknown, Tgrand_total = unknown, Topenai_total = unknown, Texpand = unknown> = Required<TotalSpendRecord<Tgoogle_total, Tgrand_total, Topenai_total>> & BaseSystemFields<Texpand>
 export type UploadCountResponse<Texpand = unknown> = Required<UploadCountRecord> & BaseSystemFields<Texpand>
 export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>
 export type VectorsResponse<Texpand = unknown> = Required<VectorsRecord> & BaseSystemFields<Texpand>
@@ -270,6 +287,8 @@ export type CollectionRecords = {
 	highlights: HighlightsRecord
 	last_read: LastReadRecord
 	messages: MessagesRecord
+	spend_by_user: SpendByUserRecord
+	total_spend: TotalSpendRecord
 	upload_count: UploadCountRecord
 	users: UsersRecord
 	vectors: VectorsRecord
@@ -288,6 +307,8 @@ export type CollectionResponses = {
 	highlights: HighlightsResponse
 	last_read: LastReadResponse
 	messages: MessagesResponse
+	spend_by_user: SpendByUserResponse
+	total_spend: TotalSpendResponse
 	upload_count: UploadCountResponse
 	users: UsersResponse
 	vectors: VectorsResponse
@@ -309,6 +330,8 @@ export type TypedPocketBase = PocketBase & {
 	collection(idOrName: 'highlights'): RecordService<HighlightsResponse>
 	collection(idOrName: 'last_read'): RecordService<LastReadResponse>
 	collection(idOrName: 'messages'): RecordService<MessagesResponse>
+	collection(idOrName: 'spend_by_user'): RecordService<SpendByUserResponse>
+	collection(idOrName: 'total_spend'): RecordService<TotalSpendResponse>
 	collection(idOrName: 'upload_count'): RecordService<UploadCountResponse>
 	collection(idOrName: 'users'): RecordService<UsersResponse>
 	collection(idOrName: 'vectors'): RecordService<VectorsResponse>

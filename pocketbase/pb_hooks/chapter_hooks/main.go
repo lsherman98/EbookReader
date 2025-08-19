@@ -1,12 +1,16 @@
 package chapter_hooks
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"strings"
 
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/routine"
+	"github.com/tmc/langchaingo/documentloaders"
+	"github.com/tmc/langchaingo/textsplitter"
 	"golang.org/x/net/html"
 )
 
@@ -27,19 +31,32 @@ func Init(app *pocketbase.PocketBase) error {
 		}
 
 		routine.FireAndForget(func() {
-			for index, textContent := range textNodes {
-				vector := core.NewRecord(vectorCollection)
-				vector.Set("title", title)
-				vector.Set("content", textContent)
-				vector.Set("chapter", e.Record.Id)
-				vector.Set("book", book)
-				vector.Set("index", index)
+			vectorIndex := 0
+			for _, textContent := range textNodes {
+				p := documentloaders.NewText(strings.NewReader(textContent))
 
-				e.App.Logger().Info("Saving vector record", "index", index, "content", textContent)
+				split := textsplitter.NewRecursiveCharacter()
+				split.ChunkSize = 600
+				split.ChunkOverlap = 100
+				docs, err := p.LoadAndSplit(context.Background(), split)
 
-				if err := e.App.Save(vector); err != nil {
-					e.App.Logger().Error("Error saving vector record:", "error", err.Error())
-					return
+				if err != nil {
+					fmt.Println("Error loading document: ", err)
+				}
+
+				for _, chunk := range docs {
+					vector := core.NewRecord(vectorCollection)
+					vector.Set("title", title)
+					vector.Set("content", chunk.PageContent)
+					vector.Set("chapter", e.Record.Id)
+					vector.Set("book", book)
+					vector.Set("index", vectorIndex)
+
+					if err := e.App.Save(vector); err != nil {
+						e.App.Logger().Error("Error saving vector record:", "error", err.Error())
+						return
+					}
+					vectorIndex++
 				}
 			}
 		})
