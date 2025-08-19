@@ -44,6 +44,28 @@ func Init(app *pocketbase.PocketBase, collections ...VectorCollection) error {
 		}
 	})
 
+	app.Cron().MustAdd("processMissingEmbeddings", "* * * * *", func() {
+		target := "vectors"
+		records, err := app.FindRecordsByFilter(target, "vector_id = 0", "", 0, 0)
+		if err != nil {
+			app.Logger().Error("failed to fetch records with missing embeddings", "error", err)
+			return
+		}
+
+		if len(records) > 0 {
+			app.Logger().Info(fmt.Sprintf("Found %d records with missing embeddings. Processing...", len(records)))
+		}
+
+		for _, record := range records {
+			routine.FireAndForget(func() {
+				err := processRecordEmbedding(app, target, client, record)
+				if err != nil {
+					app.Logger().Error("failed to process embedding for record", "record_id", record.Id, "error", err)
+				}
+			})
+		}
+	})
+
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		for _, target := range collections {
 			collection, _ := app.FindCollectionByNameOrId(target.Name)
@@ -269,7 +291,7 @@ func deleteCollection(app *pocketbase.PocketBase, target string) error {
 }
 
 func modelDelete(app *pocketbase.PocketBase, target string, e *core.RecordEvent) error {
-	return deleteEmbeddingsForRecord(app, target, e)
+	return deleteEmbeddingsForRecord(app, target, e.Record)
 }
 
 func trackAIUsage(app *pocketbase.PocketBase, record *core.Record, title, content string) {
@@ -340,6 +362,10 @@ func modelModify(app *pocketbase.PocketBase, target string, client *genai.Client
 	if err != nil {
 		return err
 	}
+	return processRecordEmbedding(app, target, client, record)
+}
+
+func processRecordEmbedding(app *pocketbase.PocketBase, target string, client *genai.Client, record *core.Record) error {
 	title := record.GetString("title")
 	content := record.GetString("content")
 
@@ -349,7 +375,7 @@ func modelModify(app *pocketbase.PocketBase, target string, client *genai.Client
 		routine.FireAndForget(func() {
 			result, err := googleAiEmbedContent(client, genai.TaskTypeRetrievalDocument, title, genai.Text(content))
 			if err != nil {
-				e.App.Logger().Error("Error embedding content:", "error", err.Error())
+				app.Logger().Error("Error embedding content:", "error", err.Error())
 				return
 			}
 
@@ -361,7 +387,7 @@ func modelModify(app *pocketbase.PocketBase, target string, client *genai.Client
 				vector = string(jsonVec)
 			}
 
-			deleteEmbeddingsForRecord(app, target, e)
+			deleteEmbeddingsForRecord(app, target, record)
 
 			{
 				stmt := "INSERT INTO " + target + "_embeddings (embedding) "
@@ -370,19 +396,19 @@ func modelModify(app *pocketbase.PocketBase, target string, client *genai.Client
 					"embedding": vector,
 				}).Execute()
 				if err != nil {
-					e.App.Logger().Error("Error inserting vector embedding:", "error", err.Error())
+					app.Logger().Error("Error inserting vector embedding:", "error", err.Error())
 					return
 				}
 				vectorId, err := res.LastInsertId()
 				if err != nil {
-					e.App.Logger().Error("Error getting last insert ID:", "error", err.Error())
+					app.Logger().Error("Error getting last insert ID:", "error", err.Error())
 					return
 				}
 				record.Set("vector_id", vectorId)
 			}
 
 			if err := app.UnsafeWithoutHooks().Save(record); err != nil {
-				e.App.Logger().Error("Error saving record with vector_id:", "error", err.Error())
+				app.Logger().Error("Error saving record with vector_id:", "error", err.Error())
 				return
 			}
 		})
@@ -390,9 +416,7 @@ func modelModify(app *pocketbase.PocketBase, target string, client *genai.Client
 	return nil
 }
 
-func deleteEmbeddingsForRecord(app *pocketbase.PocketBase, target string, e *core.RecordEvent) error {
-	record := e.Record
-
+func deleteEmbeddingsForRecord(app *pocketbase.PocketBase, target string, record *core.Record) error {
 	type Meta struct {
 		Id string `db:"id" json:"id"`
 	}
