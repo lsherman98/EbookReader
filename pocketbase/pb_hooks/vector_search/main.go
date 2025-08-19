@@ -46,7 +46,7 @@ func Init(app *pocketbase.PocketBase, collections ...VectorCollection) error {
 
 	app.Cron().MustAdd("processMissingEmbeddings", "* * * * *", func() {
 		target := "vectors"
-		records, err := app.FindRecordsByFilter(target, "vector_id = 0", "", 0, 0)
+		records, err := app.FindRecordsByFilter(target, "vector_id = 0", "", 10000, 0)
 		if err != nil {
 			app.Logger().Error("failed to fetch records with missing embeddings", "error", err)
 			return
