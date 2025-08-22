@@ -3,14 +3,30 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, Crown, BookOpen } from "lucide-react";
+import { useCreateCheckoutSession, useCreatePortalSession } from "@/lib/api/mutations";
+import { Switch } from "@/components/ui/switch";
+import { useState } from "react";
+import { useIsPaidUser } from "@/lib/api/queries";
 
 export const Route = createLazyFileRoute("/_app/subscription")({
   component: SubscriptionPage,
 });
 
 function SubscriptionPage() {
-  const handleUpgrade = () => {
-    console.log("Upgrade to premium");
+  const { data: isPaidUser } = useIsPaidUser();
+  const checkoutMutation = useCreateCheckoutSession();
+  const portalMutation = useCreatePortalSession();
+  const [isYearly, setIsYearly] = useState(false);
+
+  const handleUpgrade = async () => {
+    if (!isPaidUser) {
+      const plan = isYearly ? "yearly" : "monthly";
+      const res = await checkoutMutation.mutateAsync(plan);
+      if (res?.url) window.location.href = res.url;
+    } else {
+      const res = await portalMutation.mutateAsync();
+      if (res?.url) window.location.href = res.url;
+    }
   };
 
   return (
@@ -29,7 +45,7 @@ function SubscriptionPage() {
                   <BookOpen className="h-5 w-5" />
                   <CardTitle>Free Trial</CardTitle>
                 </div>
-                <Badge variant="secondary">Current</Badge>
+                {!isPaidUser && <Badge variant="secondary">Current</Badge>}
               </div>
               <CardDescription>Perfect for trying out the platform</CardDescription>
             </CardHeader>
@@ -66,16 +82,24 @@ function SubscriptionPage() {
               <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
             </div>
             <CardHeader>
-              <div className="flex items-center gap-2">
-                <Crown className="h-5 w-5 text-yellow-500" />
-                <CardTitle>Premium</CardTitle>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Crown className="h-5 w-5 text-yellow-500" />
+                  <CardTitle>Premium</CardTitle>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-sm ${!isYearly ? "font-bold" : ""}`}>Monthly</span>
+                  <Switch checked={isYearly} onCheckedChange={setIsYearly} />
+                  <span className={`text-sm ${isYearly ? "font-bold" : ""}`}>Yearly</span>
+                </div>
+                {isPaidUser && <Badge variant="secondary">Current</Badge>}
               </div>
               <CardDescription>For serious readers</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="mb-6">
-                <div className="text-3xl font-bold">$5</div>
-                <div className="text-sm text-muted-foreground">per month</div>
+                <div className="text-3xl font-bold">{isYearly ? "$24.99" : "$2.99"}</div>
+                <div className="text-sm text-muted-foreground">{isYearly ? "per year" : "per month"}</div>
               </div>
 
               <ul className="space-y-3 mb-6">
@@ -93,8 +117,12 @@ function SubscriptionPage() {
                 </li>
               </ul>
 
-              <Button onClick={handleUpgrade} className="w-full">
-                Upgrade to Premium
+              <Button
+                onClick={handleUpgrade}
+                className="w-full"
+                disabled={checkoutMutation.isPending || portalMutation.isPending}
+              >
+                {isPaidUser ? "Manage Subscription" : isYearly ? "Upgrade to Yearly" : "Upgrade to Monthly"}
               </Button>
             </CardContent>
           </Card>

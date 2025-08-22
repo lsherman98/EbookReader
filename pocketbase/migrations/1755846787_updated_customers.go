@@ -7,50 +7,50 @@ import (
 
 func init() {
 	m.Register(func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("pbc_3174063690")
+		collection, err := app.FindCollectionByNameOrId("pbc_108570809")
 		if err != nil {
 			return err
 		}
 
 		// update field
-		if err := collection.Fields.AddMarshaledJSONAt(8, []byte(`{
+		if err := collection.Fields.AddMarshaledJSONAt(2, []byte(`{
+			"autogeneratePattern": "",
 			"hidden": false,
-			"id": "select2063623452",
-			"maxSelect": 1,
-			"name": "status",
+			"id": "text2476065779",
+			"max": 0,
+			"min": 0,
+			"name": "customer",
+			"pattern": "",
 			"presentable": false,
+			"primaryKey": false,
 			"required": false,
 			"system": false,
-			"type": "select",
-			"values": [
-				"succeeded",
-				"pending",
-				"failed"
-			]
+			"type": "text"
 		}`)); err != nil {
 			return err
 		}
 
 		return app.Save(collection)
 	}, func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("pbc_3174063690")
+		collection, err := app.FindCollectionByNameOrId("pbc_108570809")
 		if err != nil {
 			return err
 		}
 
 		// update field
-		if err := collection.Fields.AddMarshaledJSONAt(8, []byte(`{
+		if err := collection.Fields.AddMarshaledJSONAt(2, []byte(`{
+			"autogeneratePattern": "",
 			"hidden": false,
-			"id": "select2063623452",
-			"maxSelect": 1,
-			"name": "status",
+			"id": "text2476065779",
+			"max": 0,
+			"min": 0,
+			"name": "customer_id",
+			"pattern": "",
 			"presentable": false,
+			"primaryKey": false,
 			"required": false,
 			"system": false,
-			"type": "select",
-			"values": [
-				"succeeded"
-			]
+			"type": "text"
 		}`)); err != nil {
 			return err
 		}

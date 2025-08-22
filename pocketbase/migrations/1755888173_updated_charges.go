@@ -9,7 +9,7 @@ import (
 
 func init() {
 	m.Register(func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("qfiqyxbv63dsbsr")
+		collection, err := app.FindCollectionByNameOrId("pbc_3174063690")
 		if err != nil {
 			return err
 		}
@@ -17,16 +17,16 @@ func init() {
 		// update collection data
 		if err := json.Unmarshal([]byte(`{
 			"indexes": [
-				"CREATE INDEX ` + "`" + `idx_lnL7G0jjvJ` + "`" + ` ON ` + "`" + `subscriptions` + "`" + ` (` + "`" + `subscription_id` + "`" + `)"
+				"CREATE INDEX ` + "`" + `idx_SVjRyNU0v4` + "`" + ` ON ` + "`" + `stripe_charges` + "`" + ` (` + "`" + `user` + "`" + `)"
 			],
-			"name": "subscriptions"
+			"name": "stripe_charges"
 		}`), &collection); err != nil {
 			return err
 		}
 
 		return app.Save(collection)
 	}, func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("qfiqyxbv63dsbsr")
+		collection, err := app.FindCollectionByNameOrId("pbc_3174063690")
 		if err != nil {
 			return err
 		}
@@ -34,9 +34,9 @@ func init() {
 		// update collection data
 		if err := json.Unmarshal([]byte(`{
 			"indexes": [
-				"CREATE INDEX ` + "`" + `idx_lnL7G0jjvJ` + "`" + ` ON ` + "`" + `subscription` + "`" + ` (` + "`" + `subscription_id` + "`" + `)"
+				"CREATE INDEX ` + "`" + `idx_SVjRyNU0v4` + "`" + ` ON ` + "`" + `charges` + "`" + ` (` + "`" + `user` + "`" + `)"
 			],
-			"name": "subscription"
+			"name": "charges"
 		}`), &collection); err != nil {
 			return err
 		}

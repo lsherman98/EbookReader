@@ -7,17 +7,17 @@ import (
 
 func init() {
 	m.Register(func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("qfiqyxbv63dsbsr")
+		collection, err := app.FindCollectionByNameOrId("pbc_3174063690")
 		if err != nil {
 			return err
 		}
 
 		// remove field
-		collection.Fields.RemoveById("bjrj1xfv")
+		collection.Fields.RemoveById("text2585298908")
 
 		return app.Save(collection)
 	}, func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("qfiqyxbv63dsbsr")
+		collection, err := app.FindCollectionByNameOrId("pbc_3174063690")
 		if err != nil {
 			return err
 		}
@@ -26,14 +26,14 @@ func init() {
 		if err := collection.Fields.AddMarshaledJSONAt(4, []byte(`{
 			"autogeneratePattern": "",
 			"hidden": false,
-			"id": "bjrj1xfv",
+			"id": "text2585298908",
 			"max": 0,
 			"min": 0,
-			"name": "price_id",
+			"name": "subscription_id",
 			"pattern": "",
 			"presentable": false,
 			"primaryKey": false,
-			"required": false,
+			"required": true,
 			"system": false,
 			"type": "text"
 		}`)); err != nil {

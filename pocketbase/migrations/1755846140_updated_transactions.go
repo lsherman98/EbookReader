@@ -24,11 +24,29 @@ func init() {
 			return err
 		}
 
-		// update field
-		if err := collection.Fields.AddMarshaledJSONAt(3, []byte(`{
+		// add field
+		if err := collection.Fields.AddMarshaledJSONAt(5, []byte(`{
 			"autogeneratePattern": "",
 			"hidden": false,
-			"id": "text801164047",
+			"id": "text3591686119",
+			"max": 0,
+			"min": 0,
+			"name": "price_id",
+			"pattern": "",
+			"presentable": false,
+			"primaryKey": false,
+			"required": false,
+			"system": false,
+			"type": "text"
+		}`)); err != nil {
+			return err
+		}
+
+		// add field
+		if err := collection.Fields.AddMarshaledJSONAt(6, []byte(`{
+			"autogeneratePattern": "",
+			"hidden": false,
+			"id": "text1428703508",
 			"max": 0,
 			"min": 0,
 			"name": "charge_id",
@@ -59,23 +77,11 @@ func init() {
 			return err
 		}
 
-		// update field
-		if err := collection.Fields.AddMarshaledJSONAt(3, []byte(`{
-			"autogeneratePattern": "",
-			"hidden": false,
-			"id": "text801164047",
-			"max": 0,
-			"min": 0,
-			"name": "transaction_id",
-			"pattern": "",
-			"presentable": false,
-			"primaryKey": false,
-			"required": false,
-			"system": false,
-			"type": "text"
-		}`)); err != nil {
-			return err
-		}
+		// remove field
+		collection.Fields.RemoveById("text3591686119")
+
+		// remove field
+		collection.Fields.RemoveById("text1428703508")
 
 		return app.Save(collection)
 	})

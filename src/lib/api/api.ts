@@ -182,9 +182,32 @@ export const uploadLimitReached = async () => {
     return uploadCountRecord.uploadCount >= 5
 }
 
+export const isPaidUser = async () => {
+    await pb.collection("users").authRefresh()
+    return pb.authStore.record?.paid === true
+}
+
 export const deleteAccount = async () => {
     const userId = getUserId();
     if (!userId) return;
 
     return await pb.collection(Collections.Users).update(userId, { 'deleted': true });
+}
+
+export const createCheckoutSession = async (subscriptionType: "monthly" | "yearly") => {
+    if (!getUserId()) return
+
+    return await pb.send('/stripe/create-checkout-session', {
+        method: 'GET',
+        query: { subscriptionType }
+    });
+
+}
+
+export const createPortalSession = async () => {
+    if (!getUserId()) return
+
+    return await pb.send('/stripe/create-portal-session', {
+        method: 'GET'
+    });
 }

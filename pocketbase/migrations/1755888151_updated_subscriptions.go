@@ -1,6 +1,8 @@
 package migrations
 
 import (
+	"encoding/json"
+
 	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
 )
@@ -12,8 +14,12 @@ func init() {
 			return err
 		}
 
-		// remove field
-		collection.Fields.RemoveById("gxcsc2ll")
+		// update collection data
+		if err := json.Unmarshal([]byte(`{
+			"name": "stripe_subscriptions"
+		}`), &collection); err != nil {
+			return err
+		}
 
 		return app.Save(collection)
 	}, func(app core.App) error {
@@ -22,19 +28,10 @@ func init() {
 			return err
 		}
 
-		// add field
-		if err := collection.Fields.AddMarshaledJSONAt(6, []byte(`{
-			"hidden": false,
-			"id": "gxcsc2ll",
-			"max": null,
-			"min": null,
-			"name": "quantity",
-			"onlyInt": false,
-			"presentable": false,
-			"required": false,
-			"system": false,
-			"type": "number"
-		}`)); err != nil {
+		// update collection data
+		if err := json.Unmarshal([]byte(`{
+			"name": "subscriptions"
+		}`), &collection); err != nil {
 			return err
 		}
 

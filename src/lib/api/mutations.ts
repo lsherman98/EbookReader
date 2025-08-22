@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { addChat, addHighlight, addMessage, deleteAccount, deleteBook, deleteChat, deleteHighlight, deleteHighlightByHash, downloadBook, generateAIResponse, updateBook, updateChapter, updateChat, uploadBook } from "./api";
+import { addChat, addHighlight, addMessage, createCheckoutSession, createPortalSession, deleteAccount, deleteBook, deleteChat, deleteHighlight, deleteHighlightByHash, downloadBook, generateAIResponse, updateBook, updateChapter, updateChat, uploadBook } from "./api";
 import { handleError } from "../utils/utils";
 import { FileUploadObj } from "@/pages/_app/upload.lazy";
 import { Citation } from "../types";
@@ -172,5 +172,19 @@ export function useDeleteAccount() {
             pb.authStore.clear();
             location.reload();
         }
+    })
+}
+
+export function useCreateCheckoutSession() {
+    return useMutation({
+        mutationFn: (subscriptionType: "monthly" | "yearly") => createCheckoutSession(subscriptionType),
+        onError: handleError,
+    })
+}
+
+export function useCreatePortalSession() {
+    return useMutation({
+        mutationFn: () => createPortalSession(),
+        onError: handleError,
     })
 }

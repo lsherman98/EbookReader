@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { getBookById, getBooks, getChapterById, getChaptersByBookId, getChats, getHighlights, getLastReadBook, getMessagesByChatId, searchBooks, uploadLimitReached } from "./api";
+import { getBookById, getBooks, getChapterById, getChaptersByBookId, getChats, getHighlights, getLastReadBook, getMessagesByChatId, isPaidUser, searchBooks, uploadLimitReached } from "./api";
 
 export function useGetBooks(page: number = 1, limit: number = 25) {
     return useQuery({
@@ -83,6 +83,18 @@ export function useGetUploadLimitReached() {
     return useQuery({
         queryKey: [],
         queryFn: () => uploadLimitReached(),
+        enabled: true,
+        placeholderData: false,
+        refetchOnMount: 'always',
+        refetchOnWindowFocus: 'always',
+        refetchOnReconnect: 'always',
+    });
+}
+
+export function useIsPaidUser() {
+    return useQuery({
+        queryKey: [],
+        queryFn: () => isPaidUser(),
         enabled: true,
         placeholderData: false,
         refetchOnMount: 'always',

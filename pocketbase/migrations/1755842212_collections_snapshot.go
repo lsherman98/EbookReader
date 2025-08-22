@@ -582,9 +582,9 @@ func init() {
 						"body": "<p>Hello,</p>\n<p>We noticed a login to your {APP_NAME} account from a new location.</p>\n<p>If this was you, you may disregard this email.</p>\n<p><strong>If this wasn't you, you should immediately change your {APP_NAME} account password to revoke access from all other locations.</strong></p>\n<p>\n  Thanks,<br/>\n  {APP_NAME} team\n</p>",
 						"subject": "Login from a new location"
 					},
-					"enabled": true
+					"enabled": false
 				},
-				"authRule": "",
+				"authRule": "deleted = false",
 				"authToken": {
 					"duration": 604800
 				},
@@ -593,7 +593,7 @@ func init() {
 					"subject": "Confirm your {APP_NAME} new email address"
 				},
 				"createRule": "",
-				"deleteRule": "id = @request.auth.id",
+				"deleteRule": null,
 				"emailChangeToken": {
 					"duration": 1800
 				},
@@ -706,6 +706,15 @@ func init() {
 						"hidden": false,
 						"id": "bool4253985592",
 						"name": "paid",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "bool"
+					},
+					{
+						"hidden": false,
+						"id": "bool3946532403",
+						"name": "deleted",
 						"presentable": false,
 						"required": false,
 						"system": false,
@@ -1595,7 +1604,7 @@ func init() {
 					{
 						"exceptDomains": null,
 						"hidden": false,
-						"id": "_clone_mQ1f",
+						"id": "_clone_KOa2",
 						"name": "email",
 						"onlyDomains": null,
 						"presentable": false,
@@ -1745,7 +1754,8 @@ func init() {
 				],
 				"id": "pbc_1996445397",
 				"indexes": [
-					"CREATE INDEX idx_vectors ON vectors (title, content);"
+					"CREATE INDEX idx_vectors ON vectors (title, content);",
+					"CREATE INDEX ` + "`" + `idx_K0Gr50yF3E` + "`" + ` ON ` + "`" + `vectors` + "`" + ` (` + "`" + `vector_id` + "`" + `)"
 				],
 				"listRule": null,
 				"name": "vectors",
@@ -1927,6 +1937,413 @@ func init() {
 				],
 				"listRule": null,
 				"name": "ai_usage",
+				"system": false,
+				"type": "base",
+				"updateRule": null,
+				"viewRule": null
+			},
+			{
+				"createRule": null,
+				"deleteRule": null,
+				"fields": [
+					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "text3208210256",
+						"max": 0,
+						"min": 0,
+						"name": "id",
+						"pattern": "^[a-z0-9]+$",
+						"presentable": false,
+						"primaryKey": true,
+						"required": true,
+						"system": true,
+						"type": "text"
+					},
+					{
+						"exceptDomains": null,
+						"hidden": false,
+						"id": "_clone_T5R9",
+						"name": "email",
+						"onlyDomains": null,
+						"presentable": false,
+						"required": true,
+						"system": true,
+						"type": "email"
+					},
+					{
+						"hidden": false,
+						"id": "json799060239",
+						"maxSize": 1,
+						"name": "total_spend",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "json"
+					}
+				],
+				"id": "pbc_1989023549",
+				"indexes": [],
+				"listRule": null,
+				"name": "spend_by_user",
+				"system": false,
+				"type": "view",
+				"updateRule": null,
+				"viewQuery": "SELECT\n  u.id,\n  u.email,\n  printf('$%.2f', SUM(au.total_cost)) AS total_spend\nFROM\n  ai_usage AS au\nLEFT JOIN\n  users AS u ON au.user = u.id\nGROUP BY\n  au.user, u.email\nORDER BY\n  total_spend DESC;",
+				"viewRule": null
+			},
+			{
+				"createRule": null,
+				"deleteRule": null,
+				"fields": [
+					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "text3208210256",
+						"max": 0,
+						"min": 0,
+						"name": "id",
+						"pattern": "^[a-z0-9]+$",
+						"presentable": false,
+						"primaryKey": true,
+						"required": true,
+						"system": true,
+						"type": "text"
+					},
+					{
+						"hidden": false,
+						"id": "json2279929749",
+						"maxSize": 1,
+						"name": "openai_total",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "json"
+					},
+					{
+						"hidden": false,
+						"id": "json1539500113",
+						"maxSize": 1,
+						"name": "google_total",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "json"
+					},
+					{
+						"hidden": false,
+						"id": "json3900802059",
+						"maxSize": 1,
+						"name": "grand_total",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "json"
+					}
+				],
+				"id": "pbc_3604446213",
+				"indexes": [],
+				"listRule": null,
+				"name": "total_spend",
+				"system": false,
+				"type": "view",
+				"updateRule": null,
+				"viewQuery": "SELECT\n  (ROW_NUMBER() OVER()) as id,\n  printf('$%.2f', SUM(CASE WHEN provider = 'openai' THEN total_cost ELSE 0 END)) AS openai_total,\n  printf('$%.2f', SUM(CASE WHEN provider = 'google' THEN total_cost ELSE 0 END)) AS google_total,\n  printf('$%.2f', SUM(total_cost)) AS grand_total\nFROM\n  ai_usage;",
+				"viewRule": null
+			},
+			{
+				"createRule": null,
+				"deleteRule": null,
+				"fields": [
+					{
+						"autogeneratePattern": "[a-z0-9]{15}",
+						"hidden": false,
+						"id": "_pbf_text_id_",
+						"max": 15,
+						"min": 15,
+						"name": "id",
+						"pattern": "^[a-z0-9]+$",
+						"presentable": false,
+						"primaryKey": true,
+						"required": true,
+						"system": true,
+						"type": "text"
+					},
+					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "jcxglr00",
+						"max": 0,
+						"min": 0,
+						"name": "subscription_id",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": false,
+						"system": false,
+						"type": "text"
+					},
+					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "rspmnb0u",
+						"max": 0,
+						"min": 0,
+						"name": "status",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": false,
+						"system": false,
+						"type": "text"
+					},
+					{
+						"hidden": false,
+						"id": "jfgu36fs",
+						"maxSize": 5242880,
+						"name": "metadata",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "json"
+					},
+					{
+						"hidden": false,
+						"id": "hh0ogpf6",
+						"name": "cancel_at_period_end",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "bool"
+					},
+					{
+						"hidden": false,
+						"id": "dwxvv06q",
+						"max": "",
+						"min": "",
+						"name": "current_period_start",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "date"
+					},
+					{
+						"hidden": false,
+						"id": "qexnsy6w",
+						"max": "",
+						"min": "",
+						"name": "current_period_end",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "date"
+					},
+					{
+						"hidden": false,
+						"id": "latwf5he",
+						"max": "",
+						"min": "",
+						"name": "ended_at",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "date"
+					},
+					{
+						"hidden": false,
+						"id": "zr5dy0uv",
+						"max": "",
+						"min": "",
+						"name": "cancel_at",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "date"
+					},
+					{
+						"hidden": false,
+						"id": "jgkres4h",
+						"max": "",
+						"min": "",
+						"name": "canceled_at",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "date"
+					},
+					{
+						"cascadeDelete": false,
+						"collectionId": "_pb_users_auth_",
+						"hidden": false,
+						"id": "relation2375276105",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "user",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "relation"
+					},
+					{
+						"hidden": false,
+						"id": "_pbf_autodate_created_",
+						"name": "created",
+						"onCreate": true,
+						"onUpdate": false,
+						"presentable": false,
+						"system": false,
+						"type": "autodate"
+					},
+					{
+						"hidden": false,
+						"id": "_pbf_autodate_updated_",
+						"name": "updated",
+						"onCreate": true,
+						"onUpdate": true,
+						"presentable": false,
+						"system": false,
+						"type": "autodate"
+					}
+				],
+				"id": "qfiqyxbv63dsbsr",
+				"indexes": [
+					"CREATE INDEX ` + "`" + `idx_lnL7G0jjvJ` + "`" + ` ON ` + "`" + `subscriptions` + "`" + ` (` + "`" + `subscription_id` + "`" + `)"
+				],
+				"listRule": "",
+				"name": "subscriptions",
+				"system": false,
+				"type": "base",
+				"updateRule": null,
+				"viewRule": null
+			},
+			{
+				"createRule": null,
+				"deleteRule": null,
+				"fields": [
+					{
+						"autogeneratePattern": "[a-z0-9]{15}",
+						"hidden": false,
+						"id": "text3208210256",
+						"max": 15,
+						"min": 15,
+						"name": "id",
+						"pattern": "^[a-z0-9]+$",
+						"presentable": false,
+						"primaryKey": true,
+						"required": true,
+						"system": true,
+						"type": "text"
+					},
+					{
+						"cascadeDelete": false,
+						"collectionId": "_pb_users_auth_",
+						"hidden": false,
+						"id": "relation2375276105",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "user",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "relation"
+					},
+					{
+						"hidden": false,
+						"id": "number2392944706",
+						"max": null,
+						"min": null,
+						"name": "amount",
+						"onlyInt": false,
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "number"
+					},
+					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "text801164047",
+						"max": 0,
+						"min": 0,
+						"name": "charge_id",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": false,
+						"system": false,
+						"type": "text"
+					},
+					{
+						"hidden": false,
+						"id": "bool4253985592",
+						"name": "paid",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "bool"
+					},
+					{
+						"exceptDomains": null,
+						"hidden": false,
+						"id": "url2263173092",
+						"name": "receipt_url",
+						"onlyDomains": null,
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "url"
+					},
+					{
+						"hidden": false,
+						"id": "bool2067034193",
+						"name": "refunded",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "bool"
+					},
+					{
+						"hidden": false,
+						"id": "select2063623452",
+						"maxSelect": 1,
+						"name": "status",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "select",
+						"values": [
+							"succeeded",
+							"pending",
+							"failed"
+						]
+					},
+					{
+						"hidden": false,
+						"id": "json1326724116",
+						"maxSize": 0,
+						"name": "metadata",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "json"
+					},
+					{
+						"hidden": false,
+						"id": "autodate2990389176",
+						"name": "created",
+						"onCreate": true,
+						"onUpdate": false,
+						"presentable": false,
+						"system": false,
+						"type": "autodate"
+					}
+				],
+				"id": "pbc_3174063690",
+				"indexes": [
+					"CREATE INDEX ` + "`" + `idx_SVjRyNU0v4` + "`" + ` ON ` + "`" + `charges` + "`" + ` (` + "`" + `user` + "`" + `)"
+				],
+				"listRule": null,
+				"name": "charges",
 				"system": false,
 				"type": "base",
 				"updateRule": null,

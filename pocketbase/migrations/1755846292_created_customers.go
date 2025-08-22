@@ -41,16 +41,18 @@ func init() {
 					"type": "relation"
 				},
 				{
+					"autogeneratePattern": "",
 					"hidden": false,
-					"id": "number2392944706",
-					"max": null,
-					"min": null,
-					"name": "amount",
-					"onlyInt": false,
+					"id": "text2476065779",
+					"max": 0,
+					"min": 0,
+					"name": "customer_id",
+					"pattern": "",
 					"presentable": false,
+					"primaryKey": false,
 					"required": false,
 					"system": false,
-					"type": "number"
+					"type": "text"
 				},
 				{
 					"hidden": false,
@@ -61,14 +63,22 @@ func init() {
 					"presentable": false,
 					"system": false,
 					"type": "autodate"
+				},
+				{
+					"hidden": false,
+					"id": "autodate3332085495",
+					"name": "updated",
+					"onCreate": true,
+					"onUpdate": true,
+					"presentable": false,
+					"system": false,
+					"type": "autodate"
 				}
 			],
-			"id": "pbc_3174063690",
-			"indexes": [
-				"CREATE INDEX ` + "`" + `idx_SVjRyNU0v4` + "`" + ` ON ` + "`" + `transactions` + "`" + ` (` + "`" + `user` + "`" + `)"
-			],
+			"id": "pbc_108570809",
+			"indexes": [],
 			"listRule": null,
-			"name": "transactions",
+			"name": "customers",
 			"system": false,
 			"type": "base",
 			"updateRule": null,
@@ -82,7 +92,7 @@ func init() {
 
 		return app.Save(collection)
 	}, func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("pbc_3174063690")
+		collection, err := app.FindCollectionByNameOrId("pbc_108570809")
 		if err != nil {
 			return err
 		}

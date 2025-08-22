@@ -7,32 +7,35 @@ import (
 
 func init() {
 	m.Register(func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("pbc_3174063690")
+		collection, err := app.FindCollectionByNameOrId("qfiqyxbv63dsbsr")
 		if err != nil {
 			return err
 		}
 
 		// remove field
-		collection.Fields.RemoveById("date1222445531")
+		collection.Fields.RemoveById("edn1wijr")
 
 		return app.Save(collection)
 	}, func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("pbc_3174063690")
+		collection, err := app.FindCollectionByNameOrId("qfiqyxbv63dsbsr")
 		if err != nil {
 			return err
 		}
 
 		// add field
-		if err := collection.Fields.AddMarshaledJSONAt(4, []byte(`{
+		if err := collection.Fields.AddMarshaledJSONAt(2, []byte(`{
+			"autogeneratePattern": "",
 			"hidden": false,
-			"id": "date1222445531",
-			"max": "",
-			"min": "",
-			"name": "transaction_date",
+			"id": "edn1wijr",
+			"max": 0,
+			"min": 0,
+			"name": "user_id",
+			"pattern": "",
 			"presentable": false,
+			"primaryKey": false,
 			"required": false,
 			"system": false,
-			"type": "date"
+			"type": "text"
 		}`)); err != nil {
 			return err
 		}

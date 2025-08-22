@@ -20,4 +20,8 @@ export const Route = createRootRoute({
       </TooltipProvider>
     </QueryClientProvider>
   ),
+  notFoundComponent: () => {
+    window.location.replace("/library");
+    return null;
+  },
 });
