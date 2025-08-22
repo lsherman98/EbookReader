@@ -17,81 +17,6 @@ import (
 	"github.com/tmc/langchaingo/llms/openai"
 )
 
-func trackChatAIUsage(app *pocketbase.PocketBase, bookId string, completion *llms.ContentResponse) {
-	if len(completion.Choices) == 0 || completion.Choices[0].GenerationInfo == nil {
-		return
-	}
-
-	genInfo := completion.Choices[0].GenerationInfo
-	promptTokens, ok1 := genInfo["PromptTokens"].(int)
-	completionTokens, ok2 := genInfo["CompletionTokens"].(int)
-
-	if !ok1 || !ok2 {
-		app.Logger().Error("Error extracting token counts from completion response")
-		return
-	}
-
-	inputCost := float64(promptTokens) * 2.50 / 1000000
-	outputCost := float64(completionTokens) * 10.0 / 1000000
-	totalCost := inputCost + outputCost
-
-	AIUsageCollection, err := app.FindCollectionByNameOrId("ai_usage")
-	if err != nil {
-		app.Logger().Error("Error finding ai_usage collection:", "error", err.Error())
-		return
-	}
-
-	bookRecord, err := app.FindRecordById("books", bookId)
-	if err != nil {
-		app.Logger().Error("Error finding book record:", "error", err.Error())
-		return
-	}
-	user := bookRecord.GetString("user")
-
-	var model string = os.Getenv("OPENAI_MODEL")
-
-	existingRecord, err := app.FindFirstRecordByFilter("ai_usage",
-		"book = {:book} && user = {:user} && task = 'chat'",
-		dbx.Params{
-			"book": bookId,
-			"user": user,
-		})
-
-	if err == nil && existingRecord != nil {
-		currentInputTokens := existingRecord.GetInt("input_tokens")
-		currentOutputTokens := existingRecord.GetInt("output_tokens")
-		currentInputCost := existingRecord.GetFloat("input_cost")
-		currentOutputCost := existingRecord.GetFloat("output_cost")
-		currentTotalCost := existingRecord.GetFloat("total_cost")
-
-		existingRecord.Set("input_tokens", currentInputTokens+promptTokens)
-		existingRecord.Set("output_tokens", currentOutputTokens+completionTokens)
-		existingRecord.Set("input_cost", currentInputCost+inputCost)
-		existingRecord.Set("output_cost", currentOutputCost+outputCost)
-		existingRecord.Set("total_cost", currentTotalCost+totalCost)
-
-		if err := app.Save(existingRecord); err != nil {
-			app.Logger().Error("Error updating AI usage record:", "error", err.Error())
-		}
-	} else {
-		AIUsageRecord := core.NewRecord(AIUsageCollection)
-		AIUsageRecord.Set("task", "chat")
-		AIUsageRecord.Set("provider", "openai")
-		AIUsageRecord.Set("model", model)
-		AIUsageRecord.Set("input_tokens", promptTokens)
-		AIUsageRecord.Set("output_tokens", completionTokens)
-		AIUsageRecord.Set("input_cost", inputCost)
-		AIUsageRecord.Set("output_cost", outputCost)
-		AIUsageRecord.Set("total_cost", totalCost)
-		AIUsageRecord.Set("book", bookId)
-		AIUsageRecord.Set("user", user)
-
-		if err := app.Save(AIUsageRecord); err != nil {
-			app.Logger().Error("Error saving AI usage record:", "error", err.Error())
-		}
-	}
-}
-
 func Init(app *pocketbase.PocketBase) error {
 	var model string = os.Getenv("OPENAI_MODEL")
 	OpenAI4oStructured, err := openai.New(openai.WithModel(model), openai.WithResponseFormat(GetJSONSchema()))
@@ -212,4 +137,79 @@ func buildMessage(msgsCollection *core.Collection, chatID, role, content, userID
 	newMessage.Set("citations", citations)
 	newMessage.Set("user", userID)
 	return newMessage
+}
+
+func trackChatAIUsage(app *pocketbase.PocketBase, bookId string, completion *llms.ContentResponse) {
+	if len(completion.Choices) == 0 || completion.Choices[0].GenerationInfo == nil {
+		return
+	}
+
+	genInfo := completion.Choices[0].GenerationInfo
+	promptTokens, ok1 := genInfo["PromptTokens"].(int)
+	completionTokens, ok2 := genInfo["CompletionTokens"].(int)
+
+	if !ok1 || !ok2 {
+		app.Logger().Error("Error extracting token counts from completion response")
+		return
+	}
+
+	inputCost := float64(promptTokens) * 2.50 / 1000000
+	outputCost := float64(completionTokens) * 10.0 / 1000000
+	totalCost := inputCost + outputCost
+
+	AIUsageCollection, err := app.FindCollectionByNameOrId("ai_usage")
+	if err != nil {
+		app.Logger().Error("Error finding ai_usage collection:", "error", err.Error())
+		return
+	}
+
+	bookRecord, err := app.FindRecordById("books", bookId)
+	if err != nil {
+		app.Logger().Error("Error finding book record:", "error", err.Error())
+		return
+	}
+	user := bookRecord.GetString("user")
+
+	var model string = os.Getenv("OPENAI_MODEL")
+
+	existingRecord, err := app.FindFirstRecordByFilter("ai_usage",
+		"book = {:book} && user = {:user} && task = 'chat'",
+		dbx.Params{
+			"book": bookId,
+			"user": user,
+		})
+
+	if err == nil && existingRecord != nil {
+		currentInputTokens := existingRecord.GetInt("input_tokens")
+		currentOutputTokens := existingRecord.GetInt("output_tokens")
+		currentInputCost := existingRecord.GetFloat("input_cost")
+		currentOutputCost := existingRecord.GetFloat("output_cost")
+		currentTotalCost := existingRecord.GetFloat("total_cost")
+
+		existingRecord.Set("input_tokens", currentInputTokens+promptTokens)
+		existingRecord.Set("output_tokens", currentOutputTokens+completionTokens)
+		existingRecord.Set("input_cost", currentInputCost+inputCost)
+		existingRecord.Set("output_cost", currentOutputCost+outputCost)
+		existingRecord.Set("total_cost", currentTotalCost+totalCost)
+
+		if err := app.Save(existingRecord); err != nil {
+			app.Logger().Error("Error updating AI usage record:", "error", err.Error())
+		}
+	} else {
+		AIUsageRecord := core.NewRecord(AIUsageCollection)
+		AIUsageRecord.Set("task", "chat")
+		AIUsageRecord.Set("provider", "openai")
+		AIUsageRecord.Set("model", model)
+		AIUsageRecord.Set("input_tokens", promptTokens)
+		AIUsageRecord.Set("output_tokens", completionTokens)
+		AIUsageRecord.Set("input_cost", inputCost)
+		AIUsageRecord.Set("output_cost", outputCost)
+		AIUsageRecord.Set("total_cost", totalCost)
+		AIUsageRecord.Set("book", bookId)
+		AIUsageRecord.Set("user", user)
+
+		if err := app.Save(AIUsageRecord); err != nil {
+			app.Logger().Error("Error saving AI usage record:", "error", err.Error())
+		}
+	}
 }
