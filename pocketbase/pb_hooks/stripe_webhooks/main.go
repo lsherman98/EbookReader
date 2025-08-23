@@ -1,4 +1,4 @@
-package webhooks
+package stripe_webhooks
 
 import (
 	"encoding/json"
@@ -124,8 +124,8 @@ func Init(app *pocketbase.PocketBase) error {
 			}
 
 			var priceId string
-			yearlyPriceId := "price_1RyoWUCWP3HHujSqL2z838gl"
-			monthlyPriceId := "price_1RyoWUCWP3HHujSqqXATuEQQ"
+			monthlyPriceId := "price_1Rz8t1EMwCX9j250wqBwYWMA"
+			yearlyPriceId := "price_1Rz8t1EMwCX9j250yLRXg48C"
 
 			switch subscriptionType {
 			case "yearly":

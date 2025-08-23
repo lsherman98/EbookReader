@@ -15,8 +15,8 @@ import (
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/full_text_search"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/highlight_hooks"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/message_hooks"
+	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/stripe_webhooks"
 	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/vector_search"
-	"github.com/lsherman98/ai-reader/pocketbase/pb_hooks/webhooks"
 	"github.com/mattn/go-sqlite3"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
@@ -77,7 +77,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := webhooks.Init(app); err != nil {
+	if err := stripe_webhooks.Init(app); err != nil {
 		log.Fatal(err)
 	}
 
