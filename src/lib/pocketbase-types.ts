@@ -11,6 +11,8 @@ export enum Collections {
 	Mfas = "_mfas",
 	Otps = "_otps",
 	Superusers = "_superusers",
+	AiSpendByUser = "ai_spend_by_user",
+	AiTotalSpend = "ai_total_spend",
 	AiUsage = "ai_usage",
 	Books = "books",
 	Chapters = "chapters",
@@ -18,9 +20,10 @@ export enum Collections {
 	Highlights = "highlights",
 	LastRead = "last_read",
 	Messages = "messages",
-	SpendByUser = "spend_by_user",
-	TotalSpend = "total_spend",
-	UploadCount = "upload_count",
+	StripeCharges = "stripe_charges",
+	StripeCustomers = "stripe_customers",
+	StripeSubscriptions = "stripe_subscriptions",
+	UploadsByUser = "uploads_by_user",
 	Users = "users",
 	Vectors = "vectors",
 }
@@ -99,6 +102,19 @@ export type SuperusersRecord = {
 	tokenKey: string
 	updated?: IsoDateString
 	verified?: boolean
+}
+
+export type AiSpendByUserRecord<Ttotal_spend = unknown> = {
+	email: string
+	id: string
+	total_spend?: null | Ttotal_spend
+}
+
+export type AiTotalSpendRecord<Tgoogle_total = unknown, Tgrand_total = unknown, Topenai_total = unknown> = {
+	google_total?: null | Tgoogle_total
+	grand_total?: null | Tgrand_total
+	id: string
+	openai_total?: null | Topenai_total
 }
 
 export enum AiUsageTaskOptions {
@@ -208,20 +224,53 @@ export type MessagesRecord<Tcitations = unknown> = {
 	user: RecordIdString
 }
 
-export type SpendByUserRecord<Ttotal_spend = unknown> = {
-	email: string
+export enum StripeChargesStatusOptions {
+	"succeeded" = "succeeded",
+	"pending" = "pending",
+	"failed" = "failed",
+}
+export type StripeChargesRecord<Tmetadata = unknown> = {
+	amount?: number
+	charge_id?: string
+	created?: IsoDateString
+	customer_id: string
 	id: string
-	total_spend?: null | Ttotal_spend
+	metadata?: null | Tmetadata
+	paid?: boolean
+	receipt_url?: string
+	refunded?: boolean
+	status?: StripeChargesStatusOptions
+	user?: RecordIdString
 }
 
-export type TotalSpendRecord<Tgoogle_total = unknown, Tgrand_total = unknown, Topenai_total = unknown> = {
-	google_total?: null | Tgoogle_total
-	grand_total?: null | Tgrand_total
+export type StripeCustomersRecord = {
+	created?: IsoDateString
+	customer_id: string
+	email?: string
 	id: string
-	openai_total?: null | Topenai_total
+	updated?: IsoDateString
+	user: RecordIdString
 }
 
-export type UploadCountRecord = {
+export type StripeSubscriptionsRecord<Tmetadata = unknown> = {
+	cancel_at?: IsoDateString
+	cancel_at_period_end?: boolean
+	canceled_at?: IsoDateString
+	created?: IsoDateString
+	current_period_end?: IsoDateString
+	current_period_start?: IsoDateString
+	customer_id: string
+	ended_at?: IsoDateString
+	id: string
+	metadata?: null | Tmetadata
+	price_id?: string
+	status?: string
+	subscription_id?: string
+	updated?: IsoDateString
+	user?: RecordIdString
+}
+
+export type UploadsByUserRecord = {
 	email: string
 	id: string
 	uploadCount?: number
@@ -230,6 +279,7 @@ export type UploadCountRecord = {
 export type UsersRecord = {
 	avatar?: string
 	created?: IsoDateString
+	deleted?: boolean
 	email: string
 	emailVisibility?: boolean
 	id: string
@@ -259,6 +309,8 @@ export type ExternalauthsResponse<Texpand = unknown> = Required<ExternalauthsRec
 export type MfasResponse<Texpand = unknown> = Required<MfasRecord> & BaseSystemFields<Texpand>
 export type OtpsResponse<Texpand = unknown> = Required<OtpsRecord> & BaseSystemFields<Texpand>
 export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> & AuthSystemFields<Texpand>
+export type AiSpendByUserResponse<Ttotal_spend = unknown, Texpand = unknown> = Required<AiSpendByUserRecord<Ttotal_spend>> & BaseSystemFields<Texpand>
+export type AiTotalSpendResponse<Tgoogle_total = unknown, Tgrand_total = unknown, Topenai_total = unknown, Texpand = unknown> = Required<AiTotalSpendRecord<Tgoogle_total, Tgrand_total, Topenai_total>> & BaseSystemFields<Texpand>
 export type AiUsageResponse<Texpand = unknown> = Required<AiUsageRecord> & BaseSystemFields<Texpand>
 export type BooksResponse<Texpand = unknown> = Required<BooksRecord> & BaseSystemFields<Texpand>
 export type ChaptersResponse<Texpand = unknown> = Required<ChaptersRecord> & BaseSystemFields<Texpand>
@@ -266,9 +318,10 @@ export type ChatsResponse<Texpand = unknown> = Required<ChatsRecord> & BaseSyste
 export type HighlightsResponse<Tselection = unknown, Texpand = unknown> = Required<HighlightsRecord<Tselection>> & BaseSystemFields<Texpand>
 export type LastReadResponse<Texpand = unknown> = Required<LastReadRecord> & BaseSystemFields<Texpand>
 export type MessagesResponse<Tcitations = unknown, Texpand = unknown> = Required<MessagesRecord<Tcitations>> & BaseSystemFields<Texpand>
-export type SpendByUserResponse<Ttotal_spend = unknown, Texpand = unknown> = Required<SpendByUserRecord<Ttotal_spend>> & BaseSystemFields<Texpand>
-export type TotalSpendResponse<Tgoogle_total = unknown, Tgrand_total = unknown, Topenai_total = unknown, Texpand = unknown> = Required<TotalSpendRecord<Tgoogle_total, Tgrand_total, Topenai_total>> & BaseSystemFields<Texpand>
-export type UploadCountResponse<Texpand = unknown> = Required<UploadCountRecord> & BaseSystemFields<Texpand>
+export type StripeChargesResponse<Tmetadata = unknown, Texpand = unknown> = Required<StripeChargesRecord<Tmetadata>> & BaseSystemFields<Texpand>
+export type StripeCustomersResponse<Texpand = unknown> = Required<StripeCustomersRecord> & BaseSystemFields<Texpand>
+export type StripeSubscriptionsResponse<Tmetadata = unknown, Texpand = unknown> = Required<StripeSubscriptionsRecord<Tmetadata>> & BaseSystemFields<Texpand>
+export type UploadsByUserResponse<Texpand = unknown> = Required<UploadsByUserRecord> & BaseSystemFields<Texpand>
 export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>
 export type VectorsResponse<Texpand = unknown> = Required<VectorsRecord> & BaseSystemFields<Texpand>
 
@@ -280,6 +333,8 @@ export type CollectionRecords = {
 	_mfas: MfasRecord
 	_otps: OtpsRecord
 	_superusers: SuperusersRecord
+	ai_spend_by_user: AiSpendByUserRecord
+	ai_total_spend: AiTotalSpendRecord
 	ai_usage: AiUsageRecord
 	books: BooksRecord
 	chapters: ChaptersRecord
@@ -287,9 +342,10 @@ export type CollectionRecords = {
 	highlights: HighlightsRecord
 	last_read: LastReadRecord
 	messages: MessagesRecord
-	spend_by_user: SpendByUserRecord
-	total_spend: TotalSpendRecord
-	upload_count: UploadCountRecord
+	stripe_charges: StripeChargesRecord
+	stripe_customers: StripeCustomersRecord
+	stripe_subscriptions: StripeSubscriptionsRecord
+	uploads_by_user: UploadsByUserRecord
 	users: UsersRecord
 	vectors: VectorsRecord
 }
@@ -300,6 +356,8 @@ export type CollectionResponses = {
 	_mfas: MfasResponse
 	_otps: OtpsResponse
 	_superusers: SuperusersResponse
+	ai_spend_by_user: AiSpendByUserResponse
+	ai_total_spend: AiTotalSpendResponse
 	ai_usage: AiUsageResponse
 	books: BooksResponse
 	chapters: ChaptersResponse
@@ -307,9 +365,10 @@ export type CollectionResponses = {
 	highlights: HighlightsResponse
 	last_read: LastReadResponse
 	messages: MessagesResponse
-	spend_by_user: SpendByUserResponse
-	total_spend: TotalSpendResponse
-	upload_count: UploadCountResponse
+	stripe_charges: StripeChargesResponse
+	stripe_customers: StripeCustomersResponse
+	stripe_subscriptions: StripeSubscriptionsResponse
+	uploads_by_user: UploadsByUserResponse
 	users: UsersResponse
 	vectors: VectorsResponse
 }
@@ -323,6 +382,8 @@ export type TypedPocketBase = PocketBase & {
 	collection(idOrName: '_mfas'): RecordService<MfasResponse>
 	collection(idOrName: '_otps'): RecordService<OtpsResponse>
 	collection(idOrName: '_superusers'): RecordService<SuperusersResponse>
+	collection(idOrName: 'ai_spend_by_user'): RecordService<AiSpendByUserResponse>
+	collection(idOrName: 'ai_total_spend'): RecordService<AiTotalSpendResponse>
 	collection(idOrName: 'ai_usage'): RecordService<AiUsageResponse>
 	collection(idOrName: 'books'): RecordService<BooksResponse>
 	collection(idOrName: 'chapters'): RecordService<ChaptersResponse>
@@ -330,9 +391,10 @@ export type TypedPocketBase = PocketBase & {
 	collection(idOrName: 'highlights'): RecordService<HighlightsResponse>
 	collection(idOrName: 'last_read'): RecordService<LastReadResponse>
 	collection(idOrName: 'messages'): RecordService<MessagesResponse>
-	collection(idOrName: 'spend_by_user'): RecordService<SpendByUserResponse>
-	collection(idOrName: 'total_spend'): RecordService<TotalSpendResponse>
-	collection(idOrName: 'upload_count'): RecordService<UploadCountResponse>
+	collection(idOrName: 'stripe_charges'): RecordService<StripeChargesResponse>
+	collection(idOrName: 'stripe_customers'): RecordService<StripeCustomersResponse>
+	collection(idOrName: 'stripe_subscriptions'): RecordService<StripeSubscriptionsResponse>
+	collection(idOrName: 'uploads_by_user'): RecordService<UploadsByUserResponse>
 	collection(idOrName: 'users'): RecordService<UsersResponse>
 	collection(idOrName: 'vectors'): RecordService<VectorsResponse>
 }

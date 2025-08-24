@@ -17,8 +17,24 @@ import (
 )
 
 func Init(app *pocketbase.PocketBase) error {
+	domain := "https://reader.levisherman.xyz"
 	stripe.Key = os.Getenv("STRIPE_API_KEY")
-	domain := "http://localhost:5173"
+	webhookSecret := os.Getenv("STRIPE_WEBHOOK_SECRET")
+	monthlyPriceId := os.Getenv("STRIPE_MONTHLY_PRICE_ID")
+	yearlyPriceId := os.Getenv("STRIPE_YEARLY_PRICE_ID")
+
+	dev := os.Getenv("DEV") == "true"
+	if dev {
+		domain = "http://localhost:5173"
+	}
+
+	stripeTest := os.Getenv("STRIPE_TEST") == "true"
+	if stripeTest {
+		stripe.Key = os.Getenv("TEST_STRIPE_API_KEY")
+		webhookSecret = os.Getenv("TEST_STRIPE_WEBHOOK_SECRET")
+		monthlyPriceId = os.Getenv("TEST_STRIPE_MONTHLY_PRICE_ID")
+		yearlyPriceId = os.Getenv("TEST_STRIPE_YEARLY_PRICE_ID")
+	}
 
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		subscriptionsCollection, err := app.FindCollectionByNameOrId("stripe_subscriptions")
@@ -47,7 +63,6 @@ func Init(app *pocketbase.PocketBase) error {
 				return e.BadRequestError("failed to read stripe event", err)
 			}
 
-			webhookSecret := os.Getenv("STRIPE_WEBHOOK_SECRET")
 			signatureHeader := e.Request.Header.Get("Stripe-Signature")
 			event, err = webhook.ConstructEvent(payload, signatureHeader, webhookSecret)
 			if err != nil {
@@ -124,8 +139,6 @@ func Init(app *pocketbase.PocketBase) error {
 			}
 
 			var priceId string
-			monthlyPriceId := "price_1Rz8t1EMwCX9j250wqBwYWMA"
-			yearlyPriceId := "price_1Rz8t1EMwCX9j250yLRXg48C"
 
 			switch subscriptionType {
 			case "yearly":

@@ -16,7 +16,7 @@ function SubscriptionPage() {
   const { data: isPaidUser } = useIsPaidUser();
   const checkoutMutation = useCreateCheckoutSession();
   const portalMutation = useCreatePortalSession();
-  const [isYearly, setIsYearly] = useState(false);
+  const [isYearly, setIsYearly] = useState(true);
 
   const handleUpgrade = async () => {
     if (!isPaidUser) {
@@ -32,9 +32,14 @@ function SubscriptionPage() {
   return (
     <div className="h-full flex items-center justify-center">
       <div className="max-w-4xl w-full p-6">
-        <div className="text-center mb-8">
+        <div className="flex flex-col items-center text-center mb-8">
           <h1 className="text-3xl font-bold mb-2">Choose Your Plan</h1>
-          <p className="text-muted-foreground">Unlock unlimited reading with our affordable subscription</p>
+          <p className="text-muted-foreground mb-4">Unlock unlimited reading with our affordable subscription</p>
+          <div className="flex items-center gap-2 justify-center">
+            <span className={`text-xs ${!isYearly ? "font-bold" : ""}`}>Monthly</span>
+            <Switch checked={isYearly} onCheckedChange={setIsYearly} />
+            <span className={`text-xs ${isYearly ? "font-bold" : ""}`}>Yearly</span>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
@@ -87,14 +92,9 @@ function SubscriptionPage() {
                   <Crown className="h-5 w-5 text-yellow-500" />
                   <CardTitle>Premium</CardTitle>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm ${!isYearly ? "font-bold" : ""}`}>Monthly</span>
-                  <Switch checked={isYearly} onCheckedChange={setIsYearly} />
-                  <span className={`text-sm ${isYearly ? "font-bold" : ""}`}>Yearly</span>
-                </div>
                 {isPaidUser && <Badge variant="secondary">Current</Badge>}
               </div>
-              <CardDescription>For serious readers</CardDescription>
+              <CardDescription className="flex w-full justify-between">For serious readers</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="mb-6">

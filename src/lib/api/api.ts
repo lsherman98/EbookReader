@@ -178,7 +178,7 @@ export const uploadLimitReached = async () => {
     const paid = user?.paid
     if (!user || paid) return false
 
-    const uploadCountRecord = await pb.collection(Collections.UploadCount).getOne(user.id)
+    const uploadCountRecord = await pb.collection(Collections.UploadsByUser).getOne(user.id)
     return uploadCountRecord.uploadCount >= 5
 }
 
