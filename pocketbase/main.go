@@ -23,6 +23,8 @@ import (
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
+
+	_ "github.com/lsherman98/ai-reader/pocketbase/migrations"
 )
 
 func init() {
@@ -59,17 +61,7 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	if err := vector_search.Init(app, vector_search.VectorCollection{
-		Name: "vectors",
-	}); err != nil {
-		log.Fatal(err)
-	}
-
 	if err := ai_chat.Init(app); err != nil {
-		log.Fatal(err)
-	}
-
-	if err := full_text_search.Init(app, "books"); err != nil {
 		log.Fatal(err)
 	}
 
@@ -101,8 +93,18 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if err := vector_search.Init(app, vector_search.VectorCollection{
+		Name: "vectors",
+	}); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := full_text_search.Init(app, "books"); err != nil {
+		log.Fatal(err)
+	}
+
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
-		se.Router.GET("/{path...}", apis.Static(os.DirFS("./pb_public"), false))
+		se.Router.GET("/{path...}", apis.Static(os.DirFS("./pb_public"), true))
 		return se.Next()
 	})
 

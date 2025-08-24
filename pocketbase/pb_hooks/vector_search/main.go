@@ -9,12 +9,15 @@ import (
 
 	sqlite_vec "github.com/asg017/sqlite-vec-go-bindings/cgo"
 	"github.com/google/generative-ai-go/genai"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/routine"
 	"github.com/pocketbase/pocketbase/tools/types"
 )
+
+import "C"
 
 type VectorCollection struct {
 	Name        string
@@ -44,7 +47,7 @@ func Init(app *pocketbase.PocketBase, collections ...VectorCollection) error {
 		}
 	})
 
-	app.Cron().MustAdd("processMissingEmbeddings", "* * * * *", func() {
+	app.Cron().MustAdd("processMissingEmbeddings", "0 * * * *", func() {
 		target := "vectors"
 		records, err := app.FindRecordsByFilter(target, "vector_id = 0", "", 10000, 0)
 		if err != nil {

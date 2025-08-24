@@ -30,3 +30,5 @@ pocketbase/pb_data
 pocketbase/pb_public
 pocketbase/pocketbase
 pocketbase/.env
+pocketbase/server
+pocketbase/pocketbase
