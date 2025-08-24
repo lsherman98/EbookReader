@@ -98,7 +98,7 @@ function SubscriptionPage() {
             </CardHeader>
             <CardContent>
               <div className="mb-6">
-                <div className="text-3xl font-bold">{isYearly ? "$24.99" : "$2.99"}</div>
+                <div className="text-3xl font-bold">{isYearly ? "$19.99" : "$2.99"}</div>
                 <div className="text-sm text-muted-foreground">{isYearly ? "per year" : "per month"}</div>
               </div>
 

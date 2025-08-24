@@ -91,7 +91,7 @@ function LibraryPage() {
     return pageNumbers;
   };
 
-  const displayBooks = searchResults?.length ? searchResults : booksData?.items || [];
+  const displayBooks = searchQuery ? searchResults || [] : booksData?.items || [];
   const totalItemsCount = booksData?.totalItems || 0;
 
   if (totalItemsCount === 0) {

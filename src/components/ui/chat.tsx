@@ -67,7 +67,7 @@ export function Chat({
           />
         </ChatMessages>
       ) : (
-        <div className="w-full h-full flex items-center justify-center">placeholder instructions</div>
+        <div className="w-full h-full flex items-center justify-center"></div>
       )}
 
       <ChatForm className="mt-auto" isPending={isGenerating || isTyping} handleSubmit={handleSubmit}>

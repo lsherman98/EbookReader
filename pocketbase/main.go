@@ -50,14 +50,12 @@ func init() {
 }
 
 func main() {
-
 	app := pocketbase.NewWithConfig(pocketbase.Config{
 		DBConnect: func(dbPath string) (*dbx.DB, error) {
 			return dbx.Open("pb_sqlite3", dbPath)
 		},
 	})
 
-	
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}
