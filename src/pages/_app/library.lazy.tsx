@@ -18,7 +18,7 @@ function LibraryPage() {
   const limit = 20;
 
   const { data: booksData } = useGetBooks(currentPage, limit);
-  const { data: searchResults } = useSearchBooks(searchQuery);
+  const { data: searchResults, isFetching: isSearching } = useSearchBooks(searchQuery);
   const { data: uploadLimitReached } = useGetUploadLimitReached();
   const deleteBookMutation = useDeleteBook();
   const downloadBookMutation = useDownloadBook();
@@ -91,7 +91,7 @@ function LibraryPage() {
     return pageNumbers;
   };
 
-  const displayBooks = searchQuery ? searchResults || [] : booksData?.items || [];
+  const displayBooks = searchQuery != "" || isSearching ? searchResults || [] : booksData?.items || [];
   const totalItemsCount = booksData?.totalItems || 0;
 
   if (totalItemsCount === 0) {
