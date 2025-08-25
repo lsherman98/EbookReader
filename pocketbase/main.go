@@ -25,6 +25,7 @@ import (
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 
 	_ "github.com/lsherman98/ai-reader/pocketbase/migrations"
+	// _ "github.com/marcboeker/go-duckdb/v2"
 )
 
 func init() {
@@ -55,6 +56,19 @@ func main() {
 			return dbx.Open("pb_sqlite3", dbPath)
 		},
 	})
+
+	// duckdb, err := sql.Open("duckdb", "pb_data/auxiliary.db")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// defer duckdb.Close()
+
+	// err = duckdb.Ping()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// duckdb.Exec(`CALL start_ui();`)
 
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
