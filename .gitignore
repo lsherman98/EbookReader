@@ -32,3 +32,5 @@ pocketbase/pocketbase
 pocketbase/.env
 pocketbase/server
 pocketbase/pocketbase
+
+.tanstack
