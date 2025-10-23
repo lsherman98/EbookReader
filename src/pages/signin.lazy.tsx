@@ -95,8 +95,7 @@ const UserLoginForm = () => {
       </Button>
       <Button
         type="button"
-        className="w-full"
-        variant="outline"
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
         onClick={async () => {
           await pb.collection("users").authWithPassword("demo@demo.com", "password");
           navigate({ to: getRedirectAfterSignIn() });
