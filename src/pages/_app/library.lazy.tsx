@@ -5,7 +5,7 @@ import { BooksResponse } from "@/lib/pocketbase-types";
 import { useGetBooks, useSearchBooks, useGetUploadLimitReached } from "@/lib/api/queries";
 import { useDeleteBook, useDownloadBook } from "@/lib/api/mutations";
 import { useState } from "react";
-import { BooksTable } from "@/components/BooksTable/BooksTable";
+import { BooksTable } from "@/components/booksTable/BooksTable";
 
 export const Route = createLazyFileRoute("/_app/library")({
   component: LibraryPage,
