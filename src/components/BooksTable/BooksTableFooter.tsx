@@ -11,6 +11,7 @@ import {
   PaginationPrevious,
 } from "../ui/pagination";
 import { Link } from "@tanstack/react-router";
+import { getPageNumbers } from "@/lib/utils/utils";
 
 interface BooksTableFooterProps {
   currentCount: number;
@@ -18,7 +19,6 @@ interface BooksTableFooterProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-  getPageNumbers: () => (number | string)[];
   uploadLimitReached?: boolean;
 }
 
@@ -28,7 +28,6 @@ export function BooksTableFooter({
   currentPage,
   totalPages,
   onPageChange,
-  getPageNumbers,
   uploadLimitReached,
 }: BooksTableFooterProps) {
   return (
@@ -66,7 +65,7 @@ export function BooksTableFooter({
                       className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
                     />
                   </PaginationItem>
-                  {getPageNumbers().map((page, index) =>
+                  {getPageNumbers(totalPages, currentPage).map((page, index) =>
                     page === "..." ? (
                       <PaginationItem key={`ellipsis-${index}`}>
                         <PaginationEllipsis />

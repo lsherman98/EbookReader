@@ -18,8 +18,9 @@ import (
 )
 
 func Init(app *pocketbase.PocketBase) error {
-	var model string = os.Getenv("OPENAI_MODEL")
-	OpenAI4oStructured, err := openai.New(openai.WithModel(model), openai.WithResponseFormat(GetJSONSchema()))
+	model := os.Getenv("OPENAI_MODEL")
+
+	openai, err := openai.New(openai.WithModel(model), openai.WithResponseFormat(GetJSONSchema()))
 	if err != nil {
 		return err
 	}
@@ -36,12 +37,12 @@ func Init(app *pocketbase.PocketBase) error {
 				return e.BadRequestError("failed to read chat request data", err)
 			}
 
-			bookRecord, err := e.App.FindRecordById("books", data.BookID)
+			book, err := e.App.FindRecordById("books", data.BookId)
 			if err != nil {
 				return e.InternalServerError("failed to get book information", err)
 			}
 
-			msgs, err := e.App.FindRecordsByFilter("messages", "chat = {:chatId}", "created", 0, 0, dbx.Params{"chatId": data.ChatID})
+			msgs, err := e.App.FindRecordsByFilter("messages", "chat = {:chatId}", "created", 0, 0, dbx.Params{"chatId": data.ChatId})
 			if err != nil {
 				return e.InternalServerError("failed to get messages for chat", err)
 			}
@@ -51,13 +52,12 @@ func Init(app *pocketbase.PocketBase) error {
 			}
 
 			latestMsg := msgs[len(msgs)-1]
-
-			searchResults, err := vector_search.Search(app, "", latestMsg.GetString("content"), data.BookID, data.ChapterID, 7)
+			searchResults, err := vector_search.Search(app, "", latestMsg.GetString("content"), data.BookId, data.ChapterId, 7)
 			if err != nil {
 				return e.InternalServerError("failed to search vectors", err)
 			}
 
-			prompt := buildPromptWithContext(searchResults, bookRecord.GetString("title"), bookRecord.GetString("author"))
+			prompt := buildPromptWithContext(searchResults, book.GetString("title"), book.GetString("author"))
 			content := make([]llms.MessageContent, 0, len(msgs)+1)
 			content = append(content, llms.TextParts(llms.ChatMessageTypeSystem, prompt))
 
@@ -69,22 +69,21 @@ func Init(app *pocketbase.PocketBase) error {
 				content = append(content, llms.TextParts(messageType, msg.GetString("content")))
 			}
 
-			completion, err := OpenAI4oStructured.GenerateContent(context.Background(), content, llms.WithStreamingFunc(func(streamCtx context.Context, chunk []byte) error {
+			completion, err := openai.GenerateContent(context.Background(), content, llms.WithStreamingFunc(func(streamCtx context.Context, chunk []byte) error {
 				return nil
 			}), llms.WithJSONMode())
 			if err != nil {
 				return e.InternalServerError("failed to generate llm response", err)
 			}
 
-			trackChatAIUsage(app, data.BookID, completion)
+			trackChatAIUsage(app, data.BookId, completion)
 
 			var structuredResponse StructuredChatResponse
 			if err := json.Unmarshal([]byte(completion.Choices[0].Content), &structuredResponse); err != nil {
 				return e.InternalServerError("failed to parse structured response", err)
 			}
 
-			newMessage := buildMessage(msgsCollection, data.ChatID, "assistant", structuredResponse.Answer, e.Auth.Id, structuredResponse.Citations)
-
+			newMessage := buildMessage(msgsCollection, data.ChatId, "assistant", structuredResponse.Answer, e.Auth.Id, structuredResponse.Citations)
 			err = e.App.Save(newMessage)
 			if err != nil {
 				return e.InternalServerError("failed to save new message", err)
@@ -106,9 +105,8 @@ func Init(app *pocketbase.PocketBase) error {
 	return nil
 }
 
-func buildPromptWithContext(searchResults []map[string]interface{}, bookTitle, bookAuthor string) string {
+func buildPromptWithContext(searchResults []map[string]any, bookTitle, bookAuthor string) string {
 	var contextBuilder strings.Builder
-
 	contextBuilder.WriteString(fmt.Sprintf("You are an AI assistant helping users understand their book content.\n\nBOOK INFORMATION:\nTitle: %s\nAuthor: %s\n\n", bookTitle, bookAuthor))
 
 	if len(searchResults) == 0 {
@@ -147,7 +145,6 @@ func trackChatAIUsage(app *pocketbase.PocketBase, bookId string, completion *llm
 	genInfo := completion.Choices[0].GenerationInfo
 	promptTokens, ok1 := genInfo["PromptTokens"].(int)
 	completionTokens, ok2 := genInfo["CompletionTokens"].(int)
-
 	if !ok1 || !ok2 {
 		app.Logger().Error("Error extracting token counts from completion response")
 		return
@@ -157,20 +154,20 @@ func trackChatAIUsage(app *pocketbase.PocketBase, bookId string, completion *llm
 	outputCost := float64(completionTokens) * 10.0 / 1000000
 	totalCost := inputCost + outputCost
 
-	AIUsageCollection, err := app.FindCollectionByNameOrId("ai_usage")
+	usageCollection, err := app.FindCollectionByNameOrId("ai_usage")
 	if err != nil {
 		app.Logger().Error("Error finding ai_usage collection:", "error", err.Error())
 		return
 	}
 
-	bookRecord, err := app.FindRecordById("books", bookId)
+	book, err := app.FindRecordById("books", bookId)
 	if err != nil {
 		app.Logger().Error("Error finding book record:", "error", err.Error())
 		return
 	}
-	user := bookRecord.GetString("user")
 
-	var model string = os.Getenv("OPENAI_MODEL")
+	user := book.GetString("user")
+	model := os.Getenv("OPENAI_MODEL")
 
 	existingRecord, err := app.FindFirstRecordByFilter("ai_usage",
 		"book = {:book} && user = {:user} && task = 'chat'",
@@ -178,7 +175,6 @@ func trackChatAIUsage(app *pocketbase.PocketBase, bookId string, completion *llm
 			"book": bookId,
 			"user": user,
 		})
-
 	if err == nil && existingRecord != nil {
 		currentInputTokens := existingRecord.GetInt("input_tokens")
 		currentOutputTokens := existingRecord.GetInt("output_tokens")
@@ -191,24 +187,22 @@ func trackChatAIUsage(app *pocketbase.PocketBase, bookId string, completion *llm
 		existingRecord.Set("input_cost", currentInputCost+inputCost)
 		existingRecord.Set("output_cost", currentOutputCost+outputCost)
 		existingRecord.Set("total_cost", currentTotalCost+totalCost)
-
 		if err := app.Save(existingRecord); err != nil {
 			app.Logger().Error("Error updating AI usage record:", "error", err.Error())
 		}
 	} else {
-		AIUsageRecord := core.NewRecord(AIUsageCollection)
-		AIUsageRecord.Set("task", "chat")
-		AIUsageRecord.Set("provider", "openai")
-		AIUsageRecord.Set("model", model)
-		AIUsageRecord.Set("input_tokens", promptTokens)
-		AIUsageRecord.Set("output_tokens", completionTokens)
-		AIUsageRecord.Set("input_cost", inputCost)
-		AIUsageRecord.Set("output_cost", outputCost)
-		AIUsageRecord.Set("total_cost", totalCost)
-		AIUsageRecord.Set("book", bookId)
-		AIUsageRecord.Set("user", user)
-
-		if err := app.Save(AIUsageRecord); err != nil {
+		usageRecord := core.NewRecord(usageCollection)
+		usageRecord.Set("task", "chat")
+		usageRecord.Set("provider", "openai")
+		usageRecord.Set("model", model)
+		usageRecord.Set("input_tokens", promptTokens)
+		usageRecord.Set("output_tokens", completionTokens)
+		usageRecord.Set("input_cost", inputCost)
+		usageRecord.Set("output_cost", outputCost)
+		usageRecord.Set("total_cost", totalCost)
+		usageRecord.Set("book", bookId)
+		usageRecord.Set("user", user)
+		if err := app.Save(usageRecord); err != nil {
 			app.Logger().Error("Error saving AI usage record:", "error", err.Error())
 		}
 	}

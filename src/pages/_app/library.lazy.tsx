@@ -12,17 +12,18 @@ export const Route = createLazyFileRoute("/_app/library")({
 });
 
 function LibraryPage() {
+  const navigate = useNavigate();
+  const limit = 20;
+
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
-
-  const limit = 20;
 
   const { data: booksData } = useGetBooks(currentPage, limit);
   const { data: searchResults, isFetching: isSearching } = useSearchBooks(searchQuery);
   const { data: uploadLimitReached } = useGetUploadLimitReached();
+
   const deleteBookMutation = useDeleteBook();
   const downloadBookMutation = useDownloadBook();
-  const navigate = useNavigate();
 
   const totalPages = booksData ? Math.ceil(booksData.totalItems / limit) : 0;
 
@@ -45,50 +46,6 @@ function LibraryPage() {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
-  };
-
-  const getPageNumbers = () => {
-    const pageNumbers = [];
-    const maxPagesToShow = 5;
-
-    if (totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= totalPages; i++) {
-        pageNumbers.push(i);
-      }
-    } else {
-      pageNumbers.push(1);
-
-      let startPage = Math.max(2, currentPage - 1);
-      let endPage = Math.min(totalPages - 1, currentPage + 1);
-
-      if (currentPage <= 3) {
-        startPage = 2;
-        endPage = Math.min(4, totalPages - 1);
-      }
-
-      if (currentPage >= totalPages - 2) {
-        startPage = Math.max(2, totalPages - 3);
-        endPage = totalPages - 1;
-      }
-
-      if (startPage > 2) {
-        pageNumbers.push("...");
-      }
-
-      for (let i = startPage; i <= endPage; i++) {
-        pageNumbers.push(i);
-      }
-
-      if (endPage < totalPages - 1) {
-        pageNumbers.push("...");
-      }
-
-      if (totalPages > 1) {
-        pageNumbers.push(totalPages);
-      }
-    }
-
-    return pageNumbers;
   };
 
   const displayBooks = searchQuery != "" || isSearching ? searchResults || [] : booksData?.items || [];
@@ -119,7 +76,6 @@ function LibraryPage() {
       totalPages={totalPages}
       totalItems={totalItemsCount}
       onPageChange={handlePageChange}
-      getPageNumbers={getPageNumbers}
       onDeleteBook={handleDeleteBook}
       onDownloadBook={handleDownloadBook}
       onReadBook={handleReadBook}

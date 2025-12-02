@@ -13,7 +13,6 @@ func Init(app *pocketbase.PocketBase) error {
 		}
 
 		record.Set("messages+", e.Record.Id)
-
 		err = e.App.Save(record)
 		if err != nil {
 			return err

@@ -1,9 +1,9 @@
 package ai_chat
 
 type ChatRequest struct {
-	BookID    string `json:"bookId,omitempty"`
-	ChapterID string `json:"chapterId,omitempty"`
-	ChatID    string `json:"chatId,omitempty"`
+	BookId    string `json:"bookId,omitempty"`
+	ChapterId string `json:"chapterId,omitempty"`
+	ChatId    string `json:"chatId,omitempty"`
 }
 
 type Citation struct {

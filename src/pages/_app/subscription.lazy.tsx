@@ -41,7 +41,6 @@ function SubscriptionPage() {
             <span className={`text-xs ${isYearly ? "font-bold" : ""}`}>Yearly</span>
           </div>
         </div>
-
         <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
           <Card className="relative">
             <CardHeader>
@@ -58,7 +57,6 @@ function SubscriptionPage() {
               <div className="mb-6">
                 <div className="text-3xl font-bold">$0</div>
               </div>
-
               <ul className="space-y-3 mb-6">
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
@@ -73,7 +71,6 @@ function SubscriptionPage() {
                   <span className="text-sm">Text Highlighting</span>
                 </li>
               </ul>
-
               <Link to="/library">
                 <Button variant="outline" className="w-full">
                   Continue with Free
@@ -81,7 +78,6 @@ function SubscriptionPage() {
               </Link>
             </CardContent>
           </Card>
-
           <Card className="relative border-primary">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
               <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
@@ -101,7 +97,6 @@ function SubscriptionPage() {
                 <div className="text-3xl font-bold">{isYearly ? "$19.99" : "$2.99"}</div>
                 <div className="text-sm text-muted-foreground">{isYearly ? "per year" : "per month"}</div>
               </div>
-
               <ul className="space-y-3 mb-6">
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
@@ -116,7 +111,6 @@ function SubscriptionPage() {
                   <span className="text-sm">All future features included</span>
                 </li>
               </ul>
-
               <Button
                 onClick={handleUpgrade}
                 className="w-full"

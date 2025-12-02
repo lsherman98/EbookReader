@@ -6,7 +6,6 @@ import (
 )
 
 func Init(app *pocketbase.PocketBase) error {
-
 	app.Cron().MustAdd("consolidateUsageRecords", "0 0 * * *", func() {
 		stmt := `
 			SELECT task, provider, model, user, COALESCE(book, '') as book, 
@@ -68,7 +67,6 @@ func Init(app *pocketbase.PocketBase) error {
 			}
 
 			firstRecord, err := app.FindFirstRecordByFilter("ai_usage", filterCondition, params)
-
 			if err != nil {
 				app.Logger().Error("failed to find first record for consolidation", "error", err)
 				continue
@@ -79,7 +77,6 @@ func Init(app *pocketbase.PocketBase) error {
 			firstRecord.Set("input_cost", group.TotalInputCost)
 			firstRecord.Set("output_cost", group.TotalOutputCost)
 			firstRecord.Set("total_cost", group.TotalTotalCost)
-
 			if err := app.Save(firstRecord); err != nil {
 				app.Logger().Error("failed to update consolidated record", "error", err)
 				continue

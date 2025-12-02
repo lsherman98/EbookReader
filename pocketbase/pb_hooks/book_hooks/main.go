@@ -161,7 +161,6 @@ func Init(app *pocketbase.PocketBase) error {
 		}
 
 		currentBookId := lastReadRecord.GetString("book")
-
 		if currentBookId != book {
 			bookRecord, err := e.App.FindRecordById("books", book)
 			if err != nil {

@@ -14,7 +14,6 @@ interface BooksTableProps {
   totalPages: number;
   totalItems: number;
   onPageChange: (page: number) => void;
-  getPageNumbers: () => (number | string)[];
   onDeleteBook: (bookId: string) => void;
   onDownloadBook: (bookId: string) => void;
   onReadBook: (book: BooksResponse) => void;
@@ -29,7 +28,6 @@ export function BooksTable({
   totalPages,
   totalItems,
   onPageChange,
-  getPageNumbers,
   onDeleteBook,
   onDownloadBook,
   onReadBook,
@@ -76,7 +74,6 @@ export function BooksTable({
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={onPageChange}
-            getPageNumbers={getPageNumbers}
             uploadLimitReached={uploadLimitReached}
           />
         </Table>

@@ -7,7 +7,6 @@ import (
 )
 
 func Init(app *pocketbase.PocketBase) error {
-
 	app.OnRecordDeleteRequest("chats").BindFunc(func(e *core.RecordRequestEvent) error {
 		if e.Collection.Name != "chats" {
 			return nil
